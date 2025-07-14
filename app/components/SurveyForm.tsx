@@ -1,17 +1,61 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { TSurvey, TQuestion } from "./types";
+import { TSurvey, TQuestion, TBranchCondition } from "./types";
 
 type Answer = {
     questionId: string;
-    value: string | Record<string, string>;
+    value: string | string[] | Record<string, string>;
 };
 
 export default function SurveyForm({ survey }: { survey: TSurvey }) {
     const [currentPanel, setCurrentPanel] = useState(0);
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
+
+    // 조건을 확인하는 함수
+    const checkCondition = (condition: TBranchCondition): boolean => {
+        const conditionAnswer = answers.find(a => a.questionId === condition.question_id);
+        if (!conditionAnswer) {
+            return false;
+        }
+
+        const conditionValue = conditionAnswer.value;
+        let valueToCompare = conditionValue;
+
+        // 복합 질문의 경우 특정 하위 항목 키의 값을 확인
+        if (typeof conditionValue === 'object' && conditionValue !== null && condition.sub_key) {
+            valueToCompare = (conditionValue as Record<string, string>)[condition.sub_key];
+        }
+
+        switch (condition.operator) {
+            case "equals":
+                return valueToCompare === condition.value;
+            case "not_equals":
+                return valueToCompare !== condition.value;
+            case "contains":
+                return typeof valueToCompare === 'string' && 
+                       valueToCompare.includes(condition.value as string);
+            case "greater_than":
+                const numValue = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
+                return typeof numValue === 'number' && !isNaN(numValue) && 
+                       numValue > (condition.value as number);
+            case "less_than":
+                const numValue2 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
+                return typeof numValue2 === 'number' && !isNaN(numValue2) && 
+                       numValue2 < (condition.value as number);
+            case "greater_than_or_equal":
+                const numValue3 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
+                return typeof numValue3 === 'number' && !isNaN(numValue3) && 
+                       numValue3 >= (condition.value as number);
+            case "less_than_or_equal":
+                const numValue4 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
+                return typeof numValue4 === 'number' && !isNaN(numValue4) && 
+                       numValue4 <= (condition.value as number);
+            default:
+                return false;
+        }
+    };
 
     // show_condition을 확인하는 함수
     const checkShowCondition = (question: TQuestion): boolean => {
@@ -20,48 +64,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         }
 
         for (const condition of question.show_condition.conditions) {
-            const conditionAnswer = answers.find(a => a.questionId === condition.question_id);
-            if (!conditionAnswer) {
-                return false; // 조건에 필요한 답변이 없으면 보여주지 않음
-            }
-
-            const conditionValue = conditionAnswer.value;
-            let valueToCompare = conditionValue;
-
-            // composite 타입의 경우 특정 키의 값을 확인
-            if (typeof conditionValue === 'object' && conditionValue !== null) {
-                const keys = Object.keys(conditionValue);
-                if (keys.length > 0) {
-                    // 첫 번째 키의 값을 사용 (실제로는 더 정교한 로직이 필요할 수 있음)
-                    valueToCompare = (conditionValue as Record<string, string>)[keys[0]];
-                }
-            }
-
-            let conditionMet = false;
-            switch (condition.operator) {
-                case "equals":
-                    conditionMet = valueToCompare === condition.value;
-                    break;
-                case "not_equals":
-                    conditionMet = valueToCompare !== condition.value;
-                    break;
-                case "contains":
-                    conditionMet = typeof valueToCompare === 'string' && 
-                                  valueToCompare.includes(condition.value as string);
-                    break;
-                case "greater_than":
-                    const numValue = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                    conditionMet = typeof numValue === 'number' && !isNaN(numValue) && 
-                                  numValue > (condition.value as number);
-                    break;
-                case "less_than":
-                    const numValue2 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                    conditionMet = typeof numValue2 === 'number' && !isNaN(numValue2) && 
-                                  numValue2 < (condition.value as number);
-                    break;
-            }
-
-            if (!conditionMet) {
+            if (!checkCondition(condition)) {
                 return false; // 조건이 만족되지 않으면 보여주지 않음
             }
         }
@@ -87,7 +90,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         setCurrentQuestion(visibleQuestions[currentPanel]);
     }, [visibleQuestions, currentPanel]);
 
-    const handleAnswerChange = (questionId: string, value: string | Record<string, string>) => {
+    const handleAnswerChange = (questionId: string, value: string | string[] | Record<string, string>) => {
         setAnswers(prev => {
             const existingIndex = prev.findIndex(a => a.questionId === questionId);
             if (existingIndex >= 0) {
@@ -99,12 +102,14 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         });
     };
 
-    const getNextPanel = (currentAnswer: string | Record<string, string>): number => {
+    const getNextPanel = (currentAnswer: string | string[] | Record<string, string>): number => {
         const currentQuestion = visibleQuestions[currentPanel];
         
-        // 1. 옵션별 직접 이동 로직 (multiple_choice의 경우)
-        if (currentQuestion.type === "multiple_choice" && typeof currentAnswer === 'string') {
-            const selectedOption = currentQuestion.options?.find(opt => opt.label === currentAnswer);
+        // 1. 옵션별 직접 이동 로직 (단일/중복 객관식의 경우)
+        if (currentQuestion.type === "simple" && 
+            (currentQuestion.simple_type === "single_choice" || currentQuestion.simple_type === "multiple_choice") && 
+            typeof currentAnswer === 'string') {
+            const selectedOption = currentQuestion.options?.find(opt => opt.value === currentAnswer);
             if (selectedOption?.next_question_id) {
                 const targetIndex = visibleQuestions.findIndex(q => q.id === selectedOption.next_question_id);
                 if (targetIndex !== -1) {
@@ -113,55 +118,13 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             }
         }
         
-        // 2. 조건부 로직 체크
-        if (currentQuestion.conditional_logic) {
-            for (const logic of currentQuestion.conditional_logic) {
+        // 2. 분기 로직 체크
+        if (currentQuestion.branch_logic) {
+            for (const logic of currentQuestion.branch_logic) {
                 let allConditionsMet = true;
                 
                 for (const condition of logic.conditions) {
-                    const conditionAnswer = answers.find(a => a.questionId === condition.question_id);
-                    if (!conditionAnswer) {
-                        allConditionsMet = false;
-                        break;
-                    }
-                    
-                    const conditionValue = conditionAnswer.value;
-                    let valueToCompare = conditionValue;
-                    
-                    // composite 타입의 경우 특정 키의 값을 확인
-                    if (typeof conditionValue === 'object' && conditionValue !== null) {
-                        const keys = Object.keys(conditionValue);
-                        if (keys.length > 0) {
-                            // 첫 번째 키의 값을 사용 (실제로는 더 정교한 로직이 필요할 수 있음)
-                            valueToCompare = (conditionValue as Record<string, string>)[keys[0]];
-                        }
-                    }
-                    
-                    let conditionMet = false;
-                    switch (condition.operator) {
-                        case "equals":
-                            conditionMet = valueToCompare === condition.value;
-                            break;
-                        case "not_equals":
-                            conditionMet = valueToCompare !== condition.value;
-                            break;
-                        case "contains":
-                            conditionMet = typeof valueToCompare === 'string' && 
-                                          valueToCompare.includes(condition.value as string);
-                            break;
-                        case "greater_than":
-                            const numValue = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                            conditionMet = typeof numValue === 'number' && !isNaN(numValue) && 
-                                          numValue > (condition.value as number);
-                            break;
-                        case "less_than":
-                            const numValue2 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                            conditionMet = typeof numValue2 === 'number' && !isNaN(numValue2) && 
-                                          numValue2 < (condition.value as number);
-                            break;
-                    }
-                    
-                    if (!conditionMet) {
+                    if (!checkCondition(condition)) {
                         allConditionsMet = false;
                         break;
                     }
@@ -173,15 +136,6 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                         return targetIndex;
                     }
                 }
-            }
-        }
-        
-        // 3. 기본 로직 (기존 예시)
-        if (currentPanel === 0 && typeof currentAnswer === 'string') {
-            if (currentAnswer === '예') {
-                return 2; // 3번째 패널 (인덱스 2)
-            } else if (currentAnswer === '아니오') {
-                return 1; // 2번째 패널 (인덱스 1)
             }
         }
         
@@ -256,29 +210,89 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                         <p className="text-gray-600">{question.description}</p>
                     )}
 
-                    {question.type === "multiple_choice" && (
-                        <div className="space-y-3">
-                            {question.options?.map((opt, idx) => (
-                                <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name={question.id}
-                                        value={opt.label}
-                                        checked={currentAnswer?.value === opt.label}
-                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                        className="form-radio text-blue-600"
-                                    />
-                                    <span className="text-lg">{opt.label}</span>
-                                </label>
-                            ))}
-                        </div>
+                    {/* 단순 질문 렌더링 */}
+                    {question.type === "simple" && (
+                        <>
+                            {/* 단일 객관식 */}
+                            {question.simple_type === "single_choice" && (
+                                <div className="space-y-3">
+                                    {question.options?.map((opt, idx) => (
+                                        <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name={question.id}
+                                                value={opt.value}
+                                                checked={currentAnswer?.value === opt.value}
+                                                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                                className="form-radio text-blue-600"
+                                            />
+                                            <span className="text-lg">{opt.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* 중복 객관식 */}
+                            {question.simple_type === "multiple_choice" && (
+                                <div className="space-y-3">
+                                    {question.options?.map((opt, idx) => (
+                                        <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                name={question.id}
+                                                value={opt.value}
+                                                checked={Array.isArray(currentAnswer?.value) && 
+                                                         (currentAnswer?.value as string[]).includes(opt.value)}
+                                                onChange={(e) => {
+                                                    const currentValues = Array.isArray(currentAnswer?.value) 
+                                                        ? (currentAnswer?.value as string[]) 
+                                                        : [];
+                                                    const newValues = e.target.checked
+                                                        ? [...currentValues, opt.value]
+                                                        : currentValues.filter(v => v !== opt.value);
+                                                    handleAnswerChange(question.id, newValues);
+                                                }}
+                                                className="form-checkbox text-blue-600"
+                                            />
+                                            <span className="text-lg">{opt.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* 단문대답 */}
+                            {question.simple_type === "short_text" && (
+                                <input
+                                    type="text"
+                                    value={currentAnswer?.value as string || ''}
+                                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                    className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="답변을 입력해주세요"
+                                />
+                            )}
+
+                            {/* 장문대답 */}
+                            {question.simple_type === "long_text" && (
+                                <textarea
+                                    value={currentAnswer?.value as string || ''}
+                                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                    className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    rows={4}
+                                    placeholder="답변을 입력해주세요"
+                                />
+                            )}
+                        </>
                     )}
 
+                    {/* 복합 질문 렌더링 */}
                     {question.type === "composite" && (
                         <div className="space-y-4">
                             {question.composite_items?.map((item) => (
                                 <div key={item.key} className="flex items-center space-x-4">
-                                    <label className="w-24 font-medium">{item.label}</label>
+                                    <label className="w-24 font-medium">
+                                        {item.label}
+                                        {item.required && <span className="text-red-500 ml-1">*</span>}
+                                    </label>
                                     <input
                                         name={`${question.id}_${item.key}`}
                                         type={item.input_type}
@@ -296,12 +310,6 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                                     {item.unit && <span className="text-sm text-gray-500">{item.unit}</span>}
                                 </div>
                             ))}
-                        </div>
-                    )}
-
-                    {question.type === "comment" && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <p className="text-blue-800">{question.description}</p>
                         </div>
                     )}
                 </div>
@@ -357,6 +365,9 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         <div className="max-w-2xl mx-auto p-8">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-center mb-2">{survey.title}</h1>
+                {survey.description && (
+                    <p className="text-gray-600 text-center">{survey.description}</p>
+                )}
             </div>
 
             {renderQuestion(currentQuestion)}
