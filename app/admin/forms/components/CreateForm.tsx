@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { TSurvey, TQuestion, TSimpleQuestionType, TCompositeItem, TOption, TBranchCondition, TBranchLogic, TShowCondition } from "@/app/components/types";
+import { TSurvey, TQuestion, TSimpleQuestionType, TCompositeItem, TOption, TBranchCondition, TBranchLogic, TShowCondition, TQuestionType } from "@/app/components/types";
 import { toast, ToastContainer } from "react-toastify";
 import ImagePreview from "./ImagePreview";
 import ImageUrlModal from "./ImageUrlModal";
@@ -24,6 +24,9 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Checkbox, Listbox, ListboxButton, ListboxOption, ListboxOptions, Radio, RadioGroup, Textarea, Combobox, ComboboxInput, ComboboxOptions, ComboboxOption } from '@headlessui/react';
+import { CheckCircleIcon, ChevronUpDownIcon, EnvelopeIcon, PhoneIcon, HashtagIcon, PencilIcon } from '@heroicons/react/24/solid';
+import { Switch } from '@headlessui/react';
 
 export default function CreateForm() {
     const [survey, setSurvey] = useState<TSurvey>({
@@ -46,8 +49,7 @@ export default function CreateForm() {
                 id: `q1`,
                 title: "",
                 description: "",
-                type: "simple",
-                simple_type: "single_choice",
+                question_type: "single_choice",
                 required: false,
                 options: [{ label: '', value: '' }]
             };
@@ -66,8 +68,7 @@ export default function CreateForm() {
             id: `q${survey.questions.length + 1}`,
             title: "",
             description: "",
-            type: "simple",
-            simple_type: "single_choice",
+            question_type: "single_choice",
             required: false,
             options: [{ label: '', value: '' }]
         };
@@ -185,7 +186,7 @@ export default function CreateForm() {
                                 type="text"
                                 value={survey.title}
                                 onChange={(e) => setSurvey(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="설문 제목을 입력하세요"
                             />
                         </div>
@@ -197,8 +198,7 @@ export default function CreateForm() {
                         <textarea
                             value={survey.description}
                             onChange={(e) => setSurvey(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            rows={3}
+                            className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                             placeholder="설문에 대한 설명을 입력하세요"
                         />
                     </div>
@@ -326,9 +326,27 @@ function QuestionPanel({
     // 필수 토글
     const toggleRequired = () => handleChange({ required: !question.required });
     // 질문 유형 변경
-    const handleTypeChange = (type: TSimpleQuestionType) => handleChange({ type: "simple", simple_type: type, options: type === "single_choice" || type === "multiple_choice" ? question.options || [] : undefined });
+    const handleTypeChange = (qt: TQuestionType) => handleChange({ question_type: qt });
     // 질문 텍스트 변경
     const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange({ title: e.target.value });
+
+    // 문항 유형 리스트
+    const QUESTION_TYPE_OPTIONS: { value: TQuestionType; label: string; icon: React.ReactNode }[] = [
+        { value: 'short_text', label: '단답형', icon: <span>📝</span> },
+        { value: 'long_text', label: '장문형', icon: <span>📄</span> },
+        { value: 'single_choice', label: '객관식 질문', icon: <span>🔘</span> },
+        { value: 'multiple_choice', label: '체크 박스', icon: <span>☑️</span> },
+        { value: 'dropdown', label: '드롭다운', icon: <span>⬇️</span> },
+        { value: 'composite_single', label: '복합 단일', icon: <span>🔲</span> },
+        { value: 'composite_multiple', label: '복합 다중', icon: <span>🗂️</span> },
+    ];
+
+    const COMPOSITE_INPUT_TYPE_OPTIONS = [
+        { value: 'text', label: '텍스트', icon: <PencilIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+        { value: 'number', label: '숫자', icon: <HashtagIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+        { value: 'email', label: '이메일', icon: <EnvelopeIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+        { value: 'tel', label: '전화번호', icon: <PhoneIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+    ];
 
     return (
         <div
@@ -353,21 +371,58 @@ function QuestionPanel({
                 </div>
                 <div className="flex items-center gap-2">
                     <button className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가" onClick={() => onImageClick('question')}><span>🖼️</span></button>
-                    <select
-                        value={question.simple_type}
-                        onChange={e => handleTypeChange(e.target.value as TSimpleQuestionType)}
-                        className="border rounded px-2 py-1 text-sm"
-                    >
-                        <option value="single_choice">객관식 질문</option>
-                        <option value="multiple_choice">중복 객관식</option>
-                        <option value="short_text">단문 주관식</option>
-                        <option value="long_text">장문 주관식</option>
-                    </select>
+                    <Listbox value={question.question_type} onChange={qt => {
+                        let patch: Partial<TQuestion> = { question_type: qt };
+                        if (["single_choice", "multiple_choice", "dropdown"].includes(qt)) {
+                            patch.options = question.options && question.options.length > 0 ? question.options : [{ label: '', value: '' }];
+                            patch.composite_items = undefined;
+                        } else if (["composite_single", "composite_multiple"].includes(qt)) {
+                            patch.composite_items = question.composite_items && question.composite_items.length > 0 ? question.composite_items : [{ label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
+                            patch.options = undefined;
+                        } else {
+                            patch.options = undefined;
+                            patch.composite_items = undefined;
+                        }
+                        handleChange(patch);
+                    }}>
+                        <div className="relative w-48">
+                            <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span className="flex items-center gap-2">
+                                    {QUESTION_TYPE_OPTIONS.find(o => o.value === question.question_type)?.icon}
+                                    {QUESTION_TYPE_OPTIONS.find(o => o.value === question.question_type)?.label}
+                                </span>
+                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                    <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                </span>
+                            </ListboxButton>
+                            <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                                {QUESTION_TYPE_OPTIONS.map(option => (
+                                    <ListboxOption
+                                        key={option.value}
+                                        value={option.value}
+                                        className={({ active }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
+                                    >
+                                        {({ selected }) => (
+                                            <>
+                                                <span className="absolute left-2 top-2 flex items-center">{option.icon}</span>
+                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.label}</span>
+                                                {selected ? (
+                                                    <span className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                                        <CheckCircleIcon className="h-5 w-5 text-blue-500" aria-hidden="true" />
+                                                    </span>
+                                                ) : null}
+                                            </>
+                                        )}
+                                    </ListboxOption>
+                                ))}
+                            </ListboxOptions>
+                        </div>
+                    </Listbox>
                 </div>
             </div>
             {/* 질문 텍스트 */}
-            <textarea
-                className="w-full border-b mb-4 text-lg font-semibold resize-none focus:outline-none focus:border-blue-500"
+            <Textarea
+                className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="질문을 입력하세요"
                 value={question.title}
                 onChange={handleTitleChange}
@@ -380,49 +435,86 @@ function QuestionPanel({
             />
             {/* 이미지 미리보기 */}
             <ImagePreview images={question.images} />
-            {/* 옵션 목록 (객관식) */}
-            {(question.simple_type === "single_choice" || question.simple_type === "multiple_choice") && (
-                <div className="space-y-2 mb-2">
+            {/* 옵션 목록 (객관식/드롭다운) */}
+            {["single_choice", "dropdown"].includes(question.question_type) && (
+                <RadioGroup value={question.options?.[0]?.value || ''} onChange={() => { }} className="space-y-2 mb-2">
                     {question.options?.map((opt, idx) => (
-                        <div key={idx} className="flex flex-col">
-                            <div className="flex items-center gap-2 group">
-                                <input type={question.simple_type === "single_choice" ? "radio" : "checkbox"} disabled />
-                                <input
-                                    className="flex-1 border-b focus:outline-none focus:border-blue-500"
-                                    placeholder="옵션 입력"
+                        <div className="flex flex-row gap-2 mt-1">
+                            <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2 self-center" />
+                            <div className="flex items-center text-blue-600 cursor-pointer">
+                                <OptionCombobox
                                     value={opt.label}
-                                    onChange={e => updateOption(idx, e.target.value)}
+                                    onChange={v => updateOption(idx, v)}
+                                    options={question.options?.map(o => o.label).filter(l => l && l !== opt.label) || []}
                                 />
-                                <button className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가" onClick={() => onImageClick('option', idx)}><span>🖼️</span></button>
+                                <button className="p-1 text-gray-400 hover:text-blue-500 min-h-[40px]" title="이미지 추가" onClick={() => onImageClick('option', idx)}><span>🖼️</span></button>
                                 {idx !== 0 && (
-                                    <button onClick={() => deleteOption(idx)} className="p-1 text-gray-400 hover:text-red-500"><span>✕</span></button>
+                                    <button onClick={() => deleteOption(idx)} className="p-1 text-gray-400 hover:text-red-500 min-h-[40px]"><span>✕</span></button>
                                 )}
                             </div>
-                            {opt.images && opt.images.length > 0 && (
-                                <div className="mt-1 ml-8">
-                                    <ImagePreview images={opt.images} />
-                                </div>
-                            )}
                         </div>
                     ))}
-
-                    {/* 옵션 추가 & 기타 옵션 */}
-                    <div className="flex flex-row gap-2">
+                    <div className="flex flex-row gap-2 mt-1">
                         <div className="flex items-center text-blue-600 cursor-pointer" onClick={addOption}>
-                            <input type={question.simple_type === "single_choice" ? "radio" : "checkbox"} disabled />
+                            <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2" />
                             <span>&nbsp;옵션 추가</span>
                         </div>
-                        {question.hasEtc ? null : (
+                        {question.question_type === "single_choice" && question.hasEtc ? null : (
                             <div className="flex items-center text-blue-600 cursor-pointer" onClick={addEtcOption}>
-                                <input type={question.simple_type === "single_choice" ? "radio" : "checkbox"} disabled />
+                                <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2" />
                                 <span>&nbsp;기타...</span>
                             </div>
                         )}
                     </div>
-                    {/* 기타 옵션 렌더링 */}
+                    {question.question_type === "single_choice" && question.hasEtc ? (
+                        <div className="flex items-center text-blue-600 cursor-default mt-1">
+                            <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2" />
+                            <span>&nbsp;기타...</span>
+                            <button
+                                className="ml-1 p-1 text-gray-400 hover:text-red-500"
+                                title="기타 옵션 제거"
+                                onClick={() => handleChange({ hasEtc: false })}
+                                type="button"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    ) : null}
+                </RadioGroup>
+            )}
+            {question.question_type === "multiple_choice" && (
+                <div className="space-y-2 mb-2">
+                    {question.options?.map((opt, idx) => (
+                        <div key={opt.value + idx} className="flex flex-row gap-2 mt-1">
+                            <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border self-center" />
+                            <div className="flex items-center text-blue-600 cursor-pointer" onClick={addOption}>
+                                <OptionCombobox
+                                    value={opt.label}
+                                    onChange={v => updateOption(idx, v)}
+                                    options={question.options?.map(o => o.label).filter(l => l && l !== opt.label) || []}
+                                />
+                                <button className="p-1 text-gray-400 hover:text-blue-500 min-h-[40px]" title="이미지 추가" onClick={() => onImageClick('option', idx)}><span>🖼️</span></button>
+                                {idx !== 0 && (
+                                    <button onClick={() => deleteOption(idx)} className="p-1 text-gray-400 hover:text-red-500 min-h-[40px]"><span>✕</span></button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    <div className="flex flex-row gap-2 mt-1">
+                        <div className="flex items-center text-blue-600 cursor-pointer" onClick={addOption}>
+                            <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border" />
+                            <span>&nbsp;옵션 추가</span>
+                        </div>
+                        {question.hasEtc ? null : (
+                            <div className="flex items-center text-blue-600 cursor-pointer" onClick={addEtcOption}>
+                                <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border" />
+                                <span>&nbsp;기타...</span>
+                            </div>
+                        )}
+                    </div>
                     {question.hasEtc ? (
-                        <div className="flex items-center text-blue-600 cursor-default">
-                            <input type={question.simple_type === "single_choice" ? "radio" : "checkbox"} disabled />
+                        <div className="flex items-center text-blue-600 cursor-default mt-1">
+                            <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border" />
                             <span>&nbsp;기타...</span>
                             <button
                                 className="ml-1 p-1 text-gray-400 hover:text-red-500"
@@ -436,10 +528,108 @@ function QuestionPanel({
                     ) : null}
                 </div>
             )}
+            {/* 복합질문 하위 항목 UI */}
+            {["composite_single", "composite_multiple"].includes(question.question_type) && (
+                <div className="mb-2">
+                    <div className="font-semibold mb-1">복합질문 항목</div>
+                    {(question.composite_items || []).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 mb-1 min-h-[44px]">
+                            {question.question_type === 'composite_multiple' ? (
+                                <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border self-center" />
+                            ) : (
+                                <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2 self-center" />
+                            )}
+                            <CompositeItemCombobox
+                                value={item.label}
+                                onChange={v => {
+                                    const newItems = [...(question.composite_items || [])];
+                                    newItems[idx] = { ...item, label: v };
+                                    handleChange({ composite_items: newItems });
+                                }}
+                                options={question.composite_items?.map(i => i.label).filter(l => l && l !== item.label) || []}
+                            />
+                            <Listbox value={item.input_type} onChange={v => {
+                                const newItems = [...(question.composite_items || [])];
+                                newItems[idx] = { ...item, input_type: v as TCompositeItem["input_type"] };
+                                handleChange({ composite_items: newItems });
+                            }}>
+                                <div className="relative w-32">
+                                    <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-8 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <span className="flex items-center gap-1">
+                                            {COMPOSITE_INPUT_TYPE_OPTIONS.find(o => o.value === item.input_type)?.icon}
+                                            {COMPOSITE_INPUT_TYPE_OPTIONS.find(o => o.value === item.input_type)?.label}
+                                        </span>
+                                        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                            <ChevronUpDownIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                                        </span>
+                                    </ListboxButton>
+                                    <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                                        {COMPOSITE_INPUT_TYPE_OPTIONS.map(option => (
+                                            <ListboxOption
+                                                key={option.value}
+                                                value={option.value}
+                                                className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
+                                            >
+                                                {({ selected }) => (
+                                                    <>
+                                                        <span className="absolute left-2 top-2 flex items-center">{option.icon}</span>
+                                                        <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.label}</span>
+                                                        {selected ? (
+                                                            <span className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                                                <CheckCircleIcon className="h-4 w-4 text-blue-500" aria-hidden="true" />
+                                                            </span>
+                                                        ) : null}
+                                                    </>
+                                                )}
+                                            </ListboxOption>
+                                        ))}
+                                    </ListboxOptions>
+                                </div>
+                            </Listbox>
+                            <input
+                                className="border rounded px-3 py-2 text-base min-h-[40px] w-20"
+                                placeholder="단위"
+                                value={item.unit || ''}
+                                onChange={e => {
+                                    const newItems = [...(question.composite_items || [])];
+                                    newItems[idx] = { ...item, unit: e.target.value };
+                                    handleChange({ composite_items: newItems });
+                                }}
+                            />
+                            <button className="p-1 text-gray-400 hover:text-red-500" title="삭제" onClick={() => {
+                                const newItems = (question.composite_items || []).filter((_, i) => i !== idx);
+                                handleChange({ composite_items: newItems });
+                            }}>✕</button>
+                        </div>
+                    ))}
+
+                    <div className="flex items-center text-blue-600 cursor-pointer" onClick={() => {
+                        const newItems = [...(question.composite_items || []), { label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
+                        handleChange({ composite_items: newItems });
+                    }}>
+                        <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2" />
+                        <span>&nbsp;옵션 추가</span>
+                    </div>
+                    {/* <button className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm" onClick={() => {
+                        const newItems = [...(question.composite_items || []), { label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
+                        handleChange({ composite_items: newItems });
+                    }}>+ 항목 추가</button> */}
+                </div>
+            )}
             {/* 주관식(단문/장문) 안내 */}
-            {(question.simple_type === "short_text" || question.simple_type === "long_text") && (
+            {(question.question_type === "short_text" || question.question_type === "long_text") && (
                 <div className="text-gray-400 italic mb-2">응답자가 직접 답변을 입력합니다.</div>
             )}
+            {/* 드롭다운 미리보기 렌더링 (question_type === 'dropdown'일 때) */}
+            {/* {question.question_type === 'dropdown' && question.options && question.options.length > 0 && (
+                <div className="mb-2">
+                    <DropdownPreview
+                        options={question.options}
+                        value={question.options[0].value}
+                        onChange={() => { }}
+                    />
+                </div>
+            )} */}
             {/* 하단 */}
             <div className="flex justify-between items-center mt-4">
                 <div className="flex gap-2">
@@ -448,22 +638,113 @@ function QuestionPanel({
                 </div>
                 <label className="flex items-center gap-1 cursor-pointer select-none">
                     <span className="text-sm">필수</span>
-                    <span className="relative inline-block w-10 h-6 align-middle select-none">
-                        <input
-                            type="checkbox"
-                            checked={!!question.required}
-                            onChange={toggleRequired}
-                            className="sr-only peer"
+                    <Switch
+                        checked={!!question.required}
+                        onChange={toggleRequired}
+                        className={`${question.required ? 'bg-blue-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                    >
+                        <span
+                            className={`${question.required ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform`}
                         />
-                        <span
-                            className="block w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors duration-200"
-                        ></span>
-                        <span
-                            className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-4"
-                        ></span>
-                    </span>
+                    </Switch>
                 </label>
             </div>
         </div>
+    );
+}
+
+// 옵션 미리보기(드롭다운) 컴포넌트
+function DropdownPreview({ options, value, onChange }: { options: TOption[]; value: string; onChange: (v: string) => void }) {
+    return (
+        <Listbox value={value} onChange={onChange}>
+            <div className="relative w-64">
+                <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span className="block truncate">{options.find(o => o.value === value)?.label || '선택하세요'}</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                        <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                    </span>
+                </ListboxButton>
+                <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                    {options.map((option) => (
+                        <ListboxOption
+                            key={option.value}
+                            className={({ active }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
+                            value={option.value}
+                        >
+                            {({ selected }) => (
+                                <>
+                                    <span className={`absolute left-2 top-2 flex items-center`}>{selected ? <CheckCircleIcon className="h-5 w-5 text-blue-500" /> : <span className="inline-block w-5" />}</span>
+                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{option.label}</span>
+                                </>
+                            )}
+                        </ListboxOption>
+                    ))}
+                </ListboxOptions>
+            </div>
+        </Listbox>
+    );
+}
+
+// 체크박스 그룹(다중 선택) 컴포넌트
+function CheckboxGroup({ options, value, onChange, renderOption }: { options: TOption[]; value: string[]; onChange: (v: string[]) => void; renderOption: (opt: TOption, checked: boolean, idx: number) => React.ReactNode }) {
+    return (
+        <div className="flex flex-col gap-1">
+            {options.map((opt, idx) => {
+                const checked = value.includes(opt.value);
+                return (
+                    <label key={opt.value} className={`flex items-center gap-2 cursor-pointer px-2 py-1 rounded ${checked ? 'bg-blue-50' : ''}`}>
+                        <Checkbox
+                            checked={checked}
+                            onChange={() => {
+                                if (checked) onChange(value.filter((v: string) => v !== opt.value));
+                                else onChange([...value, opt.value]);
+                            }}
+                            className={`${checked ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'} mr-2 w-4 h-4 rounded border-2`}
+                        />
+                        {renderOption(opt, checked, idx)}
+                    </label>
+                );
+            })}
+        </div>
+    );
+}
+
+// 옵션 입력 Combobox
+function OptionCombobox({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+    return (
+        <Combobox value={value} onChange={onChange}>
+            <div className="relative w-full">
+                <ComboboxInput
+                    className="w-full border-b focus:outline-none focus:border-blue-500 bg-transparent py-2 text-base min-h-[40px] px-3 rounded"
+                    displayValue={(v: string) => v}
+                    onChange={e => onChange(e.target.value)}
+                />
+                <ComboboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                    {options.map((option, idx) => (
+                        <ComboboxOption key={option + idx} value={option} className={({ active }) => `cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}>{option}</ComboboxOption>
+                    ))}
+                </ComboboxOptions>
+            </div>
+        </Combobox>
+    );
+}
+
+// 복합질문 항목명 Combobox
+function CompositeItemCombobox({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+    return (
+        <Combobox value={value} onChange={onChange}>
+            <div className="relative w-32">
+                <ComboboxInput
+                    className="w-full border rounded px-3 py-2 text-base min-h-[40px]"
+                    displayValue={(v: string) => v}
+                    onChange={e => onChange(e.target.value)}
+                />
+                <ComboboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                    {options.map((option, idx) => (
+                        <ComboboxOption key={option + idx} value={option} className={({ active }) => `cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}>{option}</ComboboxOption>
+                    ))}
+                </ComboboxOptions>
+            </div>
+        </Combobox>
     );
 }

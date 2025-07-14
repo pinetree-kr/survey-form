@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Dialog } from '@headlessui/react';
 
 export default function ImageUrlModal({
     open,
@@ -26,10 +27,10 @@ export default function ImageUrlModal({
         onSave(filtered);
     };
 
-    if (!open) return null;
     return (
-        <div className="fixed inset-0 bg-gray-500/30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <Dialog open={open} onClose={onCancel} className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-gray-500/30" aria-hidden="true" />
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-6 z-10">
                 <h2 className="text-lg font-semibold mb-4">이미지 URL 입력</h2>
                 <div className="space-y-2 mb-4">
                     {urls.map((url, idx) => (
@@ -69,6 +70,6 @@ export default function ImageUrlModal({
                     <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded">저장</button>
                 </div>
             </div>
-        </div>
+        </Dialog>
     );
 } 

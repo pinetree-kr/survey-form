@@ -43,29 +43,27 @@ export type TShowCondition = {
 };
 
 // 문항 기본 타입
+export type TQuestionType =
+  | "short_text"
+  | "long_text"
+  | "single_choice"
+  | "multiple_choice"
+  | "dropdown"
+  | "composite_single"
+  | "composite_multiple";
+
 export type TQuestion = {
     id: string;
     title: string;
     description?: string;
-    type: "simple" | "composite";
+    question_type: TQuestionType;
     required?: boolean;
-    images?: string[]; // 문항 이미지 URL 배열
-    
-    // 단순 질문 관련 필드
-    simple_type?: TSimpleQuestionType;
-    options?: TOption[]; // 객관식인 경우
-    
-    // 복합 질문 관련 필드
+    images?: string[];
+    options?: TOption[];
     composite_items?: TCompositeItem[];
-    
-    // 분기 로직
-    branch_logic?: TBranchLogic[];
-    
-    // 문항이 보여질 조건
-    show_condition?: TShowCondition;
-
-    // 기타 옵션 사용 여부
     hasEtc?: boolean;
+    branch_logic?: TBranchLogic[];
+    show_condition?: TShowCondition;
 };
 
 // 설문 전체 타입
