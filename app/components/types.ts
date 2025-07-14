@@ -20,6 +20,7 @@ export type TOption = {
     label: string;
     value: string;
     next_question_id?: string; // 특정 옵션 선택 시 이동할 질문 ID
+    images?: string[]; // 옵션 이미지 URL 배열
 };
 
 // 분기 조건
@@ -48,6 +49,7 @@ export type TQuestion = {
     description?: string;
     type: "simple" | "composite";
     required?: boolean;
+    images?: string[]; // 문항 이미지 URL 배열
     
     // 단순 질문 관련 필드
     simple_type?: TSimpleQuestionType;
@@ -61,6 +63,9 @@ export type TQuestion = {
     
     // 문항이 보여질 조건
     show_condition?: TShowCondition;
+
+    // 기타 옵션 사용 여부
+    hasEtc?: boolean;
 };
 
 // 설문 전체 타입
