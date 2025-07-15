@@ -29,29 +29,29 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         }
 
         switch (condition.operator) {
-            case "equals":
+            case "eq":
                 return valueToCompare === condition.value;
-            case "not_equals":
+            case "neq":
                 return valueToCompare !== condition.value;
             case "contains":
-                return typeof valueToCompare === 'string' && 
-                       valueToCompare.includes(condition.value as string);
-            case "greater_than":
+                return typeof valueToCompare === 'string' &&
+                    valueToCompare.includes(condition.value as string);
+            case "gt":
                 const numValue = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                return typeof numValue === 'number' && !isNaN(numValue) && 
-                       numValue > (condition.value as number);
-            case "less_than":
+                return typeof numValue === 'number' && !isNaN(numValue) &&
+                    numValue > (condition.value as number);
+            case "lt":
                 const numValue2 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                return typeof numValue2 === 'number' && !isNaN(numValue2) && 
-                       numValue2 < (condition.value as number);
-            case "greater_than_or_equal":
+                return typeof numValue2 === 'number' && !isNaN(numValue2) &&
+                    numValue2 < (condition.value as number);
+            case "gte":
                 const numValue3 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                return typeof numValue3 === 'number' && !isNaN(numValue3) && 
-                       numValue3 >= (condition.value as number);
-            case "less_than_or_equal":
+                return typeof numValue3 === 'number' && !isNaN(numValue3) &&
+                    numValue3 >= (condition.value as number);
+            case "lte":
                 const numValue4 = typeof valueToCompare === 'string' ? parseFloat(valueToCompare) : valueToCompare;
-                return typeof numValue4 === 'number' && !isNaN(numValue4) && 
-                       numValue4 <= (condition.value as number);
+                return typeof numValue4 === 'number' && !isNaN(numValue4) &&
+                    numValue4 <= (condition.value as number);
             default:
                 return false;
         }
@@ -59,11 +59,11 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
 
     // show_condition을 확인하는 함수
     const checkShowCondition = (question: TQuestion): boolean => {
-        if (!question.show_condition) {
+        if (!question.show_conditions || question.show_conditions.length === 0) {
             return true; // 조건이 없으면 항상 보여줌
         }
 
-        for (const condition of question.show_condition.conditions) {
+        for (const condition of question.show_conditions) {
             if (!checkCondition(condition)) {
                 return false; // 조건이 만족되지 않으면 보여주지 않음
             }
@@ -79,7 +79,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
     useEffect(() => {
         const filtered = survey.questions.filter(checkShowCondition);
         setVisibleQuestions(filtered);
-        
+
         // 현재 패널이 필터링된 문항 범위를 벗어나면 조정
         if (currentPanel >= filtered.length) {
             setCurrentPanel(Math.max(0, filtered.length - 1));
@@ -104,10 +104,9 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
 
     const getNextPanel = (currentAnswer: string | string[] | Record<string, string>): number => {
         const currentQuestion = visibleQuestions[currentPanel];
-        
+
         // 1. 옵션별 직접 이동 로직 (단일/중복 객관식의 경우)
-        if (currentQuestion.type === "simple" && 
-            (currentQuestion.simple_type === "single_choice" || currentQuestion.simple_type === "multiple_choice") && 
+        if ((currentQuestion.question_type === "single_choice" || currentQuestion.question_type === "multiple_choice") &&
             typeof currentAnswer === 'string') {
             const selectedOption = currentQuestion.options?.find(opt => opt.value === currentAnswer);
             if (selectedOption?.next_question_id) {
@@ -117,19 +116,19 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 }
             }
         }
-        
+
         // 2. 분기 로직 체크
         if (currentQuestion.branch_logic) {
             for (const logic of currentQuestion.branch_logic) {
                 let allConditionsMet = true;
-                
+
                 for (const condition of logic.conditions) {
                     if (!checkCondition(condition)) {
                         allConditionsMet = false;
                         break;
                     }
                 }
-                
+
                 if (allConditionsMet) {
                     const targetIndex = visibleQuestions.findIndex(q => q.id === logic.next_question_id);
                     if (targetIndex !== -1) {
@@ -138,16 +137,16 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 }
             }
         }
-        
+
         // 기본적으로 다음 패널로 이동
         return currentPanel + 1;
     };
 
     const handleNext = () => {
         if (!currentQuestion) return;
-        
+
         const currentAnswer = answers.find(a => a.questionId === currentQuestion.id);
-        
+
         if (!currentAnswer && currentQuestion.required) {
             alert('이 질문은 필수입니다.');
             return;
@@ -155,7 +154,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
 
         if (currentAnswer) {
             const nextPanel = getNextPanel(currentAnswer.value);
-            
+
             if (nextPanel >= visibleQuestions.length) {
                 setIsCompleted(true);
             } else {
@@ -193,7 +192,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                         {currentPanel + 1} / {visibleQuestions.length}
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${((currentPanel + 1) / visibleQuestions.length) * 100}%` }}
                         ></div>
@@ -205,87 +204,90 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                         {question.title}
                         {question.required && <span className="text-red-500 ml-1">*</span>}
                     </h2>
-                    
+
                     {question.description && (
                         <p className="text-gray-600">{question.description}</p>
                     )}
 
                     {/* 단순 질문 렌더링 */}
-                    {question.type === "simple" && (
-                        <>
-                            {/* 단일 객관식 */}
-                            {question.simple_type === "single_choice" && (
-                                <div className="space-y-3">
-                                    {question.options?.map((opt, idx) => (
-                                        <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                name={question.id}
-                                                value={opt.value}
-                                                checked={currentAnswer?.value === opt.value}
-                                                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                                className="form-radio text-blue-600"
-                                            />
-                                            <span className="text-lg">{opt.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
+                    {(question.question_type === "single_choice"
+                        || question.question_type === "multiple_choice"
+                        || question.question_type === "short_text"
+                        || question.question_type === "long_text") && (
+                            <>
+                                {/* 단일 객관식 */}
+                                {question.question_type === "single_choice" && (
+                                    <div className="space-y-3">
+                                        {question.options?.map((opt, idx) => (
+                                            <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name={question.id}
+                                                    value={opt.value}
+                                                    checked={currentAnswer?.value === opt.value}
+                                                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                                    className="form-radio text-blue-600"
+                                                />
+                                                <span className="text-lg">{opt.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
 
-                            {/* 중복 객관식 */}
-                            {question.simple_type === "multiple_choice" && (
-                                <div className="space-y-3">
-                                    {question.options?.map((opt, idx) => (
-                                        <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                name={question.id}
-                                                value={opt.value}
-                                                checked={Array.isArray(currentAnswer?.value) && 
-                                                         (currentAnswer?.value as string[]).includes(opt.value)}
-                                                onChange={(e) => {
-                                                    const currentValues = Array.isArray(currentAnswer?.value) 
-                                                        ? (currentAnswer?.value as string[]) 
-                                                        : [];
-                                                    const newValues = e.target.checked
-                                                        ? [...currentValues, opt.value]
-                                                        : currentValues.filter(v => v !== opt.value);
-                                                    handleAnswerChange(question.id, newValues);
-                                                }}
-                                                className="form-checkbox text-blue-600"
-                                            />
-                                            <span className="text-lg">{opt.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
+                                {/* 중복 객관식 */}
+                                {question.question_type === "multiple_choice" && (
+                                    <div className="space-y-3">
+                                        {question.options?.map((opt, idx) => (
+                                            <label key={idx} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    name={question.id}
+                                                    value={opt.value}
+                                                    checked={Array.isArray(currentAnswer?.value) &&
+                                                        (currentAnswer?.value as string[]).includes(opt.value)}
+                                                    onChange={(e) => {
+                                                        const currentValues = Array.isArray(currentAnswer?.value)
+                                                            ? (currentAnswer?.value as string[])
+                                                            : [];
+                                                        const newValues = e.target.checked
+                                                            ? [...currentValues, opt.value]
+                                                            : currentValues.filter(v => v !== opt.value);
+                                                        handleAnswerChange(question.id, newValues);
+                                                    }}
+                                                    className="form-checkbox text-blue-600"
+                                                />
+                                                <span className="text-lg">{opt.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
 
-                            {/* 단문대답 */}
-                            {question.simple_type === "short_text" && (
-                                <input
-                                    type="text"
-                                    value={currentAnswer?.value as string || ''}
-                                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                    className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="답변을 입력해주세요"
-                                />
-                            )}
+                                {/* 단문대답 */}
+                                {question.question_type === "short_text" && (
+                                    <input
+                                        type="text"
+                                        value={currentAnswer?.value as string || ''}
+                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                        className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="답변을 입력해주세요"
+                                    />
+                                )}
 
-                            {/* 장문대답 */}
-                            {question.simple_type === "long_text" && (
-                                <textarea
-                                    value={currentAnswer?.value as string || ''}
-                                    onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                    className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    rows={4}
-                                    placeholder="답변을 입력해주세요"
-                                />
-                            )}
-                        </>
-                    )}
+                                {/* 장문대답 */}
+                                {question.question_type === "long_text" && (
+                                    <textarea
+                                        value={currentAnswer?.value as string || ''}
+                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                        className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        rows={4}
+                                        placeholder="답변을 입력해주세요"
+                                    />
+                                )}
+                            </>
+                        )}
 
                     {/* 복합 질문 렌더링 */}
-                    {question.type === "composite" && (
+                    {question.question_type === "composite_single" && (
                         <div className="space-y-4">
                             {question.composite_items?.map((item) => (
                                 <div key={item.key} className="flex items-center space-x-4">
@@ -329,7 +331,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">설문이 완료되었습니다!</h2>
                     <p className="text-gray-600">소중한 의견을 주셔서 감사합니다.</p>
                 </div>
-                
+
                 <div className="space-y-4">
                     <button
                         onClick={handleSubmit}
@@ -337,7 +339,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                     >
                         제출하기
                     </button>
-                    
+
                     <button
                         onClick={() => {
                             setIsCompleted(false);
@@ -376,11 +378,10 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 <button
                     onClick={handlePrevious}
                     disabled={currentPanel === 0}
-                    className={`px-6 py-2 rounded-lg transition-colors ${
-                        currentPanel === 0
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                    className={`px-6 py-2 rounded-lg transition-colors ${currentPanel === 0
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                 >
                     이전
                 </button>

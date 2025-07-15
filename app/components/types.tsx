@@ -1,0 +1,108 @@
+import type { ReactNode } from "react";
+import { PencilIcon } from "@heroicons/react/24/solid";
+import { HashtagIcon } from "@heroicons/react/24/solid";
+import { EnvelopeIcon } from "@heroicons/react/24/solid";
+import { PhoneIcon } from "@heroicons/react/24/solid";
+
+// 단순 질문의 하위 유형들
+export type TSimpleQuestionType =
+    | "short_text"      // 단문대답
+    | "long_text"       // 장문대답
+    | "single_choice"   // 단일 객관식
+    | "multiple_choice"; // 중복 객관식
+
+// 복합 질문의 하위 항목
+export type TCompositeItem = {
+    label: string;
+    input_type: "text" | "number" | "email" | "tel";
+    unit?: string;
+    placeholder?: string;
+    key: string;
+    required?: boolean;
+};
+
+// 객관식 옵션
+export type TOption = {
+    label: string;
+    value: string;
+    next_question_id?: string; // 특정 옵션 선택 시 이동할 질문 ID
+    images?: string[]; // 옵션 이미지 URL 배열
+};
+
+// 분기 조건
+export type TBranchCondition = {
+    question_id: string;
+    sub_key?: string; // 복합 질문의 경우 특정 하위 항목 키
+    operator: "eq" | "neq" | "contains" | "gt" | "lt" | "gte" | "lte";
+    value: string | number;
+};
+
+// 분기 로직
+export type TBranchLogic = {
+    conditions: TBranchCondition[];
+    next_question_id: string; // 조건이 만족될 때 이동할 질문 ID
+};
+
+// 문항 기본 타입
+export type TQuestionType =
+    | "short_text"
+    | "long_text"
+    | "single_choice"
+    | "multiple_choice"
+    | "dropdown"
+    | "composite_single"
+    | "composite_multiple";
+
+export type TQuestion = {
+    id: string;
+    title: string;
+    description?: string;
+    question_type: TQuestionType;
+    required?: boolean;
+    images?: string[];
+    options?: TOption[];
+    composite_items?: TCompositeItem[];
+    hasEtc?: boolean;
+    branch_logic?: TBranchLogic[];
+    // 문항이 보여질 조건
+    show_conditions?: TBranchCondition[];
+};
+
+// 설문 전체 타입
+export type TSurvey = {
+    id: string;
+    title: string;
+    description?: string;
+    questions: TQuestion[];
+};
+
+
+// 문항 유형 리스트
+export const QUESTION_TYPE_OPTIONS: { value: TQuestionType; label: string; icon: ReactNode }[] = [
+    { value: 'short_text', label: '단답형', icon: <span>📝</span> },
+    { value: 'long_text', label: '장문형', icon: <span>📄</span> },
+    { value: 'single_choice', label: '객관식 질문', icon: <span>🔘</span> },
+    { value: 'multiple_choice', label: '체크 박스', icon: <span>☑️</span> },
+    { value: 'dropdown', label: '드롭다운', icon: <span>⬇️</span> },
+    { value: 'composite_single', label: '복합 단일', icon: <span>🔲</span> },
+    { value: 'composite_multiple', label: '복합 다중', icon: <span>🗂️</span> },
+]
+
+
+export const COMPOSITE_INPUT_TYPE_OPTIONS = [
+    { value: 'text', label: '텍스트', icon: <PencilIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+    { value: 'number', label: '숫자', icon: <HashtagIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+    { value: 'email', label: '이메일', icon: <EnvelopeIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+    { value: 'tel', label: '전화번호', icon: <PhoneIcon className="h-4 w-4 mr-1 text-gray-400" /> },
+]
+
+// 연산자 목록
+export const OPERATORS = [
+    { value: 'eq', label: '같음' },
+    { value: 'neq', label: '다름' },
+    { value: 'contains', label: '포함' },
+    { value: 'gt', label: '초과' },
+    { value: 'lt', label: '미만' },
+    { value: 'gte', label: '이상' },
+    { value: 'lte', label: '이하' }
+]
