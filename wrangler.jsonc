@@ -32,11 +32,23 @@
 	 * databases, object storage, AI inference, real-time communication and more.
 	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
 	 */
+	// Add this to your wrangler.jsonc
+	// "hyperdrive": [
+	// 	{
+	// 		"binding": "HYPERDRIVE",
+	// 		"id": "1ecfaddbe69f4c27b8e2283745c10b3d",
+	// 		// Optional. Can be used to connect to a local database for local development with `wrangler dev`
+	// 		"localConnectionString": "<LOCAL_CONNECTION_STRING_FOR_LOCAL_DEVELOPMENT_HERE>"
+	// 	}
+	// ],
 	/**
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
+	"vars": {
+		"NEXT_PUBLIC_APP_URL": "https://survey.grida.one",
+		"NEXT_PUBLIC_API_URL": "https://survey.grida.one/api"
+	},
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
