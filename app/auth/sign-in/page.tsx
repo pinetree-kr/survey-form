@@ -1,4 +1,4 @@
-import { LoginForm } from './components'
+import { LoginForm } from '../components'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 // import { createSupabaseClient } from '@/lib/supabase-cloudflare'
 
@@ -39,6 +39,14 @@ export default async function AuthLoginPage() {
           </p>
         </div>
         <LoginForm action={handleLogin} />
+        <div className="text-center mt-4">
+          <a 
+            href="/auth/sign-up" 
+            className="text-sm text-indigo-600 hover:text-indigo-500"
+          >
+            계정이 없으신가요? 회원가입하기
+          </a>
+        </div>
       </div>
     </div>
   )

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 로그인 페이지로 리다이렉트
-    return NextResponse.redirect(new URL('/admin/auth', request.url))
+    return NextResponse.redirect(new URL('/auth/sign-in', request.url))
   } catch (error) {
     return NextResponse.json(
       { error: '로그아웃 중 오류가 발생했습니다.' },
