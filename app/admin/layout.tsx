@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-ssr'
 import { getCloudflareContext } from "@opennextjs/cloudflare"
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 export default async function AdminLayout({
@@ -13,10 +14,10 @@ export default async function AdminLayout({
     // const supabase = createSupabaseClient(env)
     const supabase = await createClient(env)
 
-    //   // 현재 세션 확인
-    const { data: { session }, error } = await supabase.auth.getSession()
+    //   // 현재 사용자 확인 (보안을 위해 getUser() 사용)
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
         redirect('/auth/sign-in')
     }
 
@@ -27,13 +28,18 @@ export default async function AdminLayout({
                     <div className="flex justify-between h-16">
                         <div className="flex items-center">
                             <h1 className="text-xl font-semibold text-gray-900">
-                                관리자 대시보드
+                                <Link href="/admin">
+                                    관리자 대시보드
+                                </Link>
                             </h1>
                         </div>
                         <div className="flex items-center">
-                            <span className="text-sm text-gray-500 mr-4">
-                                {session?.user?.email}
-                            </span>
+                            <Link
+                                href="/admin/profile"
+                                className="text-sm text-blue-600 hover:text-blue-800 mr-4"
+                            >
+                                {user?.email}
+                            </Link>
                             <form action="/admin/logout" method="post">
                                 <button
                                     type="submit"

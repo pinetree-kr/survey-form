@@ -14,11 +14,11 @@ export default async function AuthLayout({
 
     const supabase = await createClient(env)
 
-    //   // 현재 세션 확인
-    const { data, error } = await supabase.auth.getSession()
+    //   // 현재 사용자 확인 (보안을 위해 getUser() 사용)
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-    // // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
-    if (data?.session) {
+    // // 로그인된 경우 관리자 페이지로 리다이렉트
+    if (user) {
         redirect('/admin')
     }
 

@@ -5,6 +5,7 @@ export type UserRole = 'admin' | 'user' | 'moderator'
 export interface Profile {
     id: string
     username: string
+    display_name?: string
     role: UserRole
     created_at: string
     updated_at: string
