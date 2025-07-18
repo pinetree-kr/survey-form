@@ -1,75 +1,201 @@
 {
-    "id": "",
-    "title": "",
-    "description": "",
-    "questions": [
+  "title": "타이틀",
+  "description": "설명",
+  "questions": [
+    {
+      "id": "4da2c25f-de23-4684-9c58-73d088b4cc5b",
+      "title": "안내문입니다.",
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": []
+    },
+    {
+      "id": "45f494d1-23c3-4805-bb2e-9b48d4ef234a",
+      "title": "단답형",
+      "required": false,
+      "description": "",
+      "question_type": "short_text",
+      "show_conditions": []
+    },
+    {
+      "id": "7e2778d1-d210-422f-87a1-2a35cab23863",
+      "title": "장문형",
+      "required": false,
+      "description": "",
+      "question_type": "long_text",
+      "show_conditions": []
+    },
+    {
+      "id": "3a8cbdac-afa5-4784-9755-8535768106da",
+      "title": "객관식",
+      "hasEtc": true,
+      "options": [
         {
-            "id": "bd158251-6b24-426c-9c58-daab52a415cf",
-            "title": "테스트항목1",
-            "description": "",
-            "question_type": "single_choice",
-            "required": false,
-            "options": [
-                {
-                    "label": "예",
-                    "value": "예"
-                },
-                {
-                    "label": "아니오",
-                    "value": "아니오"
-                }
-            ]
+          "label": "예",
+          "value": "예"
         },
         {
-            "id": "81c6c94d-e717-4255-b27e-2d4e661f67fc",
-            "title": "테스트항목2",
-            "description": "",
-            "question_type": "single_choice",
-            "required": false,
-            "options": [
-                {
-                    "label": "예",
-                    "value": "예"
-                },
-                {
-                    "label": "아니오",
-                    "value": "아니오"
-                }
-            ]
-        },
-        {
-            "id": "429d62cc-f8f3-450a-97cf-38daae6344d1",
-            "title": "테스트항목3",
-            "description": "",
-            "question_type": "single_choice",
-            "required": false,
-            "options": [
-                {
-                    "label": "예",
-                    "value": "예"
-                },
-                {
-                    "label": "아니오",
-                    "value": "아니오"
-                }
-            ]
-        },
-        {
-            "id": "4c7d7ec2-4c69-4ae5-9242-50ad0b44729e",
-            "title": "테스트항목4",
-            "description": "",
-            "question_type": "single_choice",
-            "required": false,
-            "options": [
-                {
-                    "label": "예",
-                    "value": "예"
-                },
-                {
-                    "label": "아니오",
-                    "value": "아니오"
-                }
-            ]
+          "label": "아니오",
+          "value": "아니오"
         }
-    ]
+      ],
+      "required": false,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "id": "8ea43e50-dc17-42ae-baf3-aa90c9fad1cb",
+      "title": "체크박스",
+      "hasEtc": true,
+      "options": [
+        {
+          "label": "예",
+          "value": "예"
+        },
+        {
+          "label": "아니오",
+          "value": "아니오"
+        }
+      ],
+      "required": false,
+      "description": "",
+      "question_type": "multiple_choice",
+      "show_conditions": []
+    },
+    {
+      "id": "da092973-3501-44c7-9188-ebedc0ca4b12",
+      "title": "드롭다운",
+      "hasEtc": true,
+      "options": [
+        {
+          "label": "선택1",
+          "value": "선택1"
+        },
+        {
+          "label": "선택2",
+          "value": "선택2"
+        },
+        {
+          "label": "선택3",
+          "value": "선택3"
+        },
+        {
+          "label": "선택4",
+          "value": "선택4"
+        }
+      ],
+      "required": false,
+      "description": "",
+      "question_type": "dropdown",
+      "show_conditions": []
+    },
+    {
+      "id": "5b6fe70c-137d-4600-999a-bfa2be808a1a",
+      "title": "복합 단일",
+      "hasEtc": true,
+      "required": false,
+      "description": "",
+      "question_type": "composite_single",
+      "composite_items": [
+        {
+          "key": "",
+          "unit": "세",
+          "label": "10대",
+          "input_type": "number"
+        },
+        {
+          "key": "",
+          "unit": "세",
+          "label": "20대",
+          "input_type": "number"
+        },
+        {
+          "key": "",
+          "unit": "세",
+          "label": "30대",
+          "input_type": "number"
+        },
+        {
+          "key": "",
+          "unit": "세",
+          "label": "40대 이상",
+          "input_type": "number"
+        }
+      ],
+      "show_conditions": []
+    },
+    {
+      "id": "4b82de19-1aa7-4931-9f00-8364d7043006",
+      "title": "연락받을 수단",
+      "hasEtc": true,
+      "required": false,
+      "description": "",
+      "question_type": "composite_multiple",
+      "composite_items": [
+        {
+          "key": "",
+          "unit": "",
+          "label": "이메일",
+          "input_type": "email"
+        },
+        {
+          "key": "",
+          "unit": "",
+          "label": "전화번호",
+          "input_type": "tel"
+        },
+        {
+          "key": "",
+          "unit": "DM",
+          "label": "인스타그램",
+          "input_type": "text"
+        },
+        {
+          "key": "",
+          "unit": "ID",
+          "label": "카톡",
+          "input_type": "text"
+        }
+      ],
+      "show_conditions": []
+    },
+    {
+      "id": "7ad32107-df2d-4979-b142-364a78376bfd",
+      "title": "객관식 분기 설정",
+      "options": [
+        {
+          "label": "A루트",
+          "value": "A루트",
+          "next_question_id": "33b831a6-0004-4240-814a-a760a6807f97"
+        },
+        {
+          "label": "B루트",
+          "value": "B루트",
+          "next_question_id": "0f9f5860-7152-4f2b-9308-68d88b582409"
+        }
+      ],
+      "required": false,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "id": "33b831a6-0004-4240-814a-a760a6807f97",
+      "title": "A루트로 진입했습니다.",
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": []
+    },
+    {
+      "id": "0f9f5860-7152-4f2b-9308-68d88b582409",
+      "title": "B루트로 진입했습니다.",
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": []
+    }
+  ]
 }

@@ -98,13 +98,13 @@ export function FormEditor({
             const newQuestionIndex = form.questions.length;
             const questionElement = document.getElementById(`question-${newQuestionIndex}`);
             const sidebarQuestionElement = document.getElementById(`sidebar-question-${newQuestionIndex}`);
-            
+
             if (questionElement) {
-                questionElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
+                questionElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                 });
-                
+
                 // 스크롤 완료 후 하이라이트 효과
                 setTimeout(() => {
                     // 기존 하이라이트 제거
@@ -114,28 +114,28 @@ export function FormEditor({
                     document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
                         el.classList.remove('sidebar-question-highlight');
                     });
-                    
+
                     // 새 문항에 하이라이트 추가
                     questionElement.classList.add('question-highlight');
-                    
+
                     // 3초 후 하이라이트 제거
                     setTimeout(() => {
                         questionElement.classList.remove('question-highlight');
                     }, 3000);
                 }, 500);
             }
-            
+
             // 사이드바 문항 목록도 스크롤 및 하이라이트
             if (sidebarQuestionElement) {
-                sidebarQuestionElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'nearest' 
+                sidebarQuestionElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
                 });
-                
+
                 // 사이드바 하이라이트 효과
                 setTimeout(() => {
                     sidebarQuestionElement.classList.add('sidebar-question-highlight');
-                    
+
                     // 3초 후 하이라이트 제거
                     setTimeout(() => {
                         sidebarQuestionElement.classList.remove('sidebar-question-highlight');
@@ -160,7 +160,7 @@ export function FormEditor({
                     const questionIndex = form.questions.findIndex(q => q.id === questionId);
                     if (questionIndex !== -1) {
                         setActiveQuestionIndex(questionIndex);
-                        
+
                         // 사이드바에서 해당 문항으로 스크롤
                         const sidebarElement = findSidebarElement(questionId);
                         if (sidebarElement) {
@@ -170,7 +170,7 @@ export function FormEditor({
                                 // 현재 활성화된 문항이 사이드바에서 보이는지 확인
                                 const containerRect = sidebarContainer.getBoundingClientRect();
                                 const elementRect = sidebarElement.getBoundingClientRect();
-                                
+
                                 // 요소가 컨테이너 밖에 있으면 스크롤
                                 if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
                                     sidebarElement.scrollIntoView({
@@ -209,13 +209,13 @@ export function FormEditor({
         // 삭제할 문항의 ID 저장
         const questionToDelete = form.questions[index];
         if (!questionToDelete) return;
-        
+
         // 이미 삭제 중인 문항이 있으면 무시
         if (deletingQuestionId) return;
-        
+
         // 삭제 중인 문항 ID 설정
         setDeletingQuestionId(questionToDelete.id);
-        
+
         // 애니메이션 완료 후 실제 삭제
         setTimeout(() => {
             setForm(prev => ({
@@ -246,19 +246,19 @@ export function FormEditor({
         const emptyTitleIndex = form.questions.findIndex(question => !question.title.trim());
         if (emptyTitleIndex !== -1) {
             toast.error(`문항 ${emptyTitleIndex + 1}의 제목을 입력해주세요.`);
-            
+
             // 해당 문항으로 스크롤 및 포커스
             setTimeout(() => {
                 const questionElement = document.getElementById(`question-${emptyTitleIndex}`);
                 const sidebarElement = document.getElementById(`sidebar-question-${emptyTitleIndex}`);
-                
+
                 if (questionElement) {
                     // 문항으로 스크롤
-                    questionElement.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
+                    questionElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
                     });
-                    
+
                     // 하이라이트 효과
                     setTimeout(() => {
                         // 기존 하이라이트 제거
@@ -268,15 +268,15 @@ export function FormEditor({
                         document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
                             el.classList.remove('sidebar-question-highlight');
                         });
-                        
+
                         // 현재 문항에 하이라이트 추가
                         questionElement.classList.add('question-highlight');
-                        
+
                         // 사이드바에서도 하이라이트
                         if (sidebarElement) {
                             sidebarElement.classList.add('sidebar-question-highlight');
                         }
-                        
+
                         // 5초 후 하이라이트 제거 (오류 문항이므로 더 오래 표시)
                         setTimeout(() => {
                             questionElement.classList.remove('question-highlight');
@@ -285,7 +285,7 @@ export function FormEditor({
                             }
                         }, 5000);
                     }, 500);
-                    
+
                     // 문항 제목 입력 필드에 포커스
                     setTimeout(() => {
                         const titleInput = questionElement.querySelector('textarea[placeholder="질문을 입력하세요"]') as HTMLTextAreaElement;
@@ -296,7 +296,7 @@ export function FormEditor({
                     }, 1000);
                 }
             }, 100);
-            
+
             return;
         }
 
@@ -304,33 +304,33 @@ export function FormEditor({
         const optionRequiredTypes = ['single_choice', 'multiple_choice', 'dropdown'];
         const emptyOptionIndex = form.questions.findIndex(question => {
             if (!optionRequiredTypes.includes(question.question_type)) return false;
-            
+
             // 옵션이 없거나 모든 옵션이 비어있는지 확인
             if (!question.options || question.options.length === 0) return true;
-            
+
             // 모든 옵션이 비어있는지 확인
             return question.options.every(option => !option.label.trim() && !option.value.trim());
         });
-        
+
         if (emptyOptionIndex !== -1) {
             const question = form.questions[emptyOptionIndex];
             const questionTypeText = question.question_type === 'single_choice' ? '단일선택' :
-                                   question.question_type === 'multiple_choice' ? '다중선택' : '드롭다운';
-            
+                question.question_type === 'multiple_choice' ? '다중선택' : '드롭다운';
+
             toast.error(`문항 ${emptyOptionIndex + 1}의 ${questionTypeText} 옵션을 입력해주세요.`);
-            
+
             // 해당 문항으로 스크롤 및 포커스
             setTimeout(() => {
                 const questionElement = document.getElementById(`question-${emptyOptionIndex}`);
                 const sidebarElement = document.getElementById(`sidebar-question-${emptyOptionIndex}`);
-                
+
                 if (questionElement) {
                     // 문항으로 스크롤
-                    questionElement.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
+                    questionElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
                     });
-                    
+
                     // 하이라이트 효과
                     setTimeout(() => {
                         // 기존 하이라이트 제거
@@ -340,15 +340,15 @@ export function FormEditor({
                         document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
                             el.classList.remove('sidebar-question-highlight');
                         });
-                        
+
                         // 현재 문항에 하이라이트 추가
                         questionElement.classList.add('question-highlight');
-                        
+
                         // 사이드바에서도 하이라이트
                         if (sidebarElement) {
                             sidebarElement.classList.add('sidebar-question-highlight');
                         }
-                        
+
                         // 5초 후 하이라이트 제거 (오류 문항이므로 더 오래 표시)
                         setTimeout(() => {
                             questionElement.classList.remove('question-highlight');
@@ -357,7 +357,7 @@ export function FormEditor({
                             }
                         }, 5000);
                     }, 500);
-                    
+
                     // 첫 번째 옵션 입력 필드에 포커스
                     setTimeout(() => {
                         const optionInput = questionElement.querySelector('input[placeholder="옵션 텍스트"]') as HTMLInputElement;
@@ -368,7 +368,7 @@ export function FormEditor({
                     }, 1000);
                 }
             }, 100);
-            
+
             return;
         }
 
@@ -404,13 +404,13 @@ export function FormEditor({
             const copiedQuestionIndex = index + 1; // 복사된 문항의 인덱스
             const questionElement = document.getElementById(`question-${copiedQuestionIndex}`);
             const sidebarQuestionElement = document.getElementById(`sidebar-question-${copiedQuestionIndex}`);
-            
+
             if (questionElement) {
-                questionElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
+                questionElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                 });
-                
+
                 // 스크롤 완료 후 하이라이트 효과
                 setTimeout(() => {
                     // 기존 하이라이트 제거
@@ -420,28 +420,28 @@ export function FormEditor({
                     document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
                         el.classList.remove('sidebar-question-highlight');
                     });
-                    
+
                     // 복사된 문항에 하이라이트 추가
                     questionElement.classList.add('question-highlight');
-                    
+
                     // 3초 후 하이라이트 제거
                     setTimeout(() => {
                         questionElement.classList.remove('question-highlight');
                     }, 3000);
                 }, 500);
             }
-            
+
             // 사이드바 문항 목록도 스크롤 및 하이라이트
             if (sidebarQuestionElement) {
-                sidebarQuestionElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'nearest' 
+                sidebarQuestionElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
                 });
-                
+
                 // 사이드바 하이라이트 효과
                 setTimeout(() => {
                     sidebarQuestionElement.classList.add('sidebar-question-highlight');
-                    
+
                     // 3초 후 하이라이트 제거
                     setTimeout(() => {
                         sidebarQuestionElement.classList.remove('sidebar-question-highlight');
@@ -504,7 +504,7 @@ export function FormEditor({
         setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
-            
+
             if (question.question_type === 'composite_single') {
                 // composite_single 문항의 경우 composite_items 수정
                 const compositeItems = [...(question.composite_items || [])];
@@ -541,7 +541,7 @@ export function FormEditor({
         setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
-            
+
             if (question.question_type === 'composite_single') {
                 // composite_single 문항의 경우 composite_items 수정
                 const compositeItems = [...(question.composite_items || [])];
@@ -600,7 +600,10 @@ export function FormEditor({
 
     // JSON 가져오기 핸들러
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
-        setForm(surveyData);
+        setForm(prev => ({
+            ...surveyData,
+            id: prev.id || undefined
+        }));
         toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
     }, [setForm]);
 
@@ -648,20 +651,19 @@ export function FormEditor({
                                 <div
                                     key={`sidebar-${question.id}`}
                                     id={`sidebar-question-${question.id}`}
-                                    className={`border rounded-md p-3 cursor-pointer transition-all duration-200 ${
-                                        activeQuestionIndex === index 
-                                            ? 'bg-blue-50 border-blue-300 shadow-md' 
-                                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                    } ${question.id === deletingQuestionId ? 'sidebar-question-delete' : ''}`}
+                                    className={`border rounded-md p-3 cursor-pointer transition-all duration-200 ${activeQuestionIndex === index
+                                        ? 'bg-blue-50 border-blue-300 shadow-md'
+                                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                        } ${question.id === deletingQuestionId ? 'sidebar-question-delete' : ''}`}
                                     onClick={() => {
                                         // 문항 클릭 시 해당 문항으로 스크롤
                                         const questionElement = findQuestionElement(question.id);
                                         if (questionElement) {
-                                            questionElement.scrollIntoView({ 
-                                                behavior: 'smooth', 
-                                                block: 'start' 
+                                            questionElement.scrollIntoView({
+                                                behavior: 'smooth',
+                                                block: 'start'
                                             });
-                                            
+
                                             // 스크롤 완료 후 하이라이트 효과
                                             setTimeout(() => {
                                                 // 기존 하이라이트 제거
@@ -671,16 +673,16 @@ export function FormEditor({
                                                 document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
                                                     el.classList.remove('sidebar-question-highlight');
                                                 });
-                                                
+
                                                 // 현재 문항에 하이라이트 추가
                                                 questionElement.classList.add('question-highlight');
-                                                
+
                                                 // 사이드바에서도 하이라이트
                                                 const sidebarElement = findSidebarElement(question.id);
                                                 if (sidebarElement) {
                                                     sidebarElement.classList.add('sidebar-question-highlight');
                                                 }
-                                                
+
                                                 // 3초 후 하이라이트 제거
                                                 setTimeout(() => {
                                                     questionElement.classList.remove('question-highlight');
@@ -732,8 +734,8 @@ export function FormEditor({
                                                     deleteQuestion(index);
                                                 }}
                                                 disabled={deletingQuestionId === question.id}
-                                                className={`p-1 ${deletingQuestionId === question.id 
-                                                    ? 'text-gray-300 cursor-not-allowed' 
+                                                className={`p-1 ${deletingQuestionId === question.id
+                                                    ? 'text-gray-300 cursor-not-allowed'
                                                     : 'text-gray-400 hover:text-red-600'}`}
                                                 title="삭제"
                                             >

@@ -13,13 +13,39 @@ interface JsonExportModalProps {
 export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModalProps) {
   const [copied, setCopied] = useState(false);
 
+  // ID를 제거하는 함수 (survey의 id만 제거)
+  const removeIds = (data: any): any => {
+    if (Array.isArray(data)) {
+      return data.map(item => removeIds(item));
+    }
+
+    if (data && typeof data === 'object') {
+      const newData: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        // survey 레벨의 id만 제거하고, questions 내부의 id는 유지
+        if (key === 'id' && !Array.isArray(data) && !data.questions) {
+          // survey 객체의 id만 제거 (questions 배열이 없는 최상위 객체)
+          continue;
+        }
+        newData[key] = removeIds(value);
+      }
+      return newData;
+    }
+
+    return data;
+  };
+
   const handleCopy = async () => {
     try {
+      // ID를 제거한 데이터로 JSON 생성
+      // const dataWithoutIds = removeIds(surveyData);
+
+      delete surveyData.id
       const jsonString = JSON.stringify(surveyData, null, 2);
       await navigator.clipboard.writeText(jsonString);
       setCopied(true);
-      toast.success('JSON이 클립보드에 복사되었습니다.');
-      
+      toast.success('JSON이 클립보드에 복사되었습니다. (ID 제거됨)');
+
       // 2초 후 복사 상태 초기화
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -30,7 +56,9 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
 
   const handleDownload = () => {
     try {
-      const jsonString = JSON.stringify(surveyData, null, 2);
+      // ID를 제거한 데이터로 JSON 생성
+      const dataWithoutIds = removeIds(surveyData);
+      const jsonString = JSON.stringify(dataWithoutIds, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -40,7 +68,7 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success('JSON 파일이 다운로드되었습니다.');
+      toast.success('JSON 파일이 다운로드되었습니다. (ID 제거됨)');
     } catch (err) {
       toast.error('파일 다운로드에 실패했습니다.');
       console.error('파일 다운로드 오류:', err);
@@ -83,11 +111,10 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
               <button
                 type="button"
                 onClick={handleCopy}
-                className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
-                  copied 
-                    ? 'bg-green-100 text-green-700' 
+                className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${copied
+                    ? 'bg-green-100 text-green-700'
                     : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
+                  }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -96,11 +123,18 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
               </button>
             </div>
           </div>
-          
+
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="text-xs text-gray-500 mb-2">미리보기 (ID 포함)</div>
             <pre className="text-sm overflow-auto max-h-96 font-mono text-gray-800">
               {JSON.stringify(surveyData, null, 2)}
             </pre>
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-sm text-blue-800">
+              <strong>참고:</strong> 클립보드 복사 및 다운로드 시 설문 ID만 제거되고, 문항 ID는 유지됩니다.
+            </div>
           </div>
         </div>
 

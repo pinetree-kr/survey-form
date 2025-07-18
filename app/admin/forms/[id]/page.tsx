@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { CompositeQuestionItem } from './components'
 
 interface SurveyDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // Server Action
@@ -43,8 +43,8 @@ async function getSurvey(surveyId: string) {
 }
 
 export default async function SurveyDetailPage({ params }: SurveyDetailPageProps) {
-
-  const survey = await getSurvey(params.id)
+  const { id } = await params
+  const survey = await getSurvey(id)
 
   if (!survey) {
     notFound()
@@ -101,8 +101,8 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.is_active
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
                     }`}>
                     {survey.is_active ? '활성' : '비활성'}
                   </span>

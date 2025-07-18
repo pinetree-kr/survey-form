@@ -35,12 +35,23 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         return;
       }
 
+      // questions의 id 검증
+      for (let i = 0; i < parsedData.questions.length; i++) {
+        const question = parsedData.questions[i];
+        if (!question.id || question.id.trim() === '') {
+          setError(`${i + 1}번 문항의 ID가 없습니다. 모든 문항은 고유한 ID를 가져야 합니다.`);
+          return;
+        }
+      }
+
+      const processedQuestions = parsedData.questions;
+
       // TSurvey 형태로 변환
       const surveyData: TSurvey = {
         id: parsedData.id || '',
         title: parsedData.title,
         description: parsedData.description || '',
-        questions: parsedData.questions || []
+        questions: processedQuestions
       };
 
       onImport(surveyData);
@@ -69,7 +80,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-500/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">JSON에서 설문 가져오기</h2>
@@ -143,6 +154,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
               <li>• <strong>description</strong>: 설문 설명 (선택)</li>
               <li>• <strong>questions</strong>: 문항 배열 (필수)</li>
               <li>• 각 문항은 <strong>id</strong>, <strong>title</strong>, <strong>question_type</strong>을 포함해야 합니다</li>
+              <li>• <strong>id</strong>: 각 문항의 고유 ID (필수, 비어있으면 안됨)</li>
               <li>• <strong>question_type</strong>은 "single_choice", "multiple_choice", "text", "dropdown" 중 하나여야 합니다</li>
             </ul>
           </div>

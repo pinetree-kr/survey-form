@@ -28,7 +28,12 @@ export function BranchModal({
 
     const handleSubmit = () => {
         if (selectedQuestionId) {
-            onAdd(selectedQuestionId);
+            // 선택된 인덱스에 해당하는 question의 id를 사용
+            const selectedIndex = parseInt(selectedQuestionId);
+            const selectedQuestion = questions[selectedIndex];
+            if (selectedQuestion) {
+                onAdd(selectedQuestion.id);
+            }
         }
     };
 
