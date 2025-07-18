@@ -51,10 +51,7 @@ export default function SignUpForm({
 
     return (
         <div>
-            <form className="mt-8 space-y-6" onSubmit={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-            }}>
+            <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
                 <div className="rounded-md shadow-sm -space-y-px">
                     <div>
                         <label htmlFor="email" className="sr-only">
@@ -108,9 +105,8 @@ export default function SignUpForm({
 
                 <div>
                     <button
-                        type="button"
+                        type="submit"
                         disabled={loading}
-                        onClick={handleSignUp}
                         className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? '회원가입 중...' : '회원가입'}
@@ -118,8 +114,8 @@ export default function SignUpForm({
                 </div>
 
                 <div className="text-center">
-                    <a 
-                        href="/auth/sign-in" 
+                    <a
+                        href="/auth/sign-in"
                         className="text-sm text-indigo-600 hover:text-indigo-500"
                     >
                         이미 계정이 있으신가요? 로그인하기

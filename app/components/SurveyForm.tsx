@@ -117,7 +117,23 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             }
         }
 
-        // 2. 분기 로직 체크
+        // 2. composite_single 문항의 분기 로직
+        if (currentQuestion.question_type === "composite_single" && typeof currentAnswer === 'object' && currentAnswer !== null) {
+            // composite_single에서 선택된 항목 찾기
+            const selectedItem = currentQuestion.composite_items?.find(item => {
+                const itemValue = (currentAnswer as Record<string, string>)[item.key];
+                return itemValue && itemValue.trim() !== '';
+            });
+            
+            if (selectedItem?.next_question_id) {
+                const targetIndex = visibleQuestions.findIndex(q => q.id === selectedItem.next_question_id);
+                if (targetIndex !== -1) {
+                    return targetIndex;
+                }
+            }
+        }
+
+        // 3. 분기 로직 체크
         if (currentQuestion.branch_logic) {
             for (const logic of currentQuestion.branch_logic) {
                 let allConditionsMet = true;
@@ -147,7 +163,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
 
         const currentAnswer = answers.find(a => a.questionId === currentQuestion.id);
 
-        if (!currentAnswer && currentQuestion.required) {
+        if (!currentAnswer && currentQuestion.required && currentQuestion.question_type !== "description") {
             alert('이 질문은 필수입니다.');
             return;
         }
@@ -202,7 +218,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold">
                         {question.title}
-                        {question.required && <span className="text-red-500 ml-1">*</span>}
+                        {question.required && question.question_type !== "description" && <span className="text-red-500 ml-1">*</span>}
                     </h2>
 
                     {question.description && (
@@ -213,7 +229,8 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                     {(question.question_type === "single_choice"
                         || question.question_type === "multiple_choice"
                         || question.question_type === "short_text"
-                        || question.question_type === "long_text") && (
+                        || question.question_type === "long_text"
+                        || question.question_type === "description") && (
                             <>
                                 {/* 단일 객관식 */}
                                 {question.question_type === "single_choice" && (
@@ -282,6 +299,18 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                                         rows={4}
                                         placeholder="답변을 입력해주세요"
                                     />
+                                )}
+
+                                {/* 안내문 */}
+                                {question.question_type === "description" && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div className="flex items-start">
+                                            <span className="text-blue-600 mr-2 mt-0.5">ℹ️</span>
+                                            <div className="text-blue-800">
+                                                <p className="text-sm leading-relaxed">{question.title}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </>
                         )}

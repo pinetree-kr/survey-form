@@ -79,6 +79,7 @@ export interface Database {
                     questions: Json
                     is_active: boolean
                     created_by: string
+                    updated_by: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -89,6 +90,7 @@ export interface Database {
                     questions?: Json
                     is_active?: boolean
                     created_by: string
+                    updated_by?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -99,6 +101,7 @@ export interface Database {
                     questions?: Json
                     is_active?: boolean
                     created_by?: string
+                    updated_by?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -173,8 +176,13 @@ export interface Database {
                     description: string | null
                     questions: Json
                     created_by: string
+                    updated_by: string | null
                     created_at: string
                     updated_at: string
+                    creator_username: string | null
+                    creator_display_name: string | null
+                    updater_username: string | null
+                    updater_display_name: string | null
                 }
             }
             survey_response_summary: {

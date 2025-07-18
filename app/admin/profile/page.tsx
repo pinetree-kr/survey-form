@@ -3,84 +3,86 @@ import { createClient } from '@/lib/supabase-ssr'
 import { redirect } from 'next/navigation'
 import ProfileForm from './components/ProfileForm'
 
+// Server Actions
+async function getCurrentUser() {
+  "use server"
+  
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
+  
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  if (error || !user) {
+    redirect('/auth/sign-in')
+  }
+  
+  return user
+}
+
+async function getProfile() {
+  "use server"
+  
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !user) {
+    redirect('/auth/sign-in')
+  }
+  
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+  
+  if (error) {
+    console.error('프로필을 불러오는데 실패했습니다:', error)
+    return null
+  }
+  
+  return profile
+}
+
+async function updateProfile(formData: FormData) {
+  "use server"
+  
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !user) {
+    throw new Error('인증이 필요합니다')
+  }
+  
+  const username = formData.get('username') as string
+  const displayName = formData.get('displayName') as string
+  
+  if (!username) {
+    throw new Error('사용자명은 필수입니다')
+  }
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ 
+      username,
+      display_name: displayName || null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', user.id)
+    .select()
+    .single()
+  
+  if (error) {
+    throw new Error('프로필 업데이트에 실패했습니다')
+  }
+  
+  return data
+}
+
 export default async function ProfilePage() {
-  const getCurrentUser = async () => {
-    "use server"
-    
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      redirect('/auth/sign-in')
-    }
-    
-    return user
-  }
-
-  const getProfile = async () => {
-    "use server"
-    
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      redirect('/auth/sign-in')
-    }
-    
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-    
-    if (error) {
-      console.error('프로필을 불러오는데 실패했습니다:', error)
-      return null
-    }
-    
-    return profile
-  }
-
-  const updateProfile = async (formData: FormData) => {
-    "use server"
-    
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      throw new Error('인증이 필요합니다')
-    }
-    
-    const username = formData.get('username') as string
-    const displayName = formData.get('displayName') as string
-    
-    if (!username) {
-      throw new Error('사용자명은 필수입니다')
-    }
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ 
-        username,
-        display_name: displayName || null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-      .select()
-      .single()
-    
-    if (error) {
-      throw new Error('프로필 업데이트에 실패했습니다')
-    }
-    
-    return data
-  }
 
   const currentUser = await getCurrentUser()
   const profile = await getProfile()

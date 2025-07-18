@@ -86,12 +86,12 @@ export function OptionCombobox({ value, onChange, options }: { value: string; on
 
 
 // 복합질문 항목명 Combobox
-export function CompositeItemCombobox({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+export function CompositeItemCombobox({ value, onChange, options, className }: { value: string; onChange: (v: string) => void; options: string[]; className?: string }) {
     return (
         <Combobox value={value} onChange={onChange}>
             <div className="relative w-32">
                 <ComboboxInput
-                    className="w-full border rounded px-3 py-2 text-base min-h-[40px]"
+                    className={`w-full border rounded px-3 py-2 text-base min-h-[40px] ${className || ''}`}
                     displayValue={(v: string) => v}
                     onChange={e => onChange(e.target.value)}
                 />
