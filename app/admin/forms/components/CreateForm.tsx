@@ -91,6 +91,42 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
         toast.success("설문이 클립보드에 복사되었습니다.");
     }, [survey]);
 
+
+    const handleSave = React.useCallback(async (formData: FormData) => {
+        const formData = new FormData();
+        formData.append('title', survey.title);
+        formData.append('description', survey.description || '');
+        formData.append('questions', JSON.stringify(survey.questions));
+
+        
+        if (!survey.title.trim()) {
+            toast.error("설문 제목을 입력해주세요.");
+            return;
+        }
+
+        if (survey.questions.length === 0) {
+            toast.error("최소 하나의 문항을 추가해주세요.");
+            return;
+        }
+
+        try {
+
+            if (isEdit && survey.id) {
+                formData.append('surveyId', survey.id);
+            }
+
+            await createSurvey(formData);
+            toast.success(isEdit ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
+
+            // 성공 후 설문 목록 페이지로 이동
+            setTimeout(() => {
+                window.location.href = '/admin/forms';
+            }, 1500);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : (isEdit ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
+        }
+    }, [survey, createSurvey, isEdit]);
+
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
