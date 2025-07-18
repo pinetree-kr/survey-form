@@ -9,37 +9,39 @@ interface SurveyDetailPageProps {
   }
 }
 
-export default async function SurveyDetailPage({ params }: SurveyDetailPageProps) {
-  const getSurvey = async (surveyId: string) => {
-    "use server"
-    
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-    
-    const { data, error } = await supabase
-      .from('surveys')
-      .select(`
-        *,
-        creator:profiles!surveys_created_by_fkey(
-          id, 
-          username, 
-          display_name
-        ),
-        updater:profiles!surveys_updated_by_fkey(
-          id, 
-          username, 
-          display_name
-        )
-      `)
-      .eq('id', surveyId)
-      .single()
-    
-    if (error || !data) {
-      return null
-    }
-    
-    return data
+// Server Action
+async function getSurvey(surveyId: string) {
+  "use server"
+  
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
+  
+  const { data, error } = await supabase
+    .from('surveys')
+    .select(`
+      *,
+      creator:profiles!surveys_created_by_fkey(
+        id, 
+        username, 
+        display_name
+      ),
+      updater:profiles!surveys_updated_by_fkey(
+        id, 
+        username, 
+        display_name
+      )
+    `)
+    .eq('id', surveyId)
+    .single()
+  
+  if (error || !data) {
+    return null
   }
+  
+  return data
+}
+
+export default async function SurveyDetailPage({ params }: SurveyDetailPageProps) {
 
   const survey = await getSurvey(params.id)
 
@@ -155,7 +157,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                 <div key={question.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-lg font-medium text-gray-900">
-                      문항 {index + 1}: {question.title}
+                      {question.title}
                     </h3>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       question.required ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'

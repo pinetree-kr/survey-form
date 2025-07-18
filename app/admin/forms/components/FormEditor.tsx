@@ -192,10 +192,24 @@ export function FormEditor({
     }, [setForm]);
 
     const deleteQuestion = React.useCallback((index: number) => {
-        setForm(prev => ({
-            ...prev,
-            questions: prev.questions.filter((_, i) => i !== index)
-        }));
+        // 삭제 애니메이션 적용
+        const questionElement = document.getElementById(`question-${index}`);
+        const sidebarElement = document.getElementById(`sidebar-question-${index}`);
+        
+        if (questionElement) {
+            questionElement.classList.add('question-delete');
+        }
+        if (sidebarElement) {
+            sidebarElement.classList.add('sidebar-question-delete');
+        }
+        
+        // 애니메이션 완료 후 실제 삭제
+        setTimeout(() => {
+            setForm(prev => ({
+                ...prev,
+                questions: prev.questions.filter((_, i) => i !== index)
+            }));
+        }, 500); // 애니메이션 지속 시간과 동일
     }, [setForm]);
 
 
@@ -210,6 +224,136 @@ export function FormEditor({
 
         if (!form.questions || form.questions.length === 0) {
             toast.error("최소 하나의 문항을 추가해주세요.");
+            return;
+        }
+
+        // 문항 제목 검증
+        const emptyTitleIndex = form.questions.findIndex(question => !question.title.trim());
+        if (emptyTitleIndex !== -1) {
+            toast.error(`문항 ${emptyTitleIndex + 1}의 제목을 입력해주세요.`);
+            
+            // 해당 문항으로 스크롤 및 포커스
+            setTimeout(() => {
+                const questionElement = document.getElementById(`question-${emptyTitleIndex}`);
+                const sidebarElement = document.getElementById(`sidebar-question-${emptyTitleIndex}`);
+                
+                if (questionElement) {
+                    // 문항으로 스크롤
+                    questionElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                    
+                    // 하이라이트 효과
+                    setTimeout(() => {
+                        // 기존 하이라이트 제거
+                        document.querySelectorAll('.question-highlight').forEach(el => {
+                            el.classList.remove('question-highlight');
+                        });
+                        document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
+                            el.classList.remove('sidebar-question-highlight');
+                        });
+                        
+                        // 현재 문항에 하이라이트 추가
+                        questionElement.classList.add('question-highlight');
+                        
+                        // 사이드바에서도 하이라이트
+                        if (sidebarElement) {
+                            sidebarElement.classList.add('sidebar-question-highlight');
+                        }
+                        
+                        // 5초 후 하이라이트 제거 (오류 문항이므로 더 오래 표시)
+                        setTimeout(() => {
+                            questionElement.classList.remove('question-highlight');
+                            if (sidebarElement) {
+                                sidebarElement.classList.remove('sidebar-question-highlight');
+                            }
+                        }, 5000);
+                    }, 500);
+                    
+                    // 문항 제목 입력 필드에 포커스
+                    setTimeout(() => {
+                        const titleInput = questionElement.querySelector('textarea[placeholder="질문을 입력하세요"]') as HTMLTextAreaElement;
+                        if (titleInput) {
+                            titleInput.focus();
+                            titleInput.select();
+                        }
+                    }, 1000);
+                }
+            }, 100);
+            
+            return;
+        }
+
+        // 옵션이 필요한 문항의 옵션 검증
+        const optionRequiredTypes = ['single_choice', 'multiple_choice', 'dropdown'];
+        const emptyOptionIndex = form.questions.findIndex(question => {
+            if (!optionRequiredTypes.includes(question.question_type)) return false;
+            
+            // 옵션이 없거나 모든 옵션이 비어있는지 확인
+            if (!question.options || question.options.length === 0) return true;
+            
+            // 모든 옵션이 비어있는지 확인
+            return question.options.every(option => !option.label.trim() && !option.value.trim());
+        });
+        
+        if (emptyOptionIndex !== -1) {
+            const question = form.questions[emptyOptionIndex];
+            const questionTypeText = question.question_type === 'single_choice' ? '단일선택' :
+                                   question.question_type === 'multiple_choice' ? '다중선택' : '드롭다운';
+            
+            toast.error(`문항 ${emptyOptionIndex + 1}의 ${questionTypeText} 옵션을 입력해주세요.`);
+            
+            // 해당 문항으로 스크롤 및 포커스
+            setTimeout(() => {
+                const questionElement = document.getElementById(`question-${emptyOptionIndex}`);
+                const sidebarElement = document.getElementById(`sidebar-question-${emptyOptionIndex}`);
+                
+                if (questionElement) {
+                    // 문항으로 스크롤
+                    questionElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                    
+                    // 하이라이트 효과
+                    setTimeout(() => {
+                        // 기존 하이라이트 제거
+                        document.querySelectorAll('.question-highlight').forEach(el => {
+                            el.classList.remove('question-highlight');
+                        });
+                        document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
+                            el.classList.remove('sidebar-question-highlight');
+                        });
+                        
+                        // 현재 문항에 하이라이트 추가
+                        questionElement.classList.add('question-highlight');
+                        
+                        // 사이드바에서도 하이라이트
+                        if (sidebarElement) {
+                            sidebarElement.classList.add('sidebar-question-highlight');
+                        }
+                        
+                        // 5초 후 하이라이트 제거 (오류 문항이므로 더 오래 표시)
+                        setTimeout(() => {
+                            questionElement.classList.remove('question-highlight');
+                            if (sidebarElement) {
+                                sidebarElement.classList.remove('sidebar-question-highlight');
+                            }
+                        }, 5000);
+                    }, 500);
+                    
+                    // 첫 번째 옵션 입력 필드에 포커스
+                    setTimeout(() => {
+                        const optionInput = questionElement.querySelector('input[placeholder="옵션 텍스트"]') as HTMLInputElement;
+                        if (optionInput) {
+                            optionInput.focus();
+                            optionInput.select();
+                        }
+                    }, 1000);
+                }
+            }, 100);
+            
             return;
         }
 
@@ -573,7 +717,7 @@ export function FormEditor({
 
             {/* 우측 메인 영역 (사이드바 너비만큼 여백 추가, 고정 높이) */}
             <div className="flex-1 flex flex-col">
-                <div className="flex-1 px-8 pb-20">
+                <div className="flex-1 px-8 pb-100">
                     {/* <div className="max-w-4xl mx-auto"> */}
                     <div className="w-full relative">
                         <div>

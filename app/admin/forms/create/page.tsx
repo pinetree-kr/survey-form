@@ -5,46 +5,47 @@ import Link from 'next/link'
 import { FormEditor } from '../components'
 import { TSurvey } from '@/app/components'
 
-export default async function CreateSurveyPage() {
+// Server Action
+async function handleCreate(formData: TSurvey) {
+  "use server"
+  console.log({ formData })
 
-  const handleCreate = async (formData: TSurvey) => {
-    "use server"
-    console.log({ formData })
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
 
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
+  // 현재 사용자 인증 확인
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    // 현재 사용자 인증 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      throw new Error('인증이 필요합니다')
-    }
-
-    if (!formData.title) {
-      throw new Error('설문 제목은 필수입니다')
-    }
-
-    const { data, error } = await supabase
-      .from('surveys')
-      .insert({
-        title: formData.title,
-        description: formData.description || null,
-        questions: formData.questions || [],
-        is_active: true,
-        created_by: user.id,
-        // created_at: new Date().toISOString(),
-        // updated_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error('설문 생성에 실패했습니다')
-    }
-
-    return data
+  if (authError || !user) {
+    throw new Error('인증이 필요합니다')
   }
+
+  if (!formData.title) {
+    throw new Error('설문 제목은 필수입니다')
+  }
+
+  const { data, error } = await supabase
+    .from('surveys')
+    .insert({
+      title: formData.title,
+      description: formData.description || null,
+      questions: formData.questions || [],
+      is_active: true,
+      created_by: user.id,
+      // created_at: new Date().toISOString(),
+      // updated_at: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error('설문 생성에 실패했습니다')
+  }
+
+  return data
+}
+
+export default async function CreateSurveyPage() {
 
   return (
     <div className="">

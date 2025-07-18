@@ -11,79 +11,78 @@ interface EditSurveyPageProps {
   }>
 }
 
+// Server Actions
+async function getSurvey(surveyId: string) {
+  "use server"
+
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
+
+  const { data, error } = await supabase
+    .from('surveys')
+    .select('*')
+    .eq('id', surveyId)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data
+}
+
+async function handleUpdate(formData: TSurvey, surveyId?: string) {
+  "use server"
+
+  if (!formData.title || !surveyId) {
+    throw new Error('필수 정보가 누락되었습니다')
+  }
+
+  const { env } = await getCloudflareContext({ async: true })
+  const supabase = await createClient(env)
+
+  // 현재 사용자 인증 확인
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    throw new Error('인증이 필요합니다')
+  }
+
+  // 관리자 권한 확인
+  const { data: adminUser, error: adminError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (adminError || !adminUser || adminUser.role !== 'admin') {
+    const survey = await getSurvey(surveyId)
+    if (!survey || survey.created_by !== user.id) {
+      throw new Error('관리자 권한 또는 설문 작성자 권한이 필요합니다')
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('surveys')
+    .update({
+      title: formData.title,
+      description: formData.description || null,
+      questions: formData.questions || [],
+      // updated_at: new Date().toISOString()
+    })
+    .eq('id', surveyId)
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error('설문 수정에 실패했습니다')
+  }
+
+  return data
+}
+
 export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
   const { id } = await params
-
-  const getSurvey = async (surveyId: string) => {
-    "use server"
-
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-
-    const { data, error } = await supabase
-      .from('surveys')
-      .select('*')
-      .eq('id', surveyId)
-      .single()
-
-    if (error || !data) {
-      return null
-    }
-
-    return data
-  }
-
-  const handleUpdate = async (formData: TSurvey, surveyId?: string) => {
-    "use server"
-
-    if (!formData.title || !surveyId) {
-      throw new Error('필수 정보가 누락되었습니다')
-    }
-
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-
-    // 현재 사용자 인증 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      throw new Error('인증이 필요합니다')
-    }
-
-
-    // 관리자 권한 확인
-    const { data: adminUser, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
-      const survey = await getSurvey(surveyId)
-      if (!survey || survey.created_by !== user.id) {
-        throw new Error('관리자 권한 또는 설문 작성자 권한이 필요합니다')
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('surveys')
-      .update({
-        title: formData.title,
-        description: formData.description || null,
-        questions: formData.questions || [],
-        // updated_at: new Date().toISOString()
-      })
-      .eq('id', surveyId)
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error('설문 수정에 실패했습니다')
-    }
-
-    return data
-  }
 
   const survey = await getSurvey(id)
 
