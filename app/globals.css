@@ -25,27 +25,69 @@ body {
   font-family: var(--font-noto-sans-kr);
 }
 
-/* 문항 하이라이트 효과 */
+/* ===== 문항 하이라이트 효과 ===== */
 .question-highlight {
-  animation: highlight-pulse 0.6s ease-in-out;
+  animation: highlight-pulse 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   border-left-color: #3b82f6 !important;
+  position: relative;
+}
+
+.question-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.05), transparent);
+  animation: shimmer 2s ease-in-out;
+  pointer-events: none;
 }
 
 /* 사이드바 문항 하이라이트 효과 */
 .sidebar-question-highlight {
-  animation: sidebar-highlight-pulse 0.6s ease-in-out;
+  animation: sidebar-highlight-pulse 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   border-color: #3b82f6 !important;
   background-color: rgba(59, 130, 246, 0.1) !important;
+  transform: translateY(-1px);
 }
 
+/* 오류 하이라이트 효과 */
+.question-error-highlight {
+  animation: error-highlight-pulse 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  border-left-color: #ef4444 !important;
+  position: relative;
+}
+
+.question-error-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(239, 68, 68, 0.05), transparent);
+  animation: error-shimmer 2s ease-in-out;
+  pointer-events: none;
+}
+
+.sidebar-question-error-highlight {
+  animation: sidebar-error-highlight-pulse 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ===== 하이라이트 애니메이션 키프레임 ===== */
 @keyframes highlight-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
@@ -55,43 +97,111 @@ body {
 @keyframes sidebar-highlight-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    transform: translateY(0);
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
+    transform: translateY(-2px);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    transform: translateY(-1px);
   }
 }
 
-/* 스크롤 기반 활성화 효과 */
+@keyframes error-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes sidebar-error-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.3);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes error-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ===== 스크롤 기반 활성화 효과 ===== */
 .sidebar-active {
   background-color: #eff6ff !important;
   border-color: #93c5fd !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
   transform: translateY(-1px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 삭제 애니메이션 효과 */
+/* ===== 삭제 애니메이션 효과 ===== */
 .question-delete {
-  animation: delete-slide-out 0.5s ease-in-out forwards;
+  animation: delete-slide-out 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  position: relative;
+}
+
+.question-delete::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(239, 68, 68, 0.1), transparent);
+  animation: delete-shimmer 0.6s ease-in-out;
   pointer-events: none;
 }
 
 .sidebar-question-delete {
-  animation: delete-slide-out 0.5s ease-in-out forwards;
+  animation: sidebar-delete-slide-out 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
 }
 
 /* 삭제 중인 문항의 번호 숨기기 */
 .question-delete .text-gray-400.font-bold {
   opacity: 0;
-  transition: opacity 0.2s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
 }
 
 .sidebar-question-delete .text-xs.bg-blue-100 {
   opacity: 0;
-  transition: opacity 0.2s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
 }
 
 @keyframes delete-slide-out {
@@ -99,11 +209,17 @@ body {
     opacity: 1;
     transform: translateX(0) scale(1);
     max-height: 500px;
+    margin-bottom: 1.5rem;
   }
-  50% {
-    opacity: 0.5;
-    transform: translateX(-20px) scale(0.95);
-    max-height: 250px;
+  30% {
+    opacity: 0.8;
+    transform: translateX(-10px) scale(0.98);
+    max-height: 400px;
+  }
+  60% {
+    opacity: 0.4;
+    transform: translateX(-30px) scale(0.95);
+    max-height: 200px;
   }
   100% {
     opacity: 0;
@@ -111,5 +227,241 @@ body {
     max-height: 0;
     margin: 0;
     padding: 0;
+  }
+}
+
+@keyframes sidebar-delete-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 100px;
+    margin-bottom: 0.5rem;
+  }
+  30% {
+    opacity: 0.8;
+    transform: translateX(-5px) scale(0.98);
+    max-height: 80px;
+  }
+  60% {
+    opacity: 0.4;
+    transform: translateX(-15px) scale(0.95);
+    max-height: 40px;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50px) scale(0.9);
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@keyframes delete-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ===== 새 문항 추가 애니메이션 효과 ===== */
+.question-fade-in {
+  animation: fade-in-scale 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  position: relative;
+}
+
+.question-fade-in::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(34, 197, 94, 0.05), transparent);
+  animation: success-shimmer 1.5s ease-in-out;
+  pointer-events: none;
+}
+
+.sidebar-question-fade-in {
+  animation: sidebar-fade-in-scale 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fade-in-scale {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  40% {
+    opacity: 0.6;
+    transform: translateY(-10px) scale(0.95);
+  }
+  80% {
+    opacity: 0.9;
+    transform: translateY(-2px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sidebar-fade-in-scale {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.9);
+  }
+  40% {
+    opacity: 0.6;
+    transform: translateX(-8px) scale(0.95);
+  }
+  80% {
+    opacity: 0.9;
+    transform: translateX(-2px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes success-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ===== 복사 애니메이션 효과 ===== */
+.question-copy {
+  animation: copy-bounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.sidebar-question-copy {
+  animation: sidebar-copy-bounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes copy-bounce {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.05);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  75% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes sidebar-copy-bounce {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.03);
+  }
+  50% {
+    transform: scale(0.97);
+  }
+  75% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ===== 드래그 앤 드롭 애니메이션 ===== */
+.question-dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.question-drag-over {
+  border-left-color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.05);
+  transform: translateX(10px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* ===== 버튼 호버 애니메이션 ===== */
+.btn-hover-lift {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== 로딩 애니메이션 ===== */
+.loading-pulse {
+  animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ===== 토스트 애니메이션 ===== */
+.toast-enter {
+  animation: toast-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast-exit {
+  animation: toast-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes toast-slide-in {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ===== 접근성 개선 ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

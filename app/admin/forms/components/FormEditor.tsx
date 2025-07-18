@@ -66,6 +66,9 @@ export function FormEditor({
 
     // 삭제 중인 문항 ID 추적
     const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
+    
+    // 저장 중 로딩 상태
+    const [isSaving, setIsSaving] = useState(false);
 
     // DOM 요소를 찾는 헬퍼 함수
     const findQuestionElement = React.useCallback((questionId: string) => {
@@ -76,9 +79,22 @@ export function FormEditor({
         return document.getElementById(`sidebar-question-${questionId}`);
     }, []);
 
+    // 모든 애니메이션 클래스를 제거하는 유틸리티 함수
+    const clearAllAnimations = React.useCallback(() => {
+        const animationClasses = [
+            'question-highlight', 'question-error-highlight', 'question-fade-in', 'question-copy',
+            'sidebar-question-highlight', 'sidebar-question-error-highlight', 'sidebar-question-fade-in', 'sidebar-question-copy'
+        ];
+        
+        animationClasses.forEach(className => {
+            document.querySelectorAll(`.${className}`).forEach(el => {
+                el.classList.remove(className);
+            });
+        });
+    }, []);
+
     const addQuestion = React.useCallback(() => {
         const newQuestion: TQuestion = {
-            // id: `q${survey.questions.length + 1}`,
             id: uuidv4(),
             title: "",
             description: "",
@@ -89,42 +105,51 @@ export function FormEditor({
         };
 
         setForm(prev => {
-            const newQuestions = [...prev.questions, newQuestion];
+            // 현재 활성화된 문항 인덱스 확인
+            const insertIndex = activeQuestionIndex !== null ? activeQuestionIndex + 1 : prev.questions.length;
+            
+            const newQuestions = [...prev.questions];
+            newQuestions.splice(insertIndex, 0, newQuestion);
+            
             return {
                 ...prev,
                 questions: newQuestions
             };
         });
 
-        // 새로 추가된 문항으로 스크롤 (React 상태 업데이트 후 실행)
+        // 새로 추가된 문항으로 스크롤 및 포커스 (React 상태 업데이트 후 실행)
         setTimeout(() => {
-            const newQuestionIndex = form.questions.length;
-            const questionElement = document.getElementById(`question-${newQuestionIndex}`);
-            const sidebarQuestionElement = document.getElementById(`sidebar-question-${newQuestionIndex}`);
+            // 새로 추가된 문항의 ID를 사용하여 DOM 요소 찾기
+            const questionElement = document.getElementById(`question-${newQuestion.id}`);
+            const sidebarQuestionElement = document.getElementById(`sidebar-question-${newQuestion.id}`);
 
             if (questionElement) {
+                // 부드러운 스크롤 애니메이션
                 questionElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
 
-                // 스크롤 완료 후 하이라이트 효과
+                // 스크롤 완료 후 애니메이션 효과
                 setTimeout(() => {
-                    // 기존 하이라이트 제거
-                    document.querySelectorAll('.question-highlight').forEach(el => {
-                        el.classList.remove('question-highlight');
-                    });
-                    document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
-                        el.classList.remove('sidebar-question-highlight');
-                    });
+                    // 기존 모든 애니메이션 클래스 제거
+                    clearAllAnimations();
 
-                    // 새 문항에 하이라이트 추가
-                    questionElement.classList.add('question-highlight');
+                    // 새 문항에 페이드인 애니메이션만 추가 (하이라이트는 나중에)
+                    questionElement.classList.add('question-fade-in');
+                    
+                    // 제목 입력 필드에 포커스
+                    const titleInput = questionElement.querySelector('textarea[placeholder="질문을 입력하세요"]') as HTMLTextAreaElement;
+                    if (titleInput) {
+                        titleInput.focus();
+                        // 커서를 맨 끝으로 이동
+                        titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
+                    }
 
-                    // 3초 후 하이라이트 제거
+                    // 1초 후 페이드인 애니메이션 제거
                     setTimeout(() => {
-                        questionElement.classList.remove('question-highlight');
-                    }, 3000);
+                        questionElement.classList.remove('question-fade-in');
+                    }, 1000);
                 }, 500);
             }
 
@@ -135,18 +160,21 @@ export function FormEditor({
                     block: 'nearest'
                 });
 
-                // 사이드바 하이라이트 효과
+                // 사이드바 애니메이션 효과
                 setTimeout(() => {
-                    sidebarQuestionElement.classList.add('sidebar-question-highlight');
+                    // 기존 모든 애니메이션 클래스 제거
+                    clearAllAnimations();
 
-                    // 3초 후 하이라이트 제거
+                    sidebarQuestionElement.classList.add('sidebar-question-fade-in');
+
+                    // 1초 후 페이드인 애니메이션 제거
                     setTimeout(() => {
-                        sidebarQuestionElement.classList.remove('sidebar-question-highlight');
-                    }, 3000);
+                        sidebarQuestionElement.classList.remove('sidebar-question-fade-in');
+                    }, 1000);
                 }, 500);
             }
         }, 100); // React 상태 업데이트 대기
-    }, [setForm, form.questions.length]);
+    }, [setForm, activeQuestionIndex, form.questions.length, clearAllAnimations]);
 
     // 스크롤 감지를 위한 Intersection Observer 설정
     React.useEffect(() => {
@@ -264,27 +292,22 @@ export function FormEditor({
 
                     // 하이라이트 효과
                     setTimeout(() => {
-                        // 기존 하이라이트 제거
-                        document.querySelectorAll('.question-highlight').forEach(el => {
-                            el.classList.remove('question-highlight');
-                        });
-                        document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
-                            el.classList.remove('sidebar-question-highlight');
-                        });
+                        // 기존 모든 애니메이션 클래스 제거
+                        clearAllAnimations();
 
-                        // 현재 문항에 하이라이트 추가
-                        questionElement.classList.add('question-highlight');
+                        // 현재 문항에 오류 하이라이트 추가
+                        questionElement.classList.add('question-error-highlight');
 
-                        // 사이드바에서도 하이라이트
+                        // 사이드바에서도 오류 하이라이트
                         if (sidebarElement) {
-                            sidebarElement.classList.add('sidebar-question-highlight');
+                            sidebarElement.classList.add('sidebar-question-error-highlight');
                         }
 
                         // 5초 후 하이라이트 제거 (오류 문항이므로 더 오래 표시)
                         setTimeout(() => {
-                            questionElement.classList.remove('question-highlight');
+                            questionElement.classList.remove('question-error-highlight');
                             if (sidebarElement) {
-                                sidebarElement.classList.remove('sidebar-question-highlight');
+                                sidebarElement.classList.remove('sidebar-question-error-highlight');
                             }
                         }, 5000);
                     }, 500);
@@ -336,27 +359,22 @@ export function FormEditor({
 
                     // 하이라이트 효과
                     setTimeout(() => {
-                        // 기존 하이라이트 제거
-                        document.querySelectorAll('.question-highlight').forEach(el => {
-                            el.classList.remove('question-highlight');
-                        });
-                        document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
-                            el.classList.remove('sidebar-question-highlight');
-                        });
+                        // 기존 모든 애니메이션 클래스 제거
+                        clearAllAnimations();
 
-                        // 현재 문항에 하이라이트 추가
-                        questionElement.classList.add('question-highlight');
+                        // 현재 문항에 오류 하이라이트 추가
+                        questionElement.classList.add('question-error-highlight');
 
-                        // 사이드바에서도 하이라이트
+                        // 사이드바에서도 오류 하이라이트
                         if (sidebarElement) {
-                            sidebarElement.classList.add('sidebar-question-highlight');
+                            sidebarElement.classList.add('sidebar-question-error-highlight');
                         }
 
                         // 5초 후 하이라이트 제거 (오류 문항이므로 더 오래 표시)
                         setTimeout(() => {
-                            questionElement.classList.remove('question-highlight');
+                            questionElement.classList.remove('question-error-highlight');
                             if (sidebarElement) {
-                                sidebarElement.classList.remove('sidebar-question-highlight');
+                                sidebarElement.classList.remove('sidebar-question-error-highlight');
                             }
                         }, 5000);
                     }, 500);
@@ -376,6 +394,7 @@ export function FormEditor({
         }
 
         try {
+            setIsSaving(true);
             await onSave(form, form.id);
             toast.success(form.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
 
@@ -385,52 +404,58 @@ export function FormEditor({
             }, 1500);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : (form.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
+        } finally {
+            setIsSaving(false);
         }
     }, [onSave, form]);
 
     // 문항 복사 (해당 문항 아래에 추가)
     const copyQuestion = React.useCallback((index: number) => {
-        setForm(prev => {
-            const q = prev.questions[index];
+        const originalQuestion = form.questions[index];
+        const copiedQuestion: TQuestion = { ...originalQuestion, id: uuidv4() };
 
-            const copy: TQuestion = { ...q, id: uuidv4() };
+        setForm(prev => {
             const newQuestions = [
                 ...prev.questions.slice(0, index + 1),
-                copy,
+                copiedQuestion,
                 ...prev.questions.slice(index + 1)
             ];
             return { ...prev, questions: newQuestions };
         });
 
-        // 복사된 문항으로 스크롤 (React 상태 업데이트 후 실행)
+        // 복사된 문항으로 스크롤 및 애니메이션 (React 상태 업데이트 후 실행)
         setTimeout(() => {
-            const copiedQuestionIndex = index + 1; // 복사된 문항의 인덱스
-            const questionElement = document.getElementById(`question-${copiedQuestionIndex}`);
-            const sidebarQuestionElement = document.getElementById(`sidebar-question-${copiedQuestionIndex}`);
+            // 복사된 문항의 ID를 사용하여 DOM 요소 찾기
+            const questionElement = document.getElementById(`question-${copiedQuestion.id}`);
+            const sidebarQuestionElement = document.getElementById(`sidebar-question-${copiedQuestion.id}`);
 
             if (questionElement) {
+                // 부드러운 스크롤 애니메이션
                 questionElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
 
-                // 스크롤 완료 후 하이라이트 효과
+                // 스크롤 완료 후 애니메이션 효과
                 setTimeout(() => {
-                    // 기존 하이라이트 제거
-                    document.querySelectorAll('.question-highlight').forEach(el => {
-                        el.classList.remove('question-highlight');
-                    });
-                    document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
-                        el.classList.remove('sidebar-question-highlight');
-                    });
+                    // 기존 모든 애니메이션 클래스 제거
+                    clearAllAnimations();
 
-                    // 복사된 문항에 하이라이트 추가
-                    questionElement.classList.add('question-highlight');
+                    // 복사된 문항에 복사 전용 애니메이션 추가
+                    questionElement.classList.add('question-copy');
+                    
+                    // 제목 입력 필드에 포커스
+                    const titleInput = questionElement.querySelector('textarea[placeholder="질문을 입력하세요"]') as HTMLTextAreaElement;
+                    if (titleInput) {
+                        titleInput.focus();
+                        // 커서를 맨 끝으로 이동
+                        titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
+                    }
 
-                    // 3초 후 하이라이트 제거
+                    // 0.8초 후 복사 애니메이션 제거
                     setTimeout(() => {
-                        questionElement.classList.remove('question-highlight');
-                    }, 3000);
+                        questionElement.classList.remove('question-copy');
+                    }, 800);
                 }, 500);
             }
 
@@ -441,18 +466,21 @@ export function FormEditor({
                     block: 'nearest'
                 });
 
-                // 사이드바 하이라이트 효과
+                // 사이드바 애니메이션 효과
                 setTimeout(() => {
-                    sidebarQuestionElement.classList.add('sidebar-question-highlight');
+                    // 기존 모든 애니메이션 클래스 제거
+                    clearAllAnimations();
 
-                    // 3초 후 하이라이트 제거
+                    sidebarQuestionElement.classList.add('sidebar-question-copy');
+
+                    // 0.8초 후 복사 애니메이션 제거
                     setTimeout(() => {
-                        sidebarQuestionElement.classList.remove('sidebar-question-highlight');
-                    }, 3000);
+                        sidebarQuestionElement.classList.remove('sidebar-question-copy');
+                    }, 800);
                 }, 500);
             }
         }, 100); // React 상태 업데이트 대기
-    }, [setForm]);
+    }, [setForm, form.questions]);
 
     // 이미지 저장 핸들러
     const handleImageSave = React.useCallback((urls: string[]) => {
@@ -700,13 +728,8 @@ export function FormEditor({
 
                                             // 스크롤 완료 후 하이라이트 효과
                                             setTimeout(() => {
-                                                // 기존 하이라이트 제거
-                                                document.querySelectorAll('.question-highlight').forEach(el => {
-                                                    el.classList.remove('question-highlight');
-                                                });
-                                                document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
-                                                    el.classList.remove('sidebar-question-highlight');
-                                                });
+                                                // 기존 모든 애니메이션 클래스 제거
+                                                clearAllAnimations();
 
                                                 // 현재 문항에 하이라이트 추가
                                                 questionElement.classList.add('question-highlight');
@@ -755,7 +778,7 @@ export function FormEditor({
                                                     e.stopPropagation();
                                                     copyQuestion(index);
                                                 }}
-                                                className="text-gray-400 hover:text-gray-600 p-1"
+                                                className="text-gray-400 hover:text-gray-600 p-1 transition-all duration-200 hover:scale-110"
                                                 title="복사"
                                             >
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -768,9 +791,9 @@ export function FormEditor({
                                                     deleteQuestion(index);
                                                 }}
                                                 disabled={deletingQuestionId === question.id}
-                                                className={`p-1 ${deletingQuestionId === question.id
+                                                className={`p-1 transition-all duration-200 ${deletingQuestionId === question.id
                                                     ? 'text-gray-300 cursor-not-allowed'
-                                                    : 'text-gray-400 hover:text-red-600'}`}
+                                                    : 'text-gray-400 hover:text-red-600 hover:scale-110'}`}
                                                 title="삭제"
                                             >
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -788,7 +811,7 @@ export function FormEditor({
                 <div className="p-4 border-t border-gray-200">
                     <button
                         onClick={addQuestion}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 btn-hover-lift flex items-center justify-center gap-2"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -900,7 +923,7 @@ export function FormEditor({
                             <button
                                 type="button"
                                 onClick={() => setShowJsonImportModal(true)}
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-200 btn-hover-lift flex items-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
@@ -910,7 +933,7 @@ export function FormEditor({
                             <button
                                 type="button"
                                 onClick={() => setShowJsonExportModal(true)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 btn-hover-lift flex items-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -922,16 +945,26 @@ export function FormEditor({
                             <button
                                 type="button"
                                 onClick={() => window.location.href = '/admin/forms'}
-                                className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
+                                className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-all duration-200 btn-hover-lift"
                             >
                                 취소
                             </button>
                             <button
                                 type="button"
                                 onClick={handleSubmit}
-                                className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                                disabled={isSaving}
+                                className={`px-6 py-2 rounded-md transition-all duration-200 btn-hover-lift flex items-center gap-2 ${
+                                    isSaving 
+                                        ? 'bg-gray-400 text-white cursor-not-allowed' 
+                                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                }`}
                             >
-                                {form.id ? '설문 수정' : '설문 저장'}
+                                {isSaving && (
+                                    <svg className="w-4 h-4 loading-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                )}
+                                {isSaving ? '저장 중...' : (form.id ? '설문 수정' : '설문 저장')}
                             </button>
                         </div>
                     </div>
@@ -979,7 +1012,19 @@ export function FormEditor({
                 surveyData={form}
             />
 
-            <ToastContainer />
+            <ToastContainer 
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+                toastClassName="toast-enter"
+            />
         </div>
     );
 }

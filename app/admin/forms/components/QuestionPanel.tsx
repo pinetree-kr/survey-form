@@ -64,7 +64,7 @@ export function QuestionPanel({
     // 옵션 관련 핸들러
     const addOption = () => handleChange({ options: [...(question.options || []), { label: "", value: "" }] });
     const deleteOption = (idx: number) => handleChange({ options: question.options?.filter((_, i) => i !== idx) });
-    const updateOption = (idx: number, value: string) => handleChange({ options: question.options?.map((opt, i) => i === idx ? { ...opt, label: value, value } : opt) });
+    const updateOption = (idx: number, value: string) => handleChange({ options: question.options?.map((opt, i) => i === idx ? { ...opt, label: value } : opt) });
     const updateOptionValue = (idx: number, value: string) => handleChange({ options: question.options?.map((opt, i) => i === idx ? { ...opt, value } : opt) });
     const addEtcOption = () => handleChange({ hasEtc: true });
     // 필수 토글
@@ -80,7 +80,7 @@ export function QuestionPanel({
             ref={setNodeRef}
             style={style}
             id={`question-${question.id}`}
-            className={`bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6 ${question.id === deletingQuestionId ? 'question-delete' : ''}`}
+            className={`bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6 transition-all duration-200 ${question.id === deletingQuestionId ? 'question-delete' : ''} ${isDragging ? 'question-dragging' : ''}`}
         >
             {/* 드래그 핸들 & 상단 */}
             <div className="flex justify-between items-center mb-2">
@@ -178,6 +178,12 @@ export function QuestionPanel({
                                     type="text"
                                     value={opt.label}
                                     onChange={(e) => updateOption(idx, e.target.value)}
+                                    onKeyDown={(e) => {
+                                        // 스페이스바 입력 허용
+                                        if (e.key === ' ') {
+                                            e.stopPropagation();
+                                        }
+                                    }}
                                     className="border-b-2 border-blue-200 border-dashed bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
                                     placeholder="옵션 텍스트"
                                 />
@@ -249,6 +255,12 @@ export function QuestionPanel({
                                     type="text"
                                     value={opt.label}
                                     onChange={(e) => updateOption(idx, e.target.value)}
+                                    onKeyDown={(e) => {
+                                        // 스페이스바 입력 허용
+                                        if (e.key === ' ') {
+                                            e.stopPropagation();
+                                        }
+                                    }}
                                     className="border-b-2 border-blue-200 bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
                                     placeholder="옵션 텍스트"
                                 />
