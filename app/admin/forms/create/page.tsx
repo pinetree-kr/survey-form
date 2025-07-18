@@ -2,10 +2,11 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { createClient } from '@/lib/supabase-ssr'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { CreateForm } from '../components'
+import { FormEditor } from '../components'
 
 export default async function CreateSurveyPage() {
-  const createSurvey = async (formData: FormData) => {
+  
+  const handleCreate = async (formData: FormData) => {
     "use server"
     console.log({ formData })
     
@@ -76,7 +77,7 @@ export default async function CreateSurveyPage() {
         </Link>
       </div>
 
-      <CreateForm createSurvey={createSurvey} />
+      <FormEditor onSave={handleCreate} />
     </div>
   )
 } 

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { TSurvey, TQuestion, TBranchCondition } from "@/app/components";
 import { toast, ToastContainer } from "react-toastify";
-import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel } from "./";
+import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel } from ".";
 import {
     DndContext,
     closestCenter,
@@ -22,18 +22,20 @@ import {
 
 import { v4 as uuidv4 } from 'uuid';
 
-interface CreateFormProps {
-    createSurvey: (formData: FormData) => Promise<any>
-    initialSurvey?: any
-    isEdit?: boolean
+interface FormEditorProps {
+    onSave: (formData: TSurvey, surveyId?: string) => Promise<any>
+    data?: TSurvey
 }
 
-export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: CreateFormProps) {
-    const [survey, setSurvey] = useState<TSurvey>(initialSurvey || {
-        "id": "",
-        "title": "",
-        "description": "",
-        "questions": []
+export function FormEditor({
+    onSave,
+    data,
+}: FormEditorProps) {
+    const [form, setForm] = useState<TSurvey>({
+        "id": data?.id || "",
+        "title": data?.title || "",
+        "description": data?.description || "",
+        "questions": data?.questions || []
     });
 
     // DnD 센서 훅은 최상단에서 한 번만 호출
@@ -62,73 +64,64 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             show_conditions: []
         };
 
-        setSurvey(prev => ({
+        setForm(prev => ({
             ...prev,
             questions: [...prev.questions, newQuestion]
         }));
-    }, [setSurvey]);
+    }, [setForm]);
 
     const updateQuestion = React.useCallback((index: number, updatedQuestion: TQuestion) => {
-        setSurvey(prev => ({
+        setForm(prev => ({
             ...prev,
             questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
         }));
-    }, [setSurvey]);
+    }, [setForm]);
 
     const deleteQuestion = React.useCallback((index: number) => {
-        setSurvey(prev => ({
+        setForm(prev => ({
             ...prev,
             questions: prev.questions.filter((_, i) => i !== index)
         }));
-    }, [setSurvey]);
+    }, [setForm]);
 
     const copyInClipboard = React.useCallback(() => {
         // 클립보드에 복사하기
-        const jsonString = JSON.stringify(survey, null, 2);
+        const jsonString = JSON.stringify(form, null, 2);
         navigator.clipboard.writeText(jsonString);
 
         // 토스트 메시지 출력
         toast.success("설문이 클립보드에 복사되었습니다.");
-    }, [survey]);
+    }, [form]);
 
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!survey.title.trim()) {
+        if (!form.title.trim()) {
             toast.error("설문 제목을 입력해주세요.");
             return;
         }
 
-        if (survey.questions.length === 0) {
+        if (!form.questions || form.questions.length === 0) {
             toast.error("최소 하나의 문항을 추가해주세요.");
             return;
         }
 
         try {
-            const formData = new FormData();
-            formData.append('title', survey.title);
-            formData.append('description', survey.description || '');
-            formData.append('questions', JSON.stringify(survey.questions));
-
-            if (isEdit && survey.id) {
-                formData.append('surveyId', survey.id);
-            }
-
-            await createSurvey(formData);
-            toast.success(isEdit ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
+            await onSave(form, data?.id);
+            toast.success(data?.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
 
             // 성공 후 설문 목록 페이지로 이동
             setTimeout(() => {
                 window.location.href = '/admin/forms';
             }, 1500);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : (isEdit ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
+            toast.error(error instanceof Error ? error.message : (data?.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
         }
-    }, [createSurvey, isEdit, survey]);
+    }, [onSave, data?.id, form]);
 
     // 문항 복사 (해당 문항 아래에 추가)
     const copyQuestion = React.useCallback((index: number) => {
-        setSurvey(prev => {
+        setForm(prev => {
             const q = prev.questions[index];
 
             const copy: TQuestion = { ...q, id: uuidv4() };
@@ -139,12 +132,12 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             ];
             return { ...prev, questions: newQuestions };
         });
-    }, [setSurvey]);
+    }, [setForm]);
 
     // 이미지 저장 핸들러
     const handleImageSave = React.useCallback((urls: string[]) => {
         if (!imageModal) return;
-        setSurvey(prev => {
+        setForm(prev => {
             const questions = [...prev.questions];
             if (imageModal.type === 'question') {
                 questions[imageModal.qIdx] = {
@@ -165,14 +158,14 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             return { ...prev, questions };
         });
         setImageModal(null);
-    }, [setSurvey, imageModal]);
+    }, [setForm, imageModal]);
 
     // 드래그 앤 드롭 핸들러
     const handleDragEnd = React.useCallback((event: DragEndEvent) => {
         const { active, over } = event;
 
         if (active.id !== over?.id) {
-            setSurvey(prev => {
+            setForm(prev => {
                 const oldIndex = prev.questions.findIndex((_, index) => index === active.id);
                 const newIndex = prev.questions.findIndex((_, index) => index === over?.id);
 
@@ -187,11 +180,11 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                 };
             });
         }
-    }, [setSurvey]);
+    }, [setForm]);
 
     // 분기 추가 핸들러
     const handleBranchAdd = React.useCallback((qIdx: number, optIdx: number, nextQuestionId: string) => {
-        setSurvey(prev => {
+        setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
             const options = [...(question.options || [])];
@@ -209,11 +202,11 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             return { ...prev, questions };
         });
         setBranchModal(null);
-    }, [setSurvey, setBranchModal]);
+    }, [setForm, setBranchModal]);
 
     // 분기 제거 핸들러
     const handleBranchDelete = React.useCallback((qIdx: number, optIdx: number) => {
-        setSurvey(prev => {
+        setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
 
@@ -232,11 +225,11 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             return { ...prev, questions };
         });
         setBranchModal(null);
-    }, [setSurvey, setBranchModal]);
+    }, [setForm, setBranchModal]);
 
     // 조건부 표시 추가 핸들러
     const handleShowConditionAdd = React.useCallback((qIdx: number, condition: TBranchCondition) => {
-        setSurvey(prev => {
+        setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
 
@@ -248,26 +241,26 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             return { ...prev, questions };
         });
         setConditionModal(null);
-    }, [setSurvey, setConditionModal]);
+    }, [setForm, setConditionModal]);
 
     const handleShowConditionDelete = React.useCallback((qIdx: number, idx: number) => {
-        setSurvey(prev => {
+        setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
             questions[qIdx] = { ...question, show_conditions: question.show_conditions?.filter((_, i) => i !== idx) };
             return { ...prev, questions };
         });
-    }, [setSurvey]);
+    }, [setForm]);
 
     const MemoizedSimpleQuestionList = React.useMemo(() => {
-        return survey.questions.map((question, index) => ({
+        return form.questions.map((question, index) => ({
             title: question.title,
             id: question.id,
             question_type: question.question_type,
             options: question.options,
             composite_items: question.composite_items
         }))
-    }, [survey.questions])
+    }, [form.questions])
 
     const MemoizedConditionModal = React.useMemo(() => {
         return <ConditionModal
@@ -279,9 +272,12 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
     }, [conditionModal, MemoizedSimpleQuestionList, handleShowConditionAdd]);
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-8">
+        <form className="max-w-2xl mx-auto p-8"
+            onSubmit={(e: React.FormEvent) => {
+                e.preventDefault();
+            }}>
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-4">{isEdit ? '설문 수정기' : '설문 생성기'}</h1>
+                <h1 className="text-3xl font-bold mb-4">{data?.id ? '설문 수정기' : '설문 생성기'}</h1>
 
                 {/* 설문 기본 정보 */}
                 <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -292,7 +288,7 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                                 설문 ID
                             </label>
                             <div className="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-500">
-                                {survey.id ? survey.id : "자동생성"}
+                                {data?.id ? data.id : "자동생성"}
                             </div>
                         </div>
                         <div>
@@ -301,8 +297,8 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                             </label>
                             <input
                                 type="text"
-                                value={survey.title}
-                                onChange={(e) => setSurvey(prev => ({ ...prev, title: e.target.value }))}
+                                value={form.title}
+                                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
                                 className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="설문 제목을 입력하세요"
                                 required
@@ -314,8 +310,8 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                             설문 설명
                         </label>
                         <textarea
-                            value={survey.description}
-                            onChange={(e) => setSurvey(prev => ({ ...prev, description: e.target.value }))}
+                            value={form.description}
+                            onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
                             className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                             placeholder="설문에 대한 설명을 입력하세요"
                         />
@@ -325,7 +321,7 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                 {/* 문항 패널 목록 */}
                 <div className="space-y-6 mb-6">
                     <h2 className="text-xl font-semibold mb-2">문항 목록</h2>
-                    {survey.questions.length === 0 ? (
+                    {form.questions.length === 0 ? (
                         <div className="bg-white p-8 rounded-lg shadow-md text-center">
                             <p className="text-gray-500">문항을 추가해주세요.</p>
                         </div>
@@ -336,15 +332,15 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                             onDragEnd={handleDragEnd}
                         >
                             <SortableContext
-                                items={survey.questions.map((_, index) => index)}
+                                items={form.questions.map((_, index) => index)}
                                 strategy={verticalListSortingStrategy}
                             >
-                                {survey.questions.map((question, index) => (
+                                {form.questions.map((question, index, questions) => (
                                     <QuestionPanel
                                         key={`p${index}`}
                                         question={question}
                                         questionIndex={index}
-                                        questions={survey.questions}
+                                        questions={questions}
                                         onUpdate={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
                                         onDelete={() => deleteQuestion(index)}
                                         onCopy={() => copyQuestion(index)}
@@ -387,7 +383,7 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                     </div>
                     <div className="mt-4">
                         <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-auto max-h-96">
-                            {JSON.stringify(survey, null, 2)}
+                            {JSON.stringify(form, null, 2)}
                         </pre>
                     </div>
                 </div>
@@ -403,10 +399,11 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
                             취소
                         </button>
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={handleSubmit}
                             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                            {isEdit ? '설문 수정' : '설문 저장'}
+                            {data?.id ? '설문 수정' : '설문 저장'}
                         </button>
                     </div>
                 </div>
@@ -423,7 +420,7 @@ export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: Crea
             <BranchModal
                 isOpen={!!branchModal}
                 onClose={() => setBranchModal(null)}
-                questions={survey.questions}
+                questions={form.questions}
                 onAdd={(nextQuestionId) => handleBranchAdd(branchModal!.qIdx, branchModal!.optIdx, nextQuestionId)}
             />
 

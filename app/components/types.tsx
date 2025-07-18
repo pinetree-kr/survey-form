@@ -70,7 +70,7 @@ export type TQuestion = {
 
 // 설문 전체 타입
 export type TSurvey = {
-    id: string;
+    id?: string;
     title: string;
     description?: string;
     questions: TQuestion[];

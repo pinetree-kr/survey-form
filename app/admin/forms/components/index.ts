@@ -1,4 +1,4 @@
-export * from './CreateForm';
+export * from './FormEditor';
 
 export * from "./FormComponents";
 export * from "./QuestionPanel";
