@@ -105,6 +105,14 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
     const getNextPanel = (currentAnswer: string | string[] | Record<string, string>): number => {
         const currentQuestion = visibleQuestions[currentPanel];
 
+        // 0. 다음 문항 연결 체크 (가장 우선순위)
+        if (currentQuestion.next_question_id) {
+            const targetIndex = visibleQuestions.findIndex(q => q.id === currentQuestion.next_question_id);
+            if (targetIndex !== -1) {
+                return targetIndex;
+            }
+        }
+
         // 1. 옵션별 직접 이동 로직 (단일/중복 객관식의 경우)
         if ((currentQuestion.question_type === "single_choice" || currentQuestion.question_type === "multiple_choice") &&
             typeof currentAnswer === 'string') {

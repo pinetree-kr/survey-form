@@ -23,6 +23,8 @@ export function QuestionPanel({
     onBranchDelete,
     onShowConditionAdd,
     onShowConditionDelete,
+    onNextQuestionAdd,
+    onNextQuestionDelete,
     deletingQuestionId,
 }: {
     question: TQuestion;
@@ -36,6 +38,8 @@ export function QuestionPanel({
     onBranchDelete: (optIdx: number) => void;
     onShowConditionAdd: () => void;
     onShowConditionDelete: (idx: number) => void;
+    onNextQuestionAdd: () => void;
+    onNextQuestionDelete: () => void;
     deletingQuestionId?: string | null;
 }) {
     const {
@@ -403,13 +407,26 @@ export function QuestionPanel({
 
             {/* 문항 패널 하단에 분기/조건부 표시 UI 추가 */}
             <div className="mt-6 space-y-4">
-                {/* 접근 조건 버튼 */}
+                {/* 접근 조건 버튼과 다음 문항 연결 버튼 */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={onShowConditionAdd}
                         className="px-3 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 text-sm"
                     >
                         접근 조건 추가
+                    </button>
+                    <button
+                        onClick={question.next_question_id ? onNextQuestionDelete : onNextQuestionAdd}
+                        className={`px-3 py-1 rounded text-sm ${
+                            question.next_question_id 
+                                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
+                                : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                        }`}
+                    >
+                        {question.next_question_id 
+                            ? `→ ${questions.findIndex(q => q.id === question.next_question_id) + 1}번`
+                            : '다음 문항 연결'
+                        }
                     </button>
                 </div>
                 {(question.show_conditions?.length) ? (

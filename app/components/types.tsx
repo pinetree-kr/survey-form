@@ -68,6 +68,8 @@ export type TQuestion = {
     branch_logic?: TBranchLogic[];
     // 문항이 보여질 조건
     show_conditions?: TBranchCondition[];
+    // 다음 문항 연결 (설정이 없으면 자동으로 다음 문항으로 이동)
+    next_question_id?: string;
 };
 
 // 설문 전체 타입

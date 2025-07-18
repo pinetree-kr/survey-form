@@ -50,6 +50,9 @@ export function FormEditor({
     // 분기 모달 상태 추가
     const [branchModal, setBranchModal] = useState<null | { qIdx: number, optIdx: number }>(null);
 
+    // 다음 문항 연결 모달 상태 추가
+    const [nextQuestionModal, setNextQuestionModal] = useState<null | { qIdx: number }>(null);
+
     const [conditionModal, setConditionModal] = useState<null | { qIdx: number }>(null);
 
     // JSON 가져오기 모달 상태
@@ -598,6 +601,37 @@ export function FormEditor({
         });
     }, [setForm]);
 
+    // 다음 문항 연결 추가 핸들러
+    const handleNextQuestionAdd = React.useCallback((qIdx: number, nextQuestionId: string) => {
+        setForm(prev => {
+            const questions = [...prev.questions];
+            const question = questions[qIdx];
+            
+            questions[qIdx] = {
+                ...question,
+                next_question_id: nextQuestionId
+            };
+
+            return { ...prev, questions };
+        });
+        setNextQuestionModal(null);
+    }, [setForm, setNextQuestionModal]);
+
+    // 다음 문항 연결 제거 핸들러
+    const handleNextQuestionDelete = React.useCallback((qIdx: number) => {
+        setForm(prev => {
+            const questions = [...prev.questions];
+            const question = questions[qIdx];
+            
+            questions[qIdx] = {
+                ...question,
+                next_question_id: undefined
+            };
+
+            return { ...prev, questions };
+        });
+    }, [setForm]);
+
     // JSON 가져오기 핸들러
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
         setForm(prev => ({
@@ -844,6 +878,8 @@ export function FormEditor({
                                                     onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
                                                     onShowConditionAdd={() => setConditionModal({ qIdx: index })}
                                                     onShowConditionDelete={(idx) => handleShowConditionDelete(index, idx)}
+                                                    onNextQuestionAdd={() => setNextQuestionModal({ qIdx: index })}
+                                                    onNextQuestionDelete={() => handleNextQuestionDelete(index)}
                                                     deletingQuestionId={deletingQuestionId}
                                                 />
                                             ))}
@@ -916,6 +952,14 @@ export function FormEditor({
                 onClose={() => setBranchModal(null)}
                 questions={form.questions}
                 onAdd={(nextQuestionId) => handleBranchAdd(branchModal!.qIdx, branchModal!.optIdx, nextQuestionId)}
+            />
+
+            {/* 다음 문항 연결 모달 */}
+            <BranchModal
+                isOpen={!!nextQuestionModal}
+                onClose={() => setNextQuestionModal(null)}
+                questions={form.questions}
+                onAdd={(nextQuestionId) => handleNextQuestionAdd(nextQuestionModal!.qIdx, nextQuestionId)}
             />
 
             {/* 조건부 표시 모달 */}

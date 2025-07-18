@@ -26,6 +26,11 @@ export function BranchModal({
         setMounted(true);
     }, []);
 
+    React.useEffect(() => {
+        setSelectedQuestionId('')
+    }, [isOpen])
+
+
     const handleSubmit = () => {
         if (selectedQuestionId) {
             // 선택된 인덱스에 해당하는 question의 id를 사용
@@ -68,12 +73,12 @@ export function BranchModal({
                         >
                             <DialogPanel className="w-full max-w-md transform overflow-visible rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                                 <DialogTitle as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                                    분기 추가
+                                    문항 이동
                                 </DialogTitle>
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        선택시 다음으로 이동
+                                        선택시 다음 문항으로 이동
                                     </label>
                                     <Listbox value={selectedQuestionId} onChange={setSelectedQuestionId}>
                                         <div className="relative">
@@ -230,7 +235,7 @@ export function ConditionModal({
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <DialogPanel className="w-full max-w-md transform overflow-visible rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all max-h-[80vh] overflow-y-auto">
+                            <DialogPanel className="w-full max-w-md transform overflow-visible rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                                 <DialogTitle as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
                                     접근 조건 설정
                                 </DialogTitle>
@@ -293,7 +298,7 @@ export function ConditionModal({
                                                         <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                                                     </span>
                                                 </ListboxButton>
-                                                <ListboxOptions className="absolute z-50 mt-1 max-h-80 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                     {selectedQ.options.map((opt, optIdx) => (
                                                         <ListboxOption
                                                             key={optIdx}
@@ -334,7 +339,7 @@ export function ConditionModal({
                                                         <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                                                     </span>
                                                 </ListboxButton>
-                                                <ListboxOptions className="absolute z-50 mt-1 max-h-80 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                     {selectedQ.composite_items.map((item) => (
                                                         <ListboxOption
                                                             key={item.key}
@@ -375,7 +380,7 @@ export function ConditionModal({
                                                         <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                                                     </span>
                                                 </ListboxButton>
-                                                <ListboxOptions className="absolute z-50 mt-1 max-h-80 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                     {OPERATORS.map(op => (
                                                         <ListboxOption
                                                             key={op.value}
