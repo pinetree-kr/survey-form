@@ -12,6 +12,8 @@ interface EditSurveyPageProps {
 }
 
 export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
+  const { id } = await params
+
   const getSurvey = async (surveyId: string) => {
     "use server"
 
@@ -83,7 +85,6 @@ export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
     return data
   }
 
-  const { id } = await params
   const survey = await getSurvey(id)
 
   if (!survey) {

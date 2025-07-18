@@ -53,29 +53,14 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
   }
 
   return (
-    <div className="py-6 sm:px-6 lg:px-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1 py-6 sm:px-6 lg:px-8 space-y-6 pb-20">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">설문 상세</h1>
           <p className="mt-1 text-sm text-gray-500">
             설문조사 정보를 확인하세요.
           </p>
         </div>
-        <div className="flex space-x-3">
-          <Link
-            href={`/admin/forms/${survey.id}/edit`}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            수정
-          </Link>
-          <Link
-            href="/admin/forms"
-            className="text-gray-600 hover:text-gray-900 text-sm font-medium"
-          >
-            ← 설문 목록으로
-          </Link>
-        </div>
-      </div>
 
       <div className="bg-white rounded-lg shadow-sm">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -217,6 +202,31 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
           <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-auto max-h-96">
             {JSON.stringify(survey, null, 2)}
           </pre>
+        </div>
+      </div>
+      </div>
+
+      {/* 하단 고정 버튼 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+        <div className="px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-3">
+              <Link
+                href="/admin/forms"
+                className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
+              >
+                목록으로
+              </Link>
+            </div>
+            <div className="flex space-x-3">
+              <Link
+                href={`/admin/forms/${survey.id}/edit`}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                수정
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
