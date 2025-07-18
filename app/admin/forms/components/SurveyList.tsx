@@ -15,9 +15,11 @@ interface Survey {
   description?: string
   is_active: boolean
   created_by: string
+  updated_by?: string | null
   created_at: string
   updated_at: string
   creator?: Creator
+  updater?: Creator
 }
 
 interface SurveyListProps {
@@ -58,6 +60,13 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
     return '알 수 없음'
   }
 
+  const getUpdaterName = (survey: Survey) => {
+    if (survey.updater) {
+      return survey.updater.display_name || survey.updater.username
+    }
+    return '수정 없음'
+  }
+
   const isAdmin = userRole === 'admin'
 
   if (surveys.length === 0) {
@@ -95,13 +104,17 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
                 </th>
               )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                상태
+                작성일
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                생성일
+                수정자
               </th>
+
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 수정일
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                상태
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 작업
@@ -135,20 +148,25 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
                     </div>
                   </td>
                 )}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    survey.is_active
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {survey.is_active ? '활성' : '비활성'}
-                  </span>
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(survey.created_at)}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {getUpdaterName(survey)}
+                  </div>
+                </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(survey.updated_at)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.is_active
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
+                    {survey.is_active ? '활성' : '비활성'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">

@@ -6,9 +6,9 @@ import { FormEditor } from '../../components'
 import { TSurvey } from '@/app/components'
 
 interface EditSurveyPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
@@ -34,6 +34,10 @@ export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
   const handleUpdate = async (formData: TSurvey, surveyId?: string) => {
     "use server"
 
+    if (!formData.title || !surveyId) {
+      throw new Error('필수 정보가 누락되었습니다')
+    }
+
     const { env } = await getCloudflareContext({ async: true })
     const supabase = await createClient(env)
 
@@ -44,6 +48,7 @@ export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
       throw new Error('인증이 필요합니다')
     }
 
+
     // 관리자 권한 확인
     const { data: adminUser, error: adminError } = await supabase
       .from('profiles')
@@ -51,13 +56,12 @@ export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
       .eq('id', user.id)
       .single()
 
+
     if (adminError || !adminUser || adminUser.role !== 'admin') {
-      throw new Error('관리자 권한이 필요합니다')
-    }
-
-
-    if (!formData.title || !surveyId) {
-      throw new Error('필수 정보가 누락되었습니다')
+      const survey = await getSurvey(surveyId)
+      if (!survey || survey.created_by !== user.id) {
+        throw new Error('관리자 권한 또는 설문 작성자 권한이 필요합니다')
+      }
     }
 
     const { data, error } = await supabase
@@ -79,27 +83,30 @@ export default async function EditSurveyPage({ params }: EditSurveyPageProps) {
     return data
   }
 
-  const survey = await getSurvey(params.id)
+  const { id } = await params
+  const survey = await getSurvey(id)
 
   if (!survey) {
     notFound()
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">설문 수정</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            설문조사를 수정하세요.
-          </p>
+    <div className="">
+      <div className="py-6 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex justify-between items-top">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">설문 수정</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              설문조사를 수정하세요.
+            </p>
+          </div>
+          <Link
+            href="/admin/forms"
+            className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+          >
+            ← 설문 목록으로
+          </Link>
         </div>
-        <Link
-          href="/admin/forms"
-          className="text-gray-600 hover:text-gray-900 text-sm font-medium"
-        >
-          ← 설문 목록으로
-        </Link>
       </div>
 
       <FormEditor

@@ -37,13 +37,18 @@ export default async function FormsAdminPage() {
                     id, 
                     username, 
                     display_name
+                ),
+                updater:profiles!surveys_updated_by_fkey(
+                    id, 
+                    username, 
+                    display_name
                 )
             `)
             .order('created_at', { ascending: false })
 
         // user 역할인 경우 자신이 작성한 설문만 조회
         if (userProfile.role === 'user') {
-            query = query.eq('surveys.created_by', user.id)
+            query = query.eq('created_by', user.id)
         }
         // admin과 moderator는 모든 설문 조회
 
@@ -112,20 +117,22 @@ export default async function FormsAdminPage() {
     const { surveys, userRole } = await getSurveys()
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="py-6 sm:px-6 lg:px-8 space-y-6">
+            <div className="flex justify-between items-top">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">설문 관리</h1>
                     <p className="mt-1 text-sm text-gray-500">
                         설문조사를 생성하고 관리하세요.
                     </p>
                 </div>
-                <Link
-                    href="/admin/forms/create"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                    새 설문 생성
-                </Link>
+                <span>
+                    <Link
+                        href="/admin/forms/create"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
+                        새 설문 생성
+                    </Link>
+                </span>
             </div>
 
             <SurveyList surveys={surveys} deleteSurvey={deleteSurvey} userRole={userRole} />

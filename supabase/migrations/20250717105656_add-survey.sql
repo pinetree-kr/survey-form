@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS public.surveys (
     is_active boolean NOT NULL DEFAULT true,
     created_by uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+    updated_at timestamp with time zone DEFAULT now()
 );
 
 -- 설문 응답 테이블 생성 (이미 존재하지 않는 경우)
@@ -49,6 +50,14 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_surveys_created_at') THEN
         CREATE INDEX idx_surveys_created_at ON public.surveys(created_at);
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_surveys_updated_at') THEN
+        CREATE INDEX idx_surveys_updated_at ON public.surveys(updated_at);
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_surveys_updated_by') THEN
+        CREATE INDEX idx_surveys_updated_by ON public.surveys(updated_by);
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_survey_responses_survey_id') THEN
@@ -167,6 +176,7 @@ CREATE OR REPLACE FUNCTION update_survey_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = now();
+    NEW.updated_by = auth.uid();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -188,18 +198,38 @@ CREATE TRIGGER on_survey_statistics_updated
     EXECUTE FUNCTION update_survey_updated_at();
 
 -- 설문 조회를 위한 뷰 생성 (활성화된 설문만)
+-- CREATE OR REPLACE VIEW active_surveys AS
+-- SELECT 
+--     id,
+--     title,
+--     description,
+--     questions,
+--     created_by,
+--     created_at,
+--     updated_at
+-- FROM public.surveys
+-- WHERE is_active = true
+-- ORDER BY created_at DESC;
+
 CREATE OR REPLACE VIEW active_surveys AS
 SELECT 
-    id,
-    title,
-    description,
-    questions,
-    created_by,
-    created_at,
-    updated_at
-FROM public.surveys
-WHERE is_active = true
-ORDER BY created_at DESC;
+    s.id,
+    s.title,
+    s.description,
+    s.questions,
+    s.created_by,
+    s.updated_by,
+    s.created_at,
+    s.updated_at,
+    creator.username as creator_username,
+    creator.display_name as creator_display_name,
+    updater.username as updater_username,
+    updater.display_name as updater_display_name
+FROM public.surveys s
+LEFT JOIN public.profiles creator ON s.created_by = creator.id
+LEFT JOIN public.profiles updater ON s.updated_by = updater.id
+WHERE s.is_active = true
+ORDER BY s.created_at DESC; 
 
 -- 설문 응답 요약 뷰 생성
 CREATE OR REPLACE VIEW survey_response_summary AS

@@ -1,0 +1,65 @@
+{
+  "id": "",
+  "title": "테스트 설문",
+  "description": "설문이지롱",
+  "questions": [
+    {
+      "id": "5b13f528-df93-44f9-93a3-282c2d6ac802",
+      "title": "1번 질문",
+      "description": "",
+      "question_type": "single_choice",
+      "required": true,
+      "options": [
+        {
+          "label": "예",
+          "value": "예"
+        },
+        {
+          "label": "아니오",
+          "value": "아니오"
+        }
+      ],
+      "show_conditions": []
+    },
+    {
+      "id": "ffe4a8ea-a991-472a-8c26-10f8a8b894b7",
+      "title": "2번 질문",
+      "description": "",
+      "question_type": "multiple_choice",
+      "required": false,
+      "options": [
+        {
+          "label": "예",
+          "value": "예"
+        },
+        {
+          "label": "아니오",
+          "value": "아니오"
+        }
+      ],
+      "show_conditions": []
+    },
+    {
+      "id": "4adcec67-5575-4c6c-b322-4cd763c1b5e5",
+      "title": "3번 질문",
+      "description": "",
+      "question_type": "dropdown",
+      "required": false,
+      "options": [
+        {
+          "label": "예!",
+          "value": "예!"
+        },
+        {
+          "label": "녜!",
+          "value": "녜!"
+        },
+        {
+          "label": "니예?!",
+          "value": "니예?!"
+        }
+      ],
+      "show_conditions": []
+    }
+  ]
+}

@@ -73,6 +73,7 @@ export function QuestionPanel({
         <div
             ref={setNodeRef}
             style={style}
+            id={`question-${questionIndex}`}
             className="bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6"
         >
             {/* 드래그 핸들 & 상단 */}

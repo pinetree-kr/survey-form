@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { TSurvey, TQuestion, TBranchCondition } from "@/app/components";
 import { toast, ToastContainer } from "react-toastify";
-import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel } from ".";
+import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel, JsonImportModal, JsonExportModal } from ".";
 import {
     DndContext,
     closestCenter,
@@ -52,6 +52,12 @@ export function FormEditor({
 
     const [conditionModal, setConditionModal] = useState<null | { qIdx: number }>(null);
 
+    // JSON 가져오기 모달 상태
+    const [showJsonImportModal, setShowJsonImportModal] = useState(false);
+
+    // JSON 미리보기 모달 상태
+    const [showJsonExportModal, setShowJsonExportModal] = useState(false);
+
     const addQuestion = React.useCallback(() => {
         const newQuestion: TQuestion = {
             // id: `q${survey.questions.length + 1}`,
@@ -64,11 +70,42 @@ export function FormEditor({
             show_conditions: []
         };
 
-        setForm(prev => ({
-            ...prev,
-            questions: [...prev.questions, newQuestion]
-        }));
-    }, [setForm]);
+        setForm(prev => {
+            const newQuestions = [...prev.questions, newQuestion];
+            return {
+                ...prev,
+                questions: newQuestions
+            };
+        });
+
+        // 새로 추가된 문항으로 스크롤 (React 상태 업데이트 후 실행)
+        setTimeout(() => {
+            const newQuestionIndex = form.questions.length;
+            const questionElement = document.getElementById(`question-${newQuestionIndex}`);
+            if (questionElement) {
+                questionElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+                
+                // 스크롤 완료 후 하이라이트 효과
+                setTimeout(() => {
+                    // 기존 하이라이트 제거
+                    document.querySelectorAll('.question-highlight').forEach(el => {
+                        el.classList.remove('question-highlight');
+                    });
+                    
+                    // 새 문항에 하이라이트 추가
+                    questionElement.classList.add('question-highlight');
+                    
+                    // 3초 후 하이라이트 제거
+                    setTimeout(() => {
+                        questionElement.classList.remove('question-highlight');
+                    }, 3000);
+                }, 500);
+            }
+        }, 100); // React 상태 업데이트 대기
+    }, [setForm, form.questions.length]);
 
     const updateQuestion = React.useCallback((index: number, updatedQuestion: TQuestion) => {
         setForm(prev => ({
@@ -84,14 +121,7 @@ export function FormEditor({
         }));
     }, [setForm]);
 
-    const copyInClipboard = React.useCallback(() => {
-        // 클립보드에 복사하기
-        const jsonString = JSON.stringify(form, null, 2);
-        navigator.clipboard.writeText(jsonString);
 
-        // 토스트 메시지 출력
-        toast.success("설문이 클립보드에 복사되었습니다.");
-    }, [form]);
 
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -107,17 +137,17 @@ export function FormEditor({
         }
 
         try {
-            await onSave(form, data?.id);
-            toast.success(data?.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
+            await onSave(form, form.id);
+            toast.success(form.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
 
             // 성공 후 설문 목록 페이지로 이동
             setTimeout(() => {
                 window.location.href = '/admin/forms';
             }, 1500);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : (data?.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
+            toast.error(error instanceof Error ? error.message : (form.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
         }
-    }, [onSave, data?.id, form]);
+    }, [onSave, form]);
 
     // 문항 복사 (해당 문항 아래에 추가)
     const copyQuestion = React.useCallback((index: number) => {
@@ -252,6 +282,12 @@ export function FormEditor({
         });
     }, [setForm]);
 
+    // JSON 가져오기 핸들러
+    const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
+        setForm(surveyData);
+        toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
+    }, [setForm]);
+
     const MemoizedSimpleQuestionList = React.useMemo(() => {
         return form.questions.map((question, index) => ({
             title: question.title,
@@ -272,142 +308,261 @@ export function FormEditor({
     }, [conditionModal, MemoizedSimpleQuestionList, handleShowConditionAdd]);
 
     return (
-        <form className="max-w-2xl mx-auto p-8"
-            onSubmit={(e: React.FormEvent) => {
-                e.preventDefault();
-            }}>
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-4">{data?.id ? '설문 수정기' : '설문 생성기'}</h1>
-
-                {/* 설문 기본 정보 */}
-                <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-                    <h2 className="text-xl font-semibold mb-4">설문 기본 정보</h2>
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                설문 ID
-                            </label>
-                            <div className="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-500">
-                                {data?.id ? data.id : "자동생성"}
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                설문 제목 <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={form.title}
-                                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="설문 제목을 입력하세요"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            설문 설명
-                        </label>
-                        <textarea
-                            value={form.description}
-                            onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                            placeholder="설문에 대한 설명을 입력하세요"
-                        />
-                    </div>
+        <div className="flex h-[calc(100vh-168px)] bg-gray-50 relative">
+            {/* 좌측 사이드바 - 문항 목록 (상위 컨테이너 기준 고정) */}
+            <div className="w-[280px] bg-white border-r rounded-md shadow-md border-gray-200 flex flex-col fixed top-[170px] left-[16px] bottom-[80px] z-30">
+                <div className="p-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900">문항 목록</h2>
+                    <p className="text-sm text-gray-500 mt-1">총 {form.questions.length}개 문항</p>
                 </div>
 
-                {/* 문항 패널 목록 */}
-                <div className="space-y-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-2">문항 목록</h2>
+                <div className="flex-1 overflow-y-auto pb-8">
                     {form.questions.length === 0 ? (
-                        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                            <p className="text-gray-500">문항을 추가해주세요.</p>
+                        <div className="p-8 text-center">
+                            <div className="text-gray-400 mb-2">
+                                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <p className="text-gray-500 text-sm">문항을 추가해주세요</p>
                         </div>
                     ) : (
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
-                        >
-                            <SortableContext
-                                items={form.questions.map((_, index) => index)}
-                                strategy={verticalListSortingStrategy}
-                            >
-                                {form.questions.map((question, index, questions) => (
-                                    <QuestionPanel
-                                        key={`p${index}`}
-                                        question={question}
-                                        questionIndex={index}
-                                        questions={questions}
-                                        onUpdate={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
-                                        onDelete={() => deleteQuestion(index)}
-                                        onCopy={() => copyQuestion(index)}
-                                        onImageClick={(type, optIdx) => {
-                                            let urls: string[] = [];
-                                            if (type === 'question' && question.images) urls = question.images;
-                                            if (type === 'option' && optIdx !== undefined && question.options && question.options[optIdx]?.images) urls = question.options[optIdx].images;
-                                            setImageModal({ type, qIdx: index, optIdx, urls });
-                                        }}
-                                        onBranchAdd={(optIdx) => setBranchModal({ qIdx: index, optIdx })}
-                                        onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
-                                        onShowConditionAdd={() => setConditionModal({ qIdx: index })}
-                                        onShowConditionDelete={(idx) => handleShowConditionDelete(index, idx)}
-                                    />
-                                ))}
-                            </SortableContext>
-                        </DndContext>
+                        <div className="p-2 space-y-2">
+                            {form.questions.map((question, index) => (
+                                <div
+                                    key={`sidebar-${index}`}
+                                    className="bg-gray-50 border border-gray-200 rounded-md p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                                    onClick={() => {
+                                        // 문항 클릭 시 해당 문항으로 스크롤
+                                        const questionElement = document.getElementById(`question-${index}`);
+                                        if (questionElement) {
+                                            questionElement.scrollIntoView({ 
+                                                behavior: 'smooth', 
+                                                block: 'start' 
+                                            });
+                                            
+                                            // 스크롤 완료 후 하이라이트 효과
+                                            setTimeout(() => {
+                                                // 기존 하이라이트 제거
+                                                document.querySelectorAll('.question-highlight').forEach(el => {
+                                                    el.classList.remove('question-highlight');
+                                                });
+                                                
+                                                // 현재 문항에 하이라이트 추가
+                                                questionElement.classList.add('question-highlight');
+                                                
+                                                // 3초 후 하이라이트 제거
+                                                setTimeout(() => {
+                                                    questionElement.classList.remove('question-highlight');
+                                                }, 3000);
+                                            }, 500); // 스크롤 애니메이션 완료 후 실행
+                                        }
+                                    }}
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                    {index + 1}
+                                                </span>
+                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                                                    {question.question_type === 'single_choice' ? '단일선택' :
+                                                        question.question_type === 'multiple_choice' ? '다중선택' :
+                                                            question.question_type === 'short_text' ? '단답형' :
+                                                                question.question_type === 'long_text' ? '서술형' :
+                                                                    question.question_type === 'dropdown' ? '드롭다운' : question.question_type}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-sm font-medium text-gray-900 truncate">
+                                                {question.title || '제목 없음'}
+                                            </h3>
+                                            {question.required && (
+                                                <span className="text-xs text-red-500 mt-1 block">필수</span>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-1 ml-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    copyQuestion(index);
+                                                }}
+                                                className="text-gray-400 hover:text-gray-600 p-1"
+                                                title="복사"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteQuestion(index);
+                                                }}
+                                                className="text-gray-400 hover:text-red-600 p-1"
+                                                title="삭제"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
-                    {/* 문항 추가 버튼 - 목록의 마지막 아래 */}
-                    <div className="flex justify-end mt-4">
-                        <button
-                            onClick={addQuestion}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            문항 추가
-                        </button>
-                    </div>
                 </div>
 
-                {/* JSON 내보내기 */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-semibold">설문 내보내기</h2>
-                        <button
-                            onClick={copyInClipboard}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                        >
-                            클립보드에 복사
-                        </button>
-                    </div>
-                    <div className="mt-4">
-                        <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-auto max-h-96">
-                            {JSON.stringify(form, null, 2)}
-                        </pre>
-                    </div>
+                <div className="p-4 border-t border-gray-200">
+                    <button
+                        onClick={addQuestion}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        문항 추가
+                    </button>
                 </div>
+            </div>
 
-                {/* 저장 버튼 */}
-                <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-                    <div className="flex justify-end space-x-3">
-                        <button
-                            type="button"
-                            onClick={() => window.location.href = '/admin/forms'}
-                            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                        >
-                            취소
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSubmit}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            {data?.id ? '설문 수정' : '설문 저장'}
-                        </button>
+            {/* 우측 메인 영역 (사이드바 너비만큼 여백 추가, 고정 높이) */}
+            <div className="flex-1 flex flex-col">
+                <div className="flex-1 px-8 pb-20">
+                    {/* <div className="max-w-4xl mx-auto"> */}
+                    <div className="w-full relative">
+                        <div>
+                            <div className="ml-[280px]">
+                                {/* <div className="flex justify-end items-center mb-4">
+                                    <h1 className="text-3xl font-bold">{form.id ? '설문 편집' : '설문 생성'}</h1>
+                                </div> */}
+
+                                {/* 설문 기본 정보 */}
+                                <div className="bg-white p-6 rounded-md shadow-md mb-6">
+                                    <h2 className="text-xl font-semibold mb-4">설문 기본 정보</h2>
+                                    <div className="flex flex-col gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                설문 ID
+                                            </label>
+                                            <div className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-500">
+                                                {form.id || "자동생성"}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                설문 제목 <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={form.title}
+                                                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                                                className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="설문 제목을 입력하세요"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            설문 설명
+                                        </label>
+                                        <textarea
+                                            value={form.description}
+                                            onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                                            className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                            placeholder="설문에 대한 설명을 입력하세요"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="border-t border-gray-200 my-6"></div>
+
+                                {/* 문항 편집 영역 */}
+                                <div className="space-y-6 mb-6">
+                                    <h2 className="text-xl font-semibold mb-2">문항 편집</h2>
+                                    {form.questions.length === 0 ? (
+                                        <div className="bg-white p-8 rounded-md shadow-md text-center">
+                                            <p className="text-gray-500">좌측에서 문항을 추가해주세요.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {form.questions.map((question, index, questions) => (
+                                                <QuestionPanel
+                                                    key={`p${index}`}
+                                                    question={question}
+                                                    questionIndex={index}
+                                                    questions={questions}
+                                                    onUpdate={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
+                                                    onDelete={() => deleteQuestion(index)}
+                                                    onCopy={() => copyQuestion(index)}
+                                                    onImageClick={(type, optIdx) => {
+                                                        let urls: string[] = [];
+                                                        if (type === 'question' && question.images) urls = question.images;
+                                                        if (type === 'option' && optIdx !== undefined && question.options && question.options[optIdx]?.images) urls = question.options[optIdx].images;
+                                                        setImageModal({ type, qIdx: index, optIdx, urls });
+                                                    }}
+                                                    onBranchAdd={(optIdx) => setBranchModal({ qIdx: index, optIdx })}
+                                                    onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
+                                                    onShowConditionAdd={() => setConditionModal({ qIdx: index })}
+                                                    onShowConditionDelete={(idx) => handleShowConditionDelete(index, idx)}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* 저장 버튼 - 화면 하단 고정 */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+                <div className="px-8 py-4">
+                    <div className="flex justify-between items-center">
+                        <div className="flex space-x-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowJsonImportModal(true)}
+                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                </svg>
+                                Import
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowJsonExportModal(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Export
+                            </button>
+                        </div>
+                        <div className="flex space-x-3">
+                            <button
+                                type="button"
+                                onClick={() => window.location.href = '/admin/forms'}
+                                className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                            >
+                                {form.id ? '설문 수정' : '설문 저장'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* 이미지 URL 입력 모달 */}
             <ImageUrlModal
                 open={!!imageModal}
@@ -426,14 +581,23 @@ export function FormEditor({
 
             {/* 조건부 표시 모달 */}
             {MemoizedConditionModal}
-            {/* <ConditionModal
-                isOpen={!!conditionModal}
-                onClose={() => setConditionModal(null)}
-                questions={survey.questions}
-                onAdd={(condition) => handleShowConditionAdd(conditionModal!.qIdx, condition)}
-            /> */}
+
+            {/* JSON 가져오기 모달 */}
+            <JsonImportModal
+                isOpen={showJsonImportModal}
+                onClose={() => setShowJsonImportModal(false)}
+                onImport={handleJsonImport}
+            />
+
+            {/* JSON 미리보기 모달 */}
+            <JsonExportModal
+                isOpen={showJsonExportModal}
+                onClose={() => setShowJsonExportModal(false)}
+                surveyData={form}
+            />
+
             <ToastContainer />
-        </form>
+        </div>
     );
 }
 

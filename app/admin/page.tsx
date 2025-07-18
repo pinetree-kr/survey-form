@@ -5,10 +5,10 @@ import { createClient } from '@/lib/supabase-ssr'
 export default async function AdminDashboardPage() {
     const { env } = await getCloudflareContext({ async: true });
     const supabase = await createClient(env)
-    
+
     // 현재 사용자 정보 가져오기
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
     let userRole = 'user'
     if (!authError && user) {
         const { data: profile } = await supabase
@@ -16,14 +16,14 @@ export default async function AdminDashboardPage() {
             .select('role')
             .eq('id', user.id)
             .single()
-        
+
         if (profile) {
             userRole = profile.role
         }
     }
-    
+
     return (
-        <div className="space-y-6">
+        <div className="py-6 sm:px-6 lg:px-8 space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">관리자 대시보드</h1>
                 <p className="mt-1 text-sm text-gray-500">

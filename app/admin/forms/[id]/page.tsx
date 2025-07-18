@@ -18,7 +18,19 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
     
     const { data, error } = await supabase
       .from('surveys')
-      .select('*')
+      .select(`
+        *,
+        creator:profiles!surveys_created_by_fkey(
+          id, 
+          username, 
+          display_name
+        ),
+        updater:profiles!surveys_updated_by_fkey(
+          id, 
+          username, 
+          display_name
+        )
+      `)
       .eq('id', surveyId)
       .single()
     
@@ -41,7 +53,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
   }
 
   return (
-    <div className="space-y-6">
+    <div className="py-6 sm:px-6 lg:px-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">설문 상세</h1>
@@ -116,6 +128,32 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
               <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
                 {formatDate(survey.created_at)}
               </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                작성자
+              </label>
+              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                {survey.creator?.display_name || survey.creator?.username || '알 수 없음'}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                수정자
+              </label>
+              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                {survey.updater?.display_name || survey.updater?.username || '수정 없음'}
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              수정일
+            </label>
+            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+              {formatDate(survey.updated_at)}
             </div>
           </div>
         </div>
