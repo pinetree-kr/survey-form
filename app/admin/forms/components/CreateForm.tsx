@@ -22,92 +22,18 @@ import {
 
 import { v4 as uuidv4 } from 'uuid';
 
-export function CreateForm() {
-    const [survey, setSurvey] = useState<TSurvey>({
-        // id: "",
-        // title: "",
-        // description: "",
-        // questions: [{
-        //     id: uuidv4(),
-        //     title: "",
-        //     description: "",
-        //     question_type: "single_choice",
-        //     required: false,
-        //     options: [{ label: '', value: '' }]
-        // }],
+interface CreateFormProps {
+    createSurvey: (formData: FormData) => Promise<any>
+    initialSurvey?: any
+    isEdit?: boolean
+}
+
+export function CreateForm({ createSurvey, initialSurvey, isEdit = false }: CreateFormProps) {
+    const [survey, setSurvey] = useState<TSurvey>(initialSurvey || {
         "id": "",
         "title": "",
         "description": "",
-        "questions": [
-            {
-                "id": "bd158251-6b24-426c-9c58-daab52a415cf",
-                "title": "테스트항목1",
-                "description": "",
-                "question_type": "single_choice",
-                "required": false,
-                "options": [
-                    {
-                        "label": "예",
-                        "value": "예"
-                    },
-                    {
-                        "label": "아니오",
-                        "value": "아니오"
-                    }
-                ]
-            },
-            {
-                "id": "81c6c94d-e717-4255-b27e-2d4e661f67fc",
-                "title": "테스트항목2",
-                "description": "",
-                "question_type": "single_choice",
-                "required": false,
-                "options": [
-                    {
-                        "label": "예",
-                        "value": "예"
-                    },
-                    {
-                        "label": "아니오",
-                        "value": "아니오"
-                    }
-                ]
-            },
-            {
-                "id": "429d62cc-f8f3-450a-97cf-38daae6344d1",
-                "title": "테스트항목3",
-                "description": "",
-                "question_type": "single_choice",
-                "required": false,
-                "options": [
-                    {
-                        "label": "예",
-                        "value": "예"
-                    },
-                    {
-                        "label": "아니오",
-                        "value": "아니오"
-                    }
-                ]
-            },
-            {
-                "id": "4c7d7ec2-4c69-4ae5-9242-50ad0b44729e",
-                "title": "테스트항목4",
-                "description": "",
-                "question_type": "single_choice",
-                "required": false,
-                "options": [
-                    {
-                        "label": "예",
-                        "value": "예"
-                    },
-                    {
-                        "label": "아니오",
-                        "value": "아니오"
-                    }
-                ]
-            }
-        ]
+        "questions": []
     });
 
     // DnD 센서 훅은 최상단에서 한 번만 호출
@@ -124,7 +50,7 @@ export function CreateForm() {
 
     const [conditionModal, setConditionModal] = useState<null | { qIdx: number }>(null);
 
-    const addQuestion = () => {
+    const addQuestion = React.useCallback(() => {
         const newQuestion: TQuestion = {
             // id: `q${survey.questions.length + 1}`,
             id: uuidv4(),
@@ -140,35 +66,68 @@ export function CreateForm() {
             ...prev,
             questions: [...prev.questions, newQuestion]
         }));
-    };
+    }, [setSurvey]);
 
-    const updateQuestion = (index: number, updatedQuestion: TQuestion) => {
-        console.log(index, updatedQuestion);
-
+    const updateQuestion = React.useCallback((index: number, updatedQuestion: TQuestion) => {
         setSurvey(prev => ({
             ...prev,
             questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
         }));
-    };
+    }, [setSurvey]);
 
-    const deleteQuestion = (index: number) => {
+    const deleteQuestion = React.useCallback((index: number) => {
         setSurvey(prev => ({
             ...prev,
             questions: prev.questions.filter((_, i) => i !== index)
         }));
-    };
+    }, [setSurvey]);
 
-    const copyInClipboard = () => {
+    const copyInClipboard = React.useCallback(() => {
         // 클립보드에 복사하기
         const jsonString = JSON.stringify(survey, null, 2);
         navigator.clipboard.writeText(jsonString);
 
         // 토스트 메시지 출력
         toast.success("설문이 클립보드에 복사되었습니다.");
-    };
+    }, [survey]);
+
+    const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!survey.title.trim()) {
+            toast.error("설문 제목을 입력해주세요.");
+            return;
+        }
+
+        if (survey.questions.length === 0) {
+            toast.error("최소 하나의 문항을 추가해주세요.");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('title', survey.title);
+            formData.append('description', survey.description || '');
+            formData.append('questions', JSON.stringify(survey.questions));
+
+            if (isEdit && survey.id) {
+                formData.append('surveyId', survey.id);
+            }
+
+            await createSurvey(formData);
+            toast.success(isEdit ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
+
+            // 성공 후 설문 목록 페이지로 이동
+            setTimeout(() => {
+                window.location.href = '/admin/forms';
+            }, 1500);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : (isEdit ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
+        }
+    }, [createSurvey, isEdit, survey]);
 
     // 문항 복사 (해당 문항 아래에 추가)
-    const copyQuestion = (index: number) => {
+    const copyQuestion = React.useCallback((index: number) => {
         setSurvey(prev => {
             const q = prev.questions[index];
 
@@ -180,10 +139,10 @@ export function CreateForm() {
             ];
             return { ...prev, questions: newQuestions };
         });
-    };
+    }, [setSurvey]);
 
     // 이미지 저장 핸들러
-    const handleImageSave = (urls: string[]) => {
+    const handleImageSave = React.useCallback((urls: string[]) => {
         if (!imageModal) return;
         setSurvey(prev => {
             const questions = [...prev.questions];
@@ -206,10 +165,10 @@ export function CreateForm() {
             return { ...prev, questions };
         });
         setImageModal(null);
-    };
+    }, [setSurvey, imageModal]);
 
     // 드래그 앤 드롭 핸들러
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = React.useCallback((event: DragEndEvent) => {
         const { active, over } = event;
 
         if (active.id !== over?.id) {
@@ -228,10 +187,10 @@ export function CreateForm() {
                 };
             });
         }
-    };
+    }, [setSurvey]);
 
     // 분기 추가 핸들러
-    const handleBranchAdd = (qIdx: number, optIdx: number, nextQuestionId: string) => {
+    const handleBranchAdd = React.useCallback((qIdx: number, optIdx: number, nextQuestionId: string) => {
         setSurvey(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
@@ -250,10 +209,10 @@ export function CreateForm() {
             return { ...prev, questions };
         });
         setBranchModal(null);
-    };
+    }, [setSurvey, setBranchModal]);
 
     // 분기 제거 핸들러
-    const handleBranchDelete = (qIdx: number, optIdx: number) => {
+    const handleBranchDelete = React.useCallback((qIdx: number, optIdx: number) => {
         setSurvey(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
@@ -273,10 +232,10 @@ export function CreateForm() {
             return { ...prev, questions };
         });
         setBranchModal(null);
-    };
+    }, [setSurvey, setBranchModal]);
 
     // 조건부 표시 추가 핸들러
-    const handleShowConditionAdd = (qIdx: number, condition: TBranchCondition) => {
+    const handleShowConditionAdd = React.useCallback((qIdx: number, condition: TBranchCondition) => {
         setSurvey(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
@@ -289,21 +248,40 @@ export function CreateForm() {
             return { ...prev, questions };
         });
         setConditionModal(null);
-    };
+    }, [setSurvey, setConditionModal]);
 
-    const handleShowConditionDelete = (qIdx: number, idx: number) => {
+    const handleShowConditionDelete = React.useCallback((qIdx: number, idx: number) => {
         setSurvey(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
             questions[qIdx] = { ...question, show_conditions: question.show_conditions?.filter((_, i) => i !== idx) };
             return { ...prev, questions };
         });
-    };
+    }, [setSurvey]);
+
+    const MemoizedSimpleQuestionList = React.useMemo(() => {
+        return survey.questions.map((question, index) => ({
+            title: question.title,
+            id: question.id,
+            question_type: question.question_type,
+            options: question.options,
+            composite_items: question.composite_items
+        }))
+    }, [survey.questions])
+
+    const MemoizedConditionModal = React.useMemo(() => {
+        return <ConditionModal
+            isOpen={!!conditionModal}
+            onClose={() => setConditionModal(null)}
+            questions={MemoizedSimpleQuestionList}
+            onAdd={(condition) => handleShowConditionAdd(conditionModal!.qIdx, condition)}
+        />
+    }, [conditionModal, MemoizedSimpleQuestionList, handleShowConditionAdd]);
 
     return (
-        <div className="max-w-2xl mx-auto p-8">
+        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-4">설문 생성기</h1>
+                <h1 className="text-3xl font-bold mb-4">{isEdit ? '설문 수정기' : '설문 생성기'}</h1>
 
                 {/* 설문 기본 정보 */}
                 <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -319,7 +297,7 @@ export function CreateForm() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                설문 제목
+                                설문 제목 <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -327,6 +305,7 @@ export function CreateForm() {
                                 onChange={(e) => setSurvey(prev => ({ ...prev, title: e.target.value }))}
                                 className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="설문 제목을 입력하세요"
+                                required
                             />
                         </div>
                     </div>
@@ -412,6 +391,25 @@ export function CreateForm() {
                         </pre>
                     </div>
                 </div>
+
+                {/* 저장 버튼 */}
+                <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            onClick={() => window.location.href = '/admin/forms'}
+                            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                            취소
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            {isEdit ? '설문 수정' : '설문 저장'}
+                        </button>
+                    </div>
+                </div>
             </div>
             {/* 이미지 URL 입력 모달 */}
             <ImageUrlModal
@@ -430,14 +428,15 @@ export function CreateForm() {
             />
 
             {/* 조건부 표시 모달 */}
-            <ConditionModal
+            {MemoizedConditionModal}
+            {/* <ConditionModal
                 isOpen={!!conditionModal}
                 onClose={() => setConditionModal(null)}
                 questions={survey.questions}
                 onAdd={(condition) => handleShowConditionAdd(conditionModal!.qIdx, condition)}
-            />
+            /> */}
             <ToastContainer />
-        </div>
+        </form>
     );
 }
 

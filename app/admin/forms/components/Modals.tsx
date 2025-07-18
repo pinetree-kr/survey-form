@@ -130,6 +130,19 @@ export function BranchModal({
     );
 }
 
+type TSimpleQuestion = {
+    title: string;
+    question_type: string;
+    id: string;
+    options?: {
+        label: string;
+        value: string;
+    }[];
+    composite_items?: {
+        label: string;
+        key: string;
+    }[];
+}
 
 // 조건부 표시 모달 컴포넌트
 export function ConditionModal({
@@ -140,7 +153,7 @@ export function ConditionModal({
 }: {
     isOpen: boolean;
     onClose: () => void;
-    questions: TQuestion[];
+    questions: TSimpleQuestion[];
     onAdd: (condition: TBranchCondition) => void;
 }) {
     const [selectedQuestion, setSelectedQuestion] = useState<number>(-1);
@@ -158,7 +171,7 @@ export function ConditionModal({
     const isChoiceType = selectedQ && ['single_choice', 'multiple_choice'].includes(selectedQ.question_type);
     const isCompositeType = selectedQ && ['composite_single', 'composite_multiple'].includes(selectedQ.question_type);
 
-    const handleSubmit = () => {
+    const handleSubmit = React.useCallback(() => {
         if (selectedQuestion < 0) return;
 
         const question = questions[selectedQuestion]
@@ -171,11 +184,9 @@ export function ConditionModal({
         };
 
         onAdd(condition);
-    };
+    }, [selectedQuestion, questions, onAdd]);
 
-    console.log({ selectedOption })
-
-    const handleClose = () => {
+    const handleClose = React.useCallback(() => {
         // 상태 초기화
         setSelectedQuestion(-1);
         setSelectedOption('');
@@ -183,7 +194,7 @@ export function ConditionModal({
         setOperator('eq');
         setValue('');
         onClose();
-    };
+    }, [onClose]);
 
     // 클라이언트에서만 렌더링
     if (!mounted) return null;
@@ -425,9 +436,6 @@ export function ConditionModal({
         </Transition>
     );
 }
-
-
-
 export function ImageUrlModal({
     open,
     urls,

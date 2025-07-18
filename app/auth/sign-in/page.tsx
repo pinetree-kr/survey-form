@@ -40,8 +40,8 @@ export default async function AuthLoginPage() {
         </div>
         <LoginForm action={handleLogin} />
         <div className="text-center mt-4">
-          <a 
-            href="/auth/sign-up" 
+          <a
+            href="/auth/sign-up"
             className="text-sm text-indigo-600 hover:text-indigo-500"
           >
             계정이 없으신가요? 회원가입하기

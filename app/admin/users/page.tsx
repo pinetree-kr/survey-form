@@ -3,8 +3,49 @@ import { UserTable } from './components'
 import { createClient } from '@/lib/supabase-ssr'
 import { UserRole } from '@/app/types'
 import CreateUserModal from './components/CreateUserModal'
+import { redirect } from 'next/navigation'
 
 export default async function UsersPage() {
+
+  const getCurrentUser = async () => {
+    "use server"
+    
+    const { env } = await getCloudflareContext({ async: true })
+    const supabase = await createClient(env)
+    
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
+      redirect('/auth/sign-in')
+    }
+    
+    return user
+  }
+
+  const checkAdminRole = async () => {
+    "use server"
+    
+    const { env } = await getCloudflareContext({ async: true })
+    const supabase = await createClient(env)
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      redirect('/auth/sign-in')
+    }
+    
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    if (error || !profile || profile.role !== 'admin') {
+      redirect('/admin')
+    }
+    
+    return profile
+  }
 
   const getUsers = async () => {
     "use server"
@@ -179,25 +220,9 @@ export default async function UsersPage() {
     return true
   }
 
-  const users = await getUsers()
-
-  // 현재 로그인한 사용자 정보 가져오기
-  const getCurrentUser = async () => {
-    "use server"
-
-    const { env } = await getCloudflareContext({ async: true })
-    const supabase = await createClient(env)
-
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (error || !user) {
-      return null
-    }
-
-    return user
-  }
-
   const currentUser = await getCurrentUser()
+  const adminProfile = await checkAdminRole()
+  const users = await getUsers()
 
   return (
     <div>

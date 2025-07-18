@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-ssr'
 import { getCloudflareContext } from "@opennextjs/cloudflare"
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 export default async function AuthLayout({
@@ -16,9 +17,8 @@ export default async function AuthLayout({
 
     //   // 현재 사용자 확인 (보안을 위해 getUser() 사용)
     const { data: { user }, error } = await supabase.auth.getUser()
-
     // // 로그인된 경우 관리자 페이지로 리다이렉트
-    if (user) {
+    if (user && !error) {
         redirect('/admin')
     }
 
