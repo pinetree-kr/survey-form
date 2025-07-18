@@ -58,6 +58,9 @@ export function FormEditor({
     // JSON 미리보기 모달 상태
     const [showJsonExportModal, setShowJsonExportModal] = useState(false);
 
+    // 현재 활성화된 문항 인덱스 (스크롤 감지용)
+    const [activeQuestionIndex, setActiveQuestionIndex] = useState<number | null>(null);
+
     const addQuestion = React.useCallback(() => {
         const newQuestion: TQuestion = {
             // id: `q${survey.questions.length + 1}`,
@@ -82,6 +85,8 @@ export function FormEditor({
         setTimeout(() => {
             const newQuestionIndex = form.questions.length;
             const questionElement = document.getElementById(`question-${newQuestionIndex}`);
+            const sidebarQuestionElement = document.getElementById(`sidebar-question-${newQuestionIndex}`);
+            
             if (questionElement) {
                 questionElement.scrollIntoView({ 
                     behavior: 'smooth', 
@@ -94,6 +99,9 @@ export function FormEditor({
                     document.querySelectorAll('.question-highlight').forEach(el => {
                         el.classList.remove('question-highlight');
                     });
+                    document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
+                        el.classList.remove('sidebar-question-highlight');
+                    });
                     
                     // 새 문항에 하이라이트 추가
                     questionElement.classList.add('question-highlight');
@@ -104,8 +112,77 @@ export function FormEditor({
                     }, 3000);
                 }, 500);
             }
+            
+            // 사이드바 문항 목록도 스크롤 및 하이라이트
+            if (sidebarQuestionElement) {
+                sidebarQuestionElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+                
+                // 사이드바 하이라이트 효과
+                setTimeout(() => {
+                    sidebarQuestionElement.classList.add('sidebar-question-highlight');
+                    
+                    // 3초 후 하이라이트 제거
+                    setTimeout(() => {
+                        sidebarQuestionElement.classList.remove('sidebar-question-highlight');
+                    }, 3000);
+                }, 500);
+            }
         }, 100); // React 상태 업데이트 대기
     }, [setForm, form.questions.length]);
+
+    // 스크롤 감지를 위한 Intersection Observer 설정
+    React.useEffect(() => {
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -70% 0px', // 화면 중앙 부분을 감지
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const questionId = entry.target.id;
+                    const index = parseInt(questionId.replace('question-', ''));
+                    setActiveQuestionIndex(index);
+                    
+                    // 사이드바에서 해당 문항으로 스크롤
+                    const sidebarElement = document.getElementById(`sidebar-question-${index}`);
+                    if (sidebarElement) {
+                        // 사이드바 컨테이너 찾기
+                        const sidebarContainer = sidebarElement.closest('.overflow-y-auto');
+                        if (sidebarContainer) {
+                            // 현재 활성화된 문항이 사이드바에서 보이는지 확인
+                            const containerRect = sidebarContainer.getBoundingClientRect();
+                            const elementRect = sidebarElement.getBoundingClientRect();
+                            
+                            // 요소가 컨테이너 밖에 있으면 스크롤
+                            if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
+                                sidebarElement.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'nearest'
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+        }, observerOptions);
+
+        // 모든 문항 요소를 관찰 대상으로 등록
+        form.questions.forEach((_, index) => {
+            const element = document.getElementById(`question-${index}`);
+            if (element) {
+                observer.observe(element);
+            }
+        });
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [form.questions.length]);
 
     const updateQuestion = React.useCallback((index: number, updatedQuestion: TQuestion) => {
         setForm(prev => ({
@@ -162,6 +239,57 @@ export function FormEditor({
             ];
             return { ...prev, questions: newQuestions };
         });
+
+        // 복사된 문항으로 스크롤 (React 상태 업데이트 후 실행)
+        setTimeout(() => {
+            const copiedQuestionIndex = index + 1; // 복사된 문항의 인덱스
+            const questionElement = document.getElementById(`question-${copiedQuestionIndex}`);
+            const sidebarQuestionElement = document.getElementById(`sidebar-question-${copiedQuestionIndex}`);
+            
+            if (questionElement) {
+                questionElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+                
+                // 스크롤 완료 후 하이라이트 효과
+                setTimeout(() => {
+                    // 기존 하이라이트 제거
+                    document.querySelectorAll('.question-highlight').forEach(el => {
+                        el.classList.remove('question-highlight');
+                    });
+                    document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
+                        el.classList.remove('sidebar-question-highlight');
+                    });
+                    
+                    // 복사된 문항에 하이라이트 추가
+                    questionElement.classList.add('question-highlight');
+                    
+                    // 3초 후 하이라이트 제거
+                    setTimeout(() => {
+                        questionElement.classList.remove('question-highlight');
+                    }, 3000);
+                }, 500);
+            }
+            
+            // 사이드바 문항 목록도 스크롤 및 하이라이트
+            if (sidebarQuestionElement) {
+                sidebarQuestionElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+                
+                // 사이드바 하이라이트 효과
+                setTimeout(() => {
+                    sidebarQuestionElement.classList.add('sidebar-question-highlight');
+                    
+                    // 3초 후 하이라이트 제거
+                    setTimeout(() => {
+                        sidebarQuestionElement.classList.remove('sidebar-question-highlight');
+                    }, 3000);
+                }, 500);
+            }
+        }, 100); // React 상태 업데이트 대기
     }, [setForm]);
 
     // 이미지 저장 핸들러
@@ -331,7 +459,12 @@ export function FormEditor({
                             {form.questions.map((question, index) => (
                                 <div
                                     key={`sidebar-${index}`}
-                                    className="bg-gray-50 border border-gray-200 rounded-md p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                                    id={`sidebar-question-${index}`}
+                                    className={`border rounded-md p-3 cursor-pointer transition-all duration-200 ${
+                                        activeQuestionIndex === index 
+                                            ? 'bg-blue-50 border-blue-300 shadow-md' 
+                                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                    }`}
                                     onClick={() => {
                                         // 문항 클릭 시 해당 문항으로 스크롤
                                         const questionElement = document.getElementById(`question-${index}`);
@@ -347,13 +480,25 @@ export function FormEditor({
                                                 document.querySelectorAll('.question-highlight').forEach(el => {
                                                     el.classList.remove('question-highlight');
                                                 });
+                                                document.querySelectorAll('.sidebar-question-highlight').forEach(el => {
+                                                    el.classList.remove('sidebar-question-highlight');
+                                                });
                                                 
                                                 // 현재 문항에 하이라이트 추가
                                                 questionElement.classList.add('question-highlight');
                                                 
+                                                // 사이드바에서도 하이라이트
+                                                const sidebarElement = document.getElementById(`sidebar-question-${index}`);
+                                                if (sidebarElement) {
+                                                    sidebarElement.classList.add('sidebar-question-highlight');
+                                                }
+                                                
                                                 // 3초 후 하이라이트 제거
                                                 setTimeout(() => {
                                                     questionElement.classList.remove('question-highlight');
+                                                    if (sidebarElement) {
+                                                        sidebarElement.classList.remove('sidebar-question-highlight');
+                                                    }
                                                 }, 3000);
                                             }, 500); // 스크롤 애니메이션 완료 후 실행
                                         }
