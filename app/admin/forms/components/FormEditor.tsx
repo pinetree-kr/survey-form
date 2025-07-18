@@ -61,6 +61,18 @@ export function FormEditor({
     // 현재 활성화된 문항 인덱스 (스크롤 감지용)
     const [activeQuestionIndex, setActiveQuestionIndex] = useState<number | null>(null);
 
+    // 삭제 중인 문항 ID 추적
+    const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
+
+    // DOM 요소를 찾는 헬퍼 함수
+    const findQuestionElement = React.useCallback((questionId: string) => {
+        return document.getElementById(`question-${questionId}`);
+    }, []);
+
+    const findSidebarElement = React.useCallback((questionId: string) => {
+        return document.getElementById(`sidebar-question-${questionId}`);
+    }, []);
+
     const addQuestion = React.useCallback(() => {
         const newQuestion: TQuestion = {
             // id: `q${survey.questions.length + 1}`,
@@ -144,26 +156,28 @@ export function FormEditor({
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
-                    const questionId = entry.target.id;
-                    const index = parseInt(questionId.replace('question-', ''));
-                    setActiveQuestionIndex(index);
-                    
-                    // 사이드바에서 해당 문항으로 스크롤
-                    const sidebarElement = document.getElementById(`sidebar-question-${index}`);
-                    if (sidebarElement) {
-                        // 사이드바 컨테이너 찾기
-                        const sidebarContainer = sidebarElement.closest('.overflow-y-auto');
-                        if (sidebarContainer) {
-                            // 현재 활성화된 문항이 사이드바에서 보이는지 확인
-                            const containerRect = sidebarContainer.getBoundingClientRect();
-                            const elementRect = sidebarElement.getBoundingClientRect();
-                            
-                            // 요소가 컨테이너 밖에 있으면 스크롤
-                            if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
-                                sidebarElement.scrollIntoView({
-                                    behavior: 'smooth',
-                                    block: 'nearest'
-                                });
+                    const questionId = entry.target.id.replace('question-', '');
+                    const questionIndex = form.questions.findIndex(q => q.id === questionId);
+                    if (questionIndex !== -1) {
+                        setActiveQuestionIndex(questionIndex);
+                        
+                        // 사이드바에서 해당 문항으로 스크롤
+                        const sidebarElement = findSidebarElement(questionId);
+                        if (sidebarElement) {
+                            // 사이드바 컨테이너 찾기
+                            const sidebarContainer = sidebarElement.closest('.overflow-y-auto');
+                            if (sidebarContainer) {
+                                // 현재 활성화된 문항이 사이드바에서 보이는지 확인
+                                const containerRect = sidebarContainer.getBoundingClientRect();
+                                const elementRect = sidebarElement.getBoundingClientRect();
+                                
+                                // 요소가 컨테이너 밖에 있으면 스크롤
+                                if (elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom) {
+                                    sidebarElement.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'nearest'
+                                    });
+                                }
                             }
                         }
                     }
@@ -172,8 +186,8 @@ export function FormEditor({
         }, observerOptions);
 
         // 모든 문항 요소를 관찰 대상으로 등록
-        form.questions.forEach((_, index) => {
-            const element = document.getElementById(`question-${index}`);
+        form.questions.forEach((question) => {
+            const element = findQuestionElement(question.id);
             if (element) {
                 observer.observe(element);
             }
@@ -192,25 +206,26 @@ export function FormEditor({
     }, [setForm]);
 
     const deleteQuestion = React.useCallback((index: number) => {
-        // 삭제 애니메이션 적용
-        const questionElement = document.getElementById(`question-${index}`);
-        const sidebarElement = document.getElementById(`sidebar-question-${index}`);
+        // 삭제할 문항의 ID 저장
+        const questionToDelete = form.questions[index];
+        if (!questionToDelete) return;
         
-        if (questionElement) {
-            questionElement.classList.add('question-delete');
-        }
-        if (sidebarElement) {
-            sidebarElement.classList.add('sidebar-question-delete');
-        }
+        // 이미 삭제 중인 문항이 있으면 무시
+        if (deletingQuestionId) return;
+        
+        // 삭제 중인 문항 ID 설정
+        setDeletingQuestionId(questionToDelete.id);
         
         // 애니메이션 완료 후 실제 삭제
         setTimeout(() => {
             setForm(prev => ({
                 ...prev,
-                questions: prev.questions.filter((_, i) => i !== index)
+                questions: prev.questions.filter(q => q.id !== questionToDelete.id)
             }));
+            // 삭제 중인 문항 ID 초기화
+            setDeletingQuestionId(null);
         }, 500); // 애니메이션 지속 시간과 동일
-    }, [setForm]);
+    }, [setForm, form.questions, deletingQuestionId]);
 
 
 
@@ -489,17 +504,32 @@ export function FormEditor({
         setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
-            const options = [...(question.options || [])];
+            
+            if (question.question_type === 'composite_single') {
+                // composite_single 문항의 경우 composite_items 수정
+                const compositeItems = [...(question.composite_items || [])];
+                compositeItems[optIdx] = {
+                    ...compositeItems[optIdx],
+                    next_question_id: nextQuestionId
+                };
 
-            options[optIdx] = {
-                ...options[optIdx],
-                next_question_id: nextQuestionId
-            };
+                questions[qIdx] = {
+                    ...question,
+                    composite_items: compositeItems
+                };
+            } else {
+                // 기존 로직 (single_choice, multiple_choice 등)
+                const options = [...(question.options || [])];
+                options[optIdx] = {
+                    ...options[optIdx],
+                    next_question_id: nextQuestionId
+                };
 
-            questions[qIdx] = {
-                ...question,
-                options
-            };
+                questions[qIdx] = {
+                    ...question,
+                    options
+                };
+            }
 
             return { ...prev, questions };
         });
@@ -511,18 +541,32 @@ export function FormEditor({
         setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
+            
+            if (question.question_type === 'composite_single') {
+                // composite_single 문항의 경우 composite_items 수정
+                const compositeItems = [...(question.composite_items || [])];
+                compositeItems[optIdx] = {
+                    ...compositeItems[optIdx],
+                    next_question_id: undefined
+                };
 
-            const options = [...(question.options || [])];
+                questions[qIdx] = {
+                    ...question,
+                    composite_items: compositeItems
+                };
+            } else {
+                // 기존 로직 (single_choice, multiple_choice 등)
+                const options = [...(question.options || [])];
+                options[optIdx] = {
+                    ...options[optIdx],
+                    next_question_id: undefined
+                };
 
-            options[optIdx] = {
-                ...options[optIdx],
-                next_question_id: undefined
-            };
-
-            questions[qIdx] = {
-                ...question,
-                options
-            };
+                questions[qIdx] = {
+                    ...question,
+                    options
+                };
+            }
 
             return { ...prev, questions };
         });
@@ -602,16 +646,16 @@ export function FormEditor({
                         <div className="p-2 space-y-2">
                             {form.questions.map((question, index) => (
                                 <div
-                                    key={`sidebar-${index}`}
-                                    id={`sidebar-question-${index}`}
+                                    key={`sidebar-${question.id}`}
+                                    id={`sidebar-question-${question.id}`}
                                     className={`border rounded-md p-3 cursor-pointer transition-all duration-200 ${
                                         activeQuestionIndex === index 
                                             ? 'bg-blue-50 border-blue-300 shadow-md' 
                                             : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                    }`}
+                                    } ${question.id === deletingQuestionId ? 'sidebar-question-delete' : ''}`}
                                     onClick={() => {
                                         // 문항 클릭 시 해당 문항으로 스크롤
-                                        const questionElement = document.getElementById(`question-${index}`);
+                                        const questionElement = findQuestionElement(question.id);
                                         if (questionElement) {
                                             questionElement.scrollIntoView({ 
                                                 behavior: 'smooth', 
@@ -632,7 +676,7 @@ export function FormEditor({
                                                 questionElement.classList.add('question-highlight');
                                                 
                                                 // 사이드바에서도 하이라이트
-                                                const sidebarElement = document.getElementById(`sidebar-question-${index}`);
+                                                const sidebarElement = findSidebarElement(question.id);
                                                 if (sidebarElement) {
                                                     sidebarElement.classList.add('sidebar-question-highlight');
                                                 }
@@ -687,7 +731,10 @@ export function FormEditor({
                                                     e.stopPropagation();
                                                     deleteQuestion(index);
                                                 }}
-                                                className="text-gray-400 hover:text-red-600 p-1"
+                                                disabled={deletingQuestionId === question.id}
+                                                className={`p-1 ${deletingQuestionId === question.id 
+                                                    ? 'text-gray-300 cursor-not-allowed' 
+                                                    : 'text-gray-400 hover:text-red-600'}`}
                                                 title="삭제"
                                             >
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -778,7 +825,7 @@ export function FormEditor({
                                         <div className="space-y-6">
                                             {form.questions.map((question, index, questions) => (
                                                 <QuestionPanel
-                                                    key={`p${index}`}
+                                                    key={`p${question.id}`}
                                                     question={question}
                                                     questionIndex={index}
                                                     questions={questions}
@@ -795,6 +842,7 @@ export function FormEditor({
                                                     onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
                                                     onShowConditionAdd={() => setConditionModal({ qIdx: index })}
                                                     onShowConditionDelete={(idx) => handleShowConditionDelete(index, idx)}
+                                                    deletingQuestionId={deletingQuestionId}
                                                 />
                                             ))}
                                         </div>

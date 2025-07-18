@@ -19,6 +19,7 @@ export type TCompositeItem = {
     placeholder?: string;
     key: string;
     required?: boolean;
+    next_question_id?: string; // 분기 시 이동할 문항 ID
 };
 
 // 객관식 옵션
@@ -51,7 +52,8 @@ export type TQuestionType =
     | "multiple_choice"
     | "dropdown"
     | "composite_single"
-    | "composite_multiple";
+    | "composite_multiple"
+    | "description";
 
 export type TQuestion = {
     id: string;
@@ -79,13 +81,14 @@ export type TSurvey = {
 
 // 문항 유형 리스트
 export const QUESTION_TYPE_OPTIONS: { value: TQuestionType; label: string; icon: ReactNode }[] = [
-    { value: 'short_text', label: '단답형', icon: <span>📝</span> },
-    { value: 'long_text', label: '장문형', icon: <span>📄</span> },
+    { value: 'short_text', label: '단답형', icon: <span>✏️</span> },
+    { value: 'long_text', label: '장문형', icon: <span>📝</span> },
     { value: 'single_choice', label: '객관식 질문', icon: <span>🔘</span> },
     { value: 'multiple_choice', label: '체크 박스', icon: <span>☑️</span> },
     { value: 'dropdown', label: '드롭다운', icon: <span>⬇️</span> },
     { value: 'composite_single', label: '복합 단일', icon: <span>🔲</span> },
     { value: 'composite_multiple', label: '복합 다중', icon: <span>🗂️</span> },
+    { value: 'description', label: '안내문', icon: <span>ℹ️</span> },
 ]
 
 

@@ -23,6 +23,7 @@ export function QuestionPanel({
     onBranchDelete,
     onShowConditionAdd,
     onShowConditionDelete,
+    deletingQuestionId,
 }: {
     question: TQuestion;
     questionIndex: number;
@@ -35,6 +36,7 @@ export function QuestionPanel({
     onBranchDelete: (optIdx: number) => void;
     onShowConditionAdd: () => void;
     onShowConditionDelete: (idx: number) => void;
+    deletingQuestionId?: string | null;
 }) {
     const {
         attributes,
@@ -73,8 +75,8 @@ export function QuestionPanel({
         <div
             ref={setNodeRef}
             style={style}
-            id={`question-${questionIndex}`}
-            className="bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6"
+            id={`question-${question.id}`}
+            className={`bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6 ${question.id === deletingQuestionId ? 'question-delete' : ''}`}
         >
             {/* 드래그 핸들 & 상단 */}
             <div className="flex justify-between items-center mb-2">
@@ -89,7 +91,7 @@ export function QuestionPanel({
                     >
                         ⋮⋮
                     </span>
-                    <span className="text-gray-400 font-bold select-none ml-1" style={{ minWidth: 32, textAlign: 'center' }}>{questionIndex + 1}번</span>
+                    <span className="text-gray-400 font-bold select-none ml-1" style={{ minWidth: 32, textAlign: 'center' }}>{questions.findIndex(q => q.id === question.id) + 1}번</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가" onClick={() => onImageClick('question')}><span>🖼️</span></button>
@@ -101,6 +103,10 @@ export function QuestionPanel({
                         } else if (["composite_single", "composite_multiple"].includes(qt)) {
                             patch.composite_items = question.composite_items && question.composite_items.length > 0 ? question.composite_items : [{ label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
                             patch.options = undefined;
+                        } else if (qt === "description") {
+                            patch.options = undefined;
+                            patch.composite_items = undefined;
+                            patch.required = false; // 안내문은 필수가 될 수 없음
                         } else {
                             patch.options = undefined;
                             patch.composite_items = undefined;
@@ -168,11 +174,11 @@ export function QuestionPanel({
                                     type="text"
                                     value={opt.label}
                                     onChange={(e) => updateOption(idx, e.target.value)}
-                                    className="border-none bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none"
+                                    className="border-b-2 border-blue-200 border-dashed bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
                                     placeholder="옵션 텍스트"
                                 />
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 min-w-[150px] justify-end">
                                 {
                                     question.question_type === "single_choice" && (
                                         opt.next_question_id ? (
@@ -184,7 +190,7 @@ export function QuestionPanel({
                                                     onClick={() => onBranchDelete(idx)}
                                                     className="px-2 py-1 text-green-600 bg-green-100 hover:bg-green-200 text-xs"
                                                 >
-                                                    → {parseInt(opt.next_question_id) + 1}번
+                                                    → {questions.findIndex(q => q.id === opt.next_question_id) + 1}번
                                                 </button>
                                             </>
                                         ) : (
@@ -239,11 +245,11 @@ export function QuestionPanel({
                                     type="text"
                                     value={opt.label}
                                     onChange={(e) => updateOption(idx, e.target.value)}
-                                    className="border-none bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none"
+                                    className="border-b-2 border-blue-200 bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
                                     placeholder="옵션 텍스트"
                                 />
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 min-w-[150px] justify-end">
                                 <button onClick={() => onImageClick('option', idx)} className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가">📷</button>
                                 <button onClick={() => deleteOption(idx)} className="p-1 text-gray-400 hover:text-red-500" title="삭제">✕</button>
                             </div>
@@ -282,7 +288,7 @@ export function QuestionPanel({
                 <div className="mb-2">
                     <div className="font-semibold mb-1">복합질문 항목</div>
                     {(question.composite_items || []).map((item, idx) => (
-                        <div key={`${questionIndex}-${idx}`} className="flex items-center gap-2 mb-1 min-h-[44px]">
+                        <div key={`${questionIndex}-${idx}`} className="flex items-center gap-2 mb-3">
                             {question.question_type === 'composite_multiple' ? (
                                 <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border self-center" />
                             ) : (
@@ -296,6 +302,7 @@ export function QuestionPanel({
                                     handleChange({ composite_items: newItems });
                                 }}
                                 options={question.composite_items?.map(i => i.label).filter(l => l && l !== item.label) || []}
+                                className="border-b-2 border-blue-200 border-dashed bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
                             />
                             <Listbox value={item.input_type} onChange={v => {
                                 const newItems = [...(question.composite_items || [])];
@@ -345,10 +352,30 @@ export function QuestionPanel({
                                     handleChange({ composite_items: newItems });
                                 }}
                             />
-                            <button className="p-1 text-gray-400 hover:text-red-500" title="삭제" onClick={() => {
-                                const newItems = (question.composite_items || []).filter((_, i) => i !== idx);
-                                handleChange({ composite_items: newItems });
-                            }}>✕</button>
+                            <div className="flex items-center gap-1 ml-auto min-w-[150px] justify-end">
+                                {
+                                    question.question_type === "composite_single" && (
+                                        item.next_question_id ? (
+                                            <button
+                                                onClick={() => onBranchDelete(idx)}
+                                                className="px-2 py-1 text-green-600 bg-green-100 hover:bg-green-200 text-xs"
+                                            >
+                                                → {questions.findIndex(q => q.id === item.next_question_id) + 1}번
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => onBranchAdd(idx)}
+                                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs"
+                                            >
+                                                선택시 이동
+                                            </button>
+                                        )
+                                    )}
+                                <button className="p-1 text-gray-400 hover:text-red-500" title="삭제" onClick={() => {
+                                    const newItems = (question.composite_items || []).filter((_, i) => i !== idx);
+                                    handleChange({ composite_items: newItems });
+                                }}>✕</button>
+                            </div>
                         </div>
                     ))}
 
@@ -368,6 +395,10 @@ export function QuestionPanel({
             {/* 주관식(단문/장문) 안내 */}
             {(question.question_type === "short_text" || question.question_type === "long_text") && (
                 <div className="text-gray-400 italic mb-2">응답자가 직접 답변을 입력합니다.</div>
+            )}
+            {/* 안내문 안내 */}
+            {question.question_type === "description" && (
+                <div className="text-gray-400 italic mb-2">응답을 받지 않고 안내사항을 표시합니다.</div>
             )}
 
             {/* 문항 패널 하단에 분기/조건부 표시 UI 추가 */}
@@ -401,14 +432,22 @@ export function QuestionPanel({
             <div className="flex justify-between items-center mt-4">
                 <div className="flex gap-2">
                     <button onClick={onCopy} className="p-2 text-gray-500 hover:text-blue-500" title="복사">복사</button>
-                    <button onClick={onDelete} className="p-2 text-gray-500 hover:text-red-500" title="삭제">삭제</button>
+                    <button 
+                        onClick={onDelete} 
+                        className="p-2 text-gray-500 hover:text-red-500" 
+                        title="삭제"
+                        style={{ pointerEvents: 'auto' }}
+                    >
+                        삭제
+                    </button>
                 </div>
-                <label className="flex items-center gap-1 cursor-pointer select-none">
+                <label className={`flex items-center gap-1 select-none ${question.question_type === "description" ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                     <span className="text-sm">필수</span>
                     <Switch
                         checked={!!question.required}
                         onChange={toggleRequired}
-                        className={`${question.required ? 'bg-blue-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                        disabled={question.question_type === "description"}
+                        className={`${question.required ? 'bg-blue-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${question.question_type === "description" ? "opacity-50" : ""}`}
                     >
                         <span
                             className={`${question.required ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform`}

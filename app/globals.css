@@ -83,6 +83,17 @@ body {
   pointer-events: none;
 }
 
+/* 삭제 중인 문항의 번호 숨기기 */
+.question-delete .text-gray-400.font-bold {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.sidebar-question-delete .text-xs.bg-blue-100 {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
 @keyframes delete-slide-out {
   0% {
     opacity: 1;
