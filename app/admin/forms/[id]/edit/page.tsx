@@ -33,7 +33,7 @@ async function getSurvey(surveyId: string) {
 
 async function handleUpdate(formData: TSurvey, surveyId?: string) {
   "use server"
-  console.log({ formData })
+  console.log({ formData, surveyId })
   if (!formData.title || !surveyId) {
     throw new Error('필수 정보가 누락되었습니다')
   }

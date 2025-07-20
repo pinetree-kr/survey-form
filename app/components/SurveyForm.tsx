@@ -14,7 +14,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
     const [isCompleted, setIsCompleted] = useState(false);
 
     // 조건을 확인하는 함수
-    const checkCondition = (condition: TBranchCondition): boolean => {
+    const checkCondition = React.useCallback((condition: TBranchCondition): boolean => {
         const conditionAnswer = answers.find(a => a.questionId === condition.question_id);
         if (!conditionAnswer) {
             return false;
@@ -55,10 +55,10 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             default:
                 return false;
         }
-    };
+    }, [answers]);
 
     // show_condition을 확인하는 함수
-    const checkShowCondition = (question: TQuestion): boolean => {
+    const checkShowCondition = React.useCallback((question: TQuestion): boolean => {
         if (!question.show_conditions || question.show_conditions.length === 0) {
             return true; // 조건이 없으면 항상 보여줌
         }
@@ -70,7 +70,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         }
 
         return true; // 모든 조건이 만족되면 보여줌
-    };
+    }, [checkCondition]);
 
     // show_condition을 만족하는 문항들만 필터링
     const [visibleQuestions, setVisibleQuestions] = useState<TQuestion[]>([]);
@@ -90,7 +90,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         setCurrentQuestion(visibleQuestions[currentPanel]);
     }, [visibleQuestions, currentPanel]);
 
-    const handleAnswerChange = (questionId: string, value: string | string[] | Record<string, string>) => {
+    const handleAnswerChange = React.useCallback((questionId: string, value: string | string[] | Record<string, string>) => {
         setAnswers(prev => {
             const existingIndex = prev.findIndex(a => a.questionId === questionId);
             if (existingIndex >= 0) {
@@ -100,9 +100,9 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             }
             return [...prev, { questionId, value }];
         });
-    };
+    }, []);
 
-    const getNextPanel = (currentAnswer: string | string[] | Record<string, string>): number => {
+    const getNextPanel = React.useCallback((currentAnswer: string | string[] | Record<string, string>): number => {
         const currentQuestion = visibleQuestions[currentPanel];
 
         // 0. 다음 문항 연결 체크 (가장 우선순위)
@@ -132,7 +132,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 const itemValue = (currentAnswer as Record<string, string>)[item.key];
                 return itemValue && itemValue.trim() !== '';
             });
-            
+
             if (selectedItem?.next_question_id) {
                 const targetIndex = visibleQuestions.findIndex(q => q.id === selectedItem.next_question_id);
                 if (targetIndex !== -1) {
@@ -164,9 +164,9 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
 
         // 기본적으로 다음 패널로 이동
         return currentPanel + 1;
-    };
+    }, [currentPanel, visibleQuestions, checkCondition]);
 
-    const handleNext = () => {
+    const handleNext = React.useCallback(() => {
         if (!currentQuestion) return;
 
         const currentAnswer = answers.find(a => a.questionId === currentQuestion.id);
@@ -193,20 +193,20 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 setCurrentPanel(nextPanel);
             }
         }
-    };
+    }, [currentQuestion, visibleQuestions, answers, getNextPanel]);
 
-    const handlePrevious = () => {
+    const handlePrevious = React.useCallback(() => {
         if (currentPanel > 0) {
             setCurrentPanel(currentPanel - 1);
         }
-    };
+    }, [currentPanel, setCurrentPanel]);
 
-    const handleSubmit = () => {
+    const handleSubmit = React.useCallback(() => {
         console.log('설문 완료:', answers);
         // 여기에 제출 로직 추가
-    };
+    }, [answers]);
 
-    const renderQuestion = (question: TQuestion) => {
+    const renderQuestion = React.useCallback((question: TQuestion) => {
         const currentAnswer = answers.find(a => a.questionId === question.id);
 
         return (
@@ -248,8 +248,8 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                                                 <input
                                                     type="radio"
                                                     name={question.id}
-                                                    value={opt.value}
-                                                    checked={currentAnswer?.value === opt.value}
+                                                    value={opt.key}
+                                                    checked={currentAnswer?.value === opt.key}
                                                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                                                     className="form-radio text-blue-600"
                                                 />
@@ -354,7 +354,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 </div>
             </div>
         );
-    };
+    }, [handleAnswerChange, visibleQuestions, answers, currentPanel]);
 
     if (isCompleted) {
         return (

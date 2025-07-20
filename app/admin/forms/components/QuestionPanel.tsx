@@ -1,17 +1,35 @@
 "use client"
 
-import { TQuestion, TQuestionType } from "@/app/components";
+import React, { useMemo, useCallback, useState, useEffect } from 'react'
+import { COMPOSITE_INPUT_TYPE_OPTIONS, TQuestion, TQuestionType } from "@/app/components";
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, RadioGroup, Checkbox, Textarea, Switch } from "@headlessui/react";
 import { TCompositeItem } from "@/app/components";
 import { ChevronUpDownIcon } from "@heroicons/react/24/solid";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
-import { QUESTION_TYPE_OPTIONS, COMPOSITE_INPUT_TYPE_OPTIONS, OPERATORS } from "@/app/components";
+import { QUESTION_TYPE_OPTIONS } from "@/app/components";
 import { ImagePreview, CompositeItemCombobox } from "./";
+import { formatCondition } from '@/lib/survey-utils'
 
-// 문항 패널 컴포넌트
-export function QuestionPanel({
+// 디바운스 훅
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+}
+
+export const QuestionPanel = React.memo(({
     question,
     questionIndex,
     onUpdate,
@@ -41,7 +59,7 @@ export function QuestionPanel({
     onNextQuestionAdd: () => void;
     onNextQuestionDelete: () => void;
     deletingQuestionId?: string | null;
-}) {
+}) => {
     const {
         attributes,
         listeners,
@@ -51,36 +69,154 @@ export function QuestionPanel({
         isDragging,
     } = useSortable({ id: questionIndex });
 
-    const style = {
+    // 로컬 상태로 즉시 반응하는 UI
+    const [localTitle, setLocalTitle] = useState(question.title);
+    const [localOptions, setLocalOptions] = useState(question.options || []);
+
+    // 디바운스된 값들
+    const debouncedTitle = useDebounce(localTitle, 300);
+    const debouncedOptions = useDebounce(localOptions, 300);
+
+    // 디바운스 상태 추적
+    const [isTitleDebouncing, setIsTitleDebouncing] = useState(false);
+    const [isOptionsDebouncing, setIsOptionsDebouncing] = useState(false);
+
+    // 디바운스 상태 업데이트
+    useEffect(() => {
+        setIsTitleDebouncing(localTitle !== debouncedTitle);
+    }, [localTitle, debouncedTitle]);
+
+    useEffect(() => {
+        setIsOptionsDebouncing(JSON.stringify(localOptions) !== JSON.stringify(debouncedOptions));
+    }, [localOptions, debouncedOptions]);
+
+    // 디바운스된 값이 변경되면 부모에게 업데이트
+    useEffect(() => {
+        if (debouncedTitle !== question.title) {
+            onUpdate({ ...question, title: debouncedTitle });
+        }
+    }, [debouncedTitle, question.title, onUpdate, question]);
+
+    useEffect(() => {
+        if (JSON.stringify(debouncedOptions) !== JSON.stringify(question.options)) {
+            onUpdate({ ...question, options: debouncedOptions });
+        }
+    }, [debouncedOptions, question.options, onUpdate, question]);
+
+    // question이 외부에서 변경되면 로컬 상태 동기화
+    useEffect(() => {
+        setLocalTitle(question.title);
+    }, [question.title]);
+
+    useEffect(() => {
+        setLocalOptions(question.options || []);
+    }, [question.options]);
+
+    // 스타일은 useMemo로 최적화 (계산이 필요함)
+    const style = useMemo(() => ({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-    };
+    }), [transform, transition, isDragging]);
 
-    // 상태를 제거하고, 입력값 변경 시 바로 onUpdate 호출
-    const handleChange = (patch: Partial<TQuestion>) => {
+    // 핵심 업데이트 함수만 useCallback 사용
+    const handleChange = useCallback((patch: Partial<TQuestion>) => {
         onUpdate({ ...question, ...patch });
-    };
-    // 옵션 관련 핸들러
-    const addOption = () => handleChange({ options: [...(question.options || []), { label: "", value: "" }] });
-    const deleteOption = (idx: number) => handleChange({ options: question.options?.filter((_, i) => i !== idx) });
-    const updateOption = (idx: number, value: string) => handleChange({ options: question.options?.map((opt, i) => i === idx ? { ...opt, label: value } : opt) });
-    const updateOptionValue = (idx: number, value: string) => handleChange({ options: question.options?.map((opt, i) => i === idx ? { ...opt, value } : opt) });
-    const addEtcOption = () => handleChange({ hasEtc: true });
-    // 필수 토글
-    const toggleRequired = () => handleChange({ required: !question.required });
-    // 질문 유형 변경
-    const handleTypeChange = (qt: TQuestionType) => handleChange({ question_type: qt });
-    // 질문 텍스트 변경
-    const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange({ title: e.target.value });
+    }, [question.id, onUpdate]); // question 전체 대신 id만 의존성으로 사용
 
+    // 단순한 이벤트 핸들러들은 useCallback 불필요
+    const addOption = () => {
+        const newOptions = [...localOptions, { label: "", key: "" }];
+        setLocalOptions(newOptions);
+    };
+
+    const deleteOption = (idx: number) => {
+        const newOptions = localOptions.filter((_, i) => i !== idx);
+        setLocalOptions(newOptions);
+    };
+
+    const updateOption = (idx: number, value: string) => {
+        const newOptions = localOptions.map((opt, i) =>
+            i === idx ? { ...opt, label: value, key: value } : opt
+        );
+
+        console.log({ newOptions })
+        setLocalOptions(newOptions);
+    };
+
+    // const updateOptionValue = (idx: number, value: string) => {
+    //     const newOptions = localOptions.map((opt, i) =>
+    //         i === idx ? { ...opt, value: value.trim(), key: value.trim() } : opt
+    //     );
+    //     setLocalOptions(newOptions);
+    // };
+
+    const addEtcOption = () => {
+        handleChange({ hasEtc: true });
+    };
+
+    const toggleRequired = () => {
+        handleChange({ required: !question.required });
+    };
+
+    const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setLocalTitle(e.target.value);
+    };
+
+    // 복잡한 로직이 있는 함수만 useCallback 사용
+    const handleTypeChange = useCallback((qt: TQuestionType) => {
+        const patch: Partial<TQuestion> = { question_type: qt };
+        if (["single_choice", "multiple_choice", "dropdown"].includes(qt)) {
+            patch.options = localOptions && localOptions.length > 0 ? localOptions : [{ label: '', key: '' }];
+            patch.composite_items = undefined;
+        } else if (["composite_single", "composite_multiple"].includes(qt)) {
+            patch.composite_items = question.composite_items && question.composite_items.length > 0 ? question.composite_items : [{ label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
+            patch.options = undefined;
+        } else if (qt === "description") {
+            patch.options = undefined;
+            patch.composite_items = undefined;
+            patch.required = false;
+        } else {
+            patch.options = undefined;
+            patch.composite_items = undefined;
+        }
+        handleChange(patch);
+    }, [handleChange, localOptions, question.composite_items]);
+
+    // 계산이 필요한 값들만 useMemo 사용
+    const questionNumber = useMemo(() => {
+        return questions.findIndex(q => q.id === question.id) + 1;
+    }, [questions, question.id]);
+
+    const nextQuestionNumber = useMemo(() => {
+        if (!question.next_question_id) return null;
+        return questions.findIndex(q => q.id === question.next_question_id) + 1;
+    }, [questions, question.next_question_id]);
+
+    const getQuestionNumber = useCallback((questionId: string) => {
+        const index = questions.findIndex(q => q.id === questionId);
+        return index !== -1 ? index + 1 : '?';
+    }, [questions]);
+
+    // 조건부 표시 정보는 useMemo로 최적화
+    const showConditionsInfo = useMemo(() => {
+        if (!question.show_conditions?.length) return null;
+
+        return question.show_conditions.map((condition, idx) => (
+            <button key={idx}
+                className="px-2 h-7 text-green-600 bg-green-100 hover:bg-green-200 text-xs"
+                onClick={() => onShowConditionDelete(idx)}>
+                {formatCondition(condition, questions, getQuestionNumber)}
+            </button>
+        ));
+    }, [question.show_conditions, questions, getQuestionNumber, onShowConditionDelete]);
 
     return (
         <div
             ref={setNodeRef}
             style={style}
             id={`question-${question.id}`}
-            className={`bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6 transition-all duration-200 ${question.id === deletingQuestionId ? 'question-delete' : ''} ${isDragging ? 'question-dragging' : ''}`}
+            className={`bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 mb-6 transition-all duration-200 question-panel-optimized ${question.id === deletingQuestionId ? 'question-delete' : ''} ${isDragging ? 'question-dragging' : ''}`}
         >
             {/* 드래그 핸들 & 상단 */}
             <div className="flex justify-between items-center mb-2">
@@ -95,28 +231,11 @@ export function QuestionPanel({
                     >
                         ⋮⋮
                     </span>
-                    <span className="text-gray-400 font-bold select-none ml-1" style={{ minWidth: 32, textAlign: 'center' }}>{questions.findIndex(q => q.id === question.id) + 1}번</span>
+                    <span className="text-gray-400 font-bold select-none ml-1" style={{ minWidth: 32, textAlign: 'center' }}>{questionNumber}번</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가" onClick={() => onImageClick('question')}><span>🖼️</span></button>
-                    <Listbox value={question.question_type} onChange={qt => {
-                        const patch: Partial<TQuestion> = { question_type: qt };
-                        if (["single_choice", "multiple_choice", "dropdown"].includes(qt)) {
-                            patch.options = question.options && question.options.length > 0 ? question.options : [{ label: '', value: '' }];
-                            patch.composite_items = undefined;
-                        } else if (["composite_single", "composite_multiple"].includes(qt)) {
-                            patch.composite_items = question.composite_items && question.composite_items.length > 0 ? question.composite_items : [{ label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
-                            patch.options = undefined;
-                        } else if (qt === "description") {
-                            patch.options = undefined;
-                            patch.composite_items = undefined;
-                            patch.required = false; // 안내문은 필수가 될 수 없음
-                        } else {
-                            patch.options = undefined;
-                            patch.composite_items = undefined;
-                        }
-                        handleChange(patch);
-                    }}>
+                    <Listbox value={question.question_type} onChange={handleTypeChange}>
                         <div className="relative w-48">
                             <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <span className="flex items-center gap-2">
@@ -152,11 +271,12 @@ export function QuestionPanel({
                     </Listbox>
                 </div>
             </div>
+
             {/* 질문 텍스트 */}
             <Textarea
-                className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isTitleDebouncing ? 'input-debouncing' : ''}`}
                 placeholder="질문을 입력하세요"
-                value={question.title}
+                value={localTitle}
                 onChange={handleTitleChange}
                 onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                     const target = e.target as HTMLTextAreaElement;
@@ -165,18 +285,19 @@ export function QuestionPanel({
                 }}
                 style={{ minHeight: 40, overflow: 'hidden' }}
             />
+
             {/* 이미지 미리보기 */}
             <ImagePreview images={question.images} />
             {/* 옵션 목록 (객관식/드롭다운) */}
             {["single_choice", "dropdown"].includes(question.question_type) && (
-                <RadioGroup value={question.options?.[0]?.value || ''} onChange={() => { }} className="space-y-2 mb-2">
-                    {question.options?.map((opt, idx) => (
+                <RadioGroup value={localOptions?.[0]?.key || ''} onChange={() => { }} className="space-y-2 mb-2">
+                    {localOptions?.map((opt, idx) => (
                         <div key={`${questionIndex}-${idx}`} className="flex flex-row gap-2 mt-1 items-center">
                             <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2 self-center" />
                             <div className="flex items-center text-blue-600 cursor-pointer flex-1">
                                 <input
                                     type="text"
-                                    value={opt.label}
+                                    value={opt.key}
                                     onChange={(e) => updateOption(idx, e.target.value)}
                                     onKeyDown={(e) => {
                                         // 스페이스바 입력 허용
@@ -184,7 +305,7 @@ export function QuestionPanel({
                                             e.stopPropagation();
                                         }
                                     }}
-                                    className="border-b-2 border-blue-200 border-dashed bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
+                                    className={`border-b-2 border-blue-200 border-dashed bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors ${isOptionsDebouncing ? 'input-debouncing' : ''}`}
                                     placeholder="옵션 텍스트"
                                 />
                             </div>
@@ -213,7 +334,7 @@ export function QuestionPanel({
                                         )
                                     )}
                                 <button onClick={() => onImageClick('option', idx)} className="p-1 text-gray-400 hover:bg-blue-200 rounded" title="이미지 추가">🖼️</button>
-                                <button onClick={() => deleteOption(idx)} className="p-1 text-red-400 hover:bg-red-200 rounded" title="삭제">✕</button>
+                                <button onClick={() => deleteOption(idx)} className="p-1 text-red-400 hover:text-red-200 rounded" title="삭제">✕</button>
                             </div>
                         </div>
                     ))}
@@ -247,13 +368,13 @@ export function QuestionPanel({
             )}
             {question.question_type === "multiple_choice" && (
                 <div className="space-y-2 mb-2">
-                    {question.options?.map((opt, idx) => (
+                    {localOptions?.map((opt, idx) => (
                         <div key={`${questionIndex}-${idx}`} className="flex flex-row gap-2 mt-1 items-center">
                             <Checkbox checked={false} onChange={() => { }} className="border-blue-400 bg-white mr-2 w-4 h-4 rounded border self-center" />
                             <div className="flex items-center text-blue-600 cursor-pointer flex-1">
                                 <input
                                     type="text"
-                                    value={opt.label}
+                                    value={opt.key}
                                     onChange={(e) => updateOption(idx, e.target.value)}
                                     onKeyDown={(e) => {
                                         // 스페이스바 입력 허용
@@ -261,7 +382,7 @@ export function QuestionPanel({
                                             e.stopPropagation();
                                         }
                                     }}
-                                    className="border-b-2 border-blue-200 bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors"
+                                    className={`border-b-2 border-blue-200 bg-transparent text-blue-600 flex-1 min-w-0 focus:ring-0 focus:outline-none focus:border-blue-500 transition-colors ${isOptionsDebouncing ? 'input-debouncing' : ''}`}
                                     placeholder="옵션 텍스트"
                                 />
                             </div>
@@ -311,10 +432,11 @@ export function QuestionPanel({
                                 <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2 self-center" />
                             )}
                             <CompositeItemCombobox
-                                value={item.label}
+                                value={item.key}
                                 onChange={v => {
                                     const newItems = [...(question.composite_items || [])];
-                                    newItems[idx] = { ...item, label: v };
+                                    newItems[idx] = { ...item, label: v.trim(), key: v.trim() };
+                                    console.log({ newItems })
                                     handleChange({ composite_items: newItems });
                                 }}
                                 options={question.composite_items?.map(i => i.label).filter(l => l && l !== item.label) || []}
@@ -429,41 +551,31 @@ export function QuestionPanel({
                     </button>
                     <button
                         onClick={question.next_question_id ? onNextQuestionDelete : onNextQuestionAdd}
-                        className={`px-3 py-1 rounded text-sm ${
-                            question.next_question_id 
-                                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
-                                : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
-                        }`}
+                        className={`px-3 py-1 rounded text-sm ${question.next_question_id
+                            ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                            : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                            }`}
                     >
-                        {question.next_question_id 
-                            ? `→ ${questions.findIndex(q => q.id === question.next_question_id) + 1}번`
+                        {nextQuestionNumber
+                            ? `→ ${nextQuestionNumber}번`
                             : '다음 문항 연결'
                         }
                     </button>
                 </div>
-                {(question.show_conditions?.length) ? (
+                {showConditionsInfo && (
                     <div className="border-l-4 border-amber-500">
-                        {question.show_conditions?.map((condition, idx) => (
-                            <button key={idx}
-                                className="px-2 h-7 text-green-600 bg-green-100 hover:bg-green-200 text-xs"
-                                onClick={() => onShowConditionDelete(idx)}>
-                                {
-                                    `${questions.find(q => q.id == condition.question_id)?.title} 문항에서 \`${condition.value}\` 선택 시`
-                                }
-                            </button>
-
-                        ))}
+                        {showConditionsInfo}
                     </div>
-                ) : null}
+                )}
             </div>
 
             {/* 하단 */}
             <div className="flex justify-between items-center mt-4">
                 <div className="flex gap-2">
                     <button onClick={onCopy} className="p-2 text-gray-500 hover:text-blue-500" title="복사">복사</button>
-                    <button 
-                        onClick={onDelete} 
-                        className="p-2 text-gray-500 hover:text-red-500" 
+                    <button
+                        onClick={onDelete}
+                        className="p-2 text-gray-500 hover:text-red-500"
                         title="삭제"
                         style={{ pointerEvents: 'auto' }}
                     >
@@ -486,4 +598,19 @@ export function QuestionPanel({
             </div>
         </div>
     );
-}
+}, (prevProps, nextProps) => {
+    // 최적화된 비교 함수 - 핵심 속성만 비교
+    return (
+        prevProps.question.id === nextProps.question.id &&
+        prevProps.questionIndex === nextProps.questionIndex &&
+        prevProps.deletingQuestionId === nextProps.deletingQuestionId &&
+        prevProps.question.question_type === nextProps.question.question_type &&
+        prevProps.question.required === nextProps.question.required &&
+        prevProps.question.hasEtc === nextProps.question.hasEtc &&
+        prevProps.question.next_question_id === nextProps.question.next_question_id &&
+        prevProps.question.show_conditions?.length === nextProps.question.show_conditions?.length &&
+        prevProps.questions.length === nextProps.questions.length
+    );
+});
+
+QuestionPanel.displayName = 'QuestionPanel';

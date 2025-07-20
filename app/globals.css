@@ -456,6 +456,27 @@ body {
 }
 
 /* ===== 접근성 개선 ===== */
+/* ===== 성능 최적화 ===== */
+/* 입력 필드 최적화 */
+input, textarea {
+  will-change: contents;
+  transform: translateZ(0);
+}
+
+/* 문항 패널 최적화 */
+.question-panel-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout style paint;
+}
+
+/* 디바운스 중인 입력 필드 스타일 */
+.input-debouncing {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* ===== 접근성 및 성능 개선 ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

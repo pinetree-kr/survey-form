@@ -25,7 +25,8 @@ export type TCompositeItem = {
 // 객관식 옵션
 export type TOption = {
     label: string;
-    value: string;
+    // value: string;
+    key: string;
     next_question_id?: string; // 특정 옵션 선택 시 이동할 질문 ID
     images?: string[]; // 옵션 이미지 URL 배열
 };
@@ -77,8 +78,23 @@ export type TSurvey = {
     id?: string;
     title: string;
     description?: string;
+    is_active?: boolean;
     questions: TQuestion[];
-};
+    created_at?: string;
+    updated_at?: string;
+    created_by?: string;
+    updated_by?: string;
+    creator?: {
+        id: string;
+        username: string;
+        display_name?: string;
+    };
+    updater?: {
+        id: string;
+        username: string;
+        display_name?: string;
+    };
+}
 
 
 // 문항 유형 리스트
