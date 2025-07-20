@@ -21,6 +21,8 @@ import {
 
 
 import { v4 as uuidv4 } from 'uuid';
+import { useCallback } from 'react'
+
 
 interface FormEditorProps {
     onSave: (formData: TSurvey, surveyId?: string) => Promise<any>
@@ -66,7 +68,7 @@ export function FormEditor({
 
     // 삭제 중인 문항 ID 추적
     const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
-    
+
     // 저장 중 로딩 상태
     const [isSaving, setIsSaving] = useState(false);
 
@@ -85,7 +87,7 @@ export function FormEditor({
             'question-highlight', 'question-error-highlight', 'question-fade-in', 'question-copy',
             'sidebar-question-highlight', 'sidebar-question-error-highlight', 'sidebar-question-fade-in', 'sidebar-question-copy'
         ];
-        
+
         animationClasses.forEach(className => {
             document.querySelectorAll(`.${className}`).forEach(el => {
                 el.classList.remove(className);
@@ -100,17 +102,17 @@ export function FormEditor({
             description: "",
             question_type: "single_choice",
             required: false,
-            options: [{ label: '', value: '' }],
+            options: [{ label: '', key: '' }],
             show_conditions: []
         };
 
         setForm(prev => {
             // 현재 활성화된 문항 인덱스 확인
             const insertIndex = activeQuestionIndex !== null ? activeQuestionIndex + 1 : prev.questions.length;
-            
+
             const newQuestions = [...prev.questions];
             newQuestions.splice(insertIndex, 0, newQuestion);
-            
+
             return {
                 ...prev,
                 questions: newQuestions
@@ -137,7 +139,7 @@ export function FormEditor({
 
                     // 새 문항에 페이드인 애니메이션만 추가 (하이라이트는 나중에)
                     questionElement.classList.add('question-fade-in');
-                    
+
                     // 제목 입력 필드에 포커스
                     const titleInput = questionElement.querySelector('textarea[placeholder="질문을 입력하세요"]') as HTMLTextAreaElement;
                     if (titleInput) {
@@ -174,7 +176,7 @@ export function FormEditor({
                 }, 500);
             }
         }, 100); // React 상태 업데이트 대기
-    }, [setForm, activeQuestionIndex, form.questions.length, clearAllAnimations]);
+    }, [activeQuestionIndex, form.questions, clearAllAnimations]);
 
     // 스크롤 감지를 위한 Intersection Observer 설정
     React.useEffect(() => {
@@ -229,14 +231,29 @@ export function FormEditor({
         };
     }, [form.questions.length]);
 
-    const updateQuestion = React.useCallback((index: number, updatedQuestion: TQuestion) => {
-        setForm(prev => ({
-            ...prev,
-            questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
-        }));
-    }, [setForm]);
+    // 문항 업데이트 함수를 useCallback으로 메모이제이션
+    const updateQuestion = useCallback((index: number, updatedQuestion: TQuestion) => {
+        setForm(prev => {
+            // 이전 질문과 새 질문이 실제로 다른지 확인
+            const currentQuestion = prev.questions[index];
+            if (currentQuestion &&
+                currentQuestion.title === updatedQuestion.title &&
+                JSON.stringify(currentQuestion.options) === JSON.stringify(updatedQuestion.options) &&
+                currentQuestion.question_type === updatedQuestion.question_type &&
+                currentQuestion.required === updatedQuestion.required &&
+                currentQuestion.hasEtc === updatedQuestion.hasEtc) {
+                return prev; // 변경사항이 없으면 이전 상태 반환
+            }
 
-    const deleteQuestion = React.useCallback((index: number) => {
+            return {
+                ...prev,
+                questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
+            };
+        });
+    }, []);
+
+    // 문항 삭제 함수를 useCallback으로 메모이제이션
+    const deleteQuestion = useCallback((index: number) => {
         // 삭제할 문항의 ID 저장
         const questionToDelete = form.questions[index];
         if (!questionToDelete) return;
@@ -256,7 +273,7 @@ export function FormEditor({
             // 삭제 중인 문항 ID 초기화
             setDeletingQuestionId(null);
         }, 500); // 애니메이션 지속 시간과 동일
-    }, [setForm, form.questions, deletingQuestionId]);
+    }, [setForm]);
 
 
 
@@ -335,7 +352,7 @@ export function FormEditor({
             if (!question.options || question.options.length === 0) return true;
 
             // 모든 옵션이 비어있는지 확인
-            return question.options.every(option => !option.label.trim() && !option.value.trim());
+            return question.options.every(option => !option.label.trim() && !option.key.trim());
         });
 
         if (emptyOptionIndex !== -1) {
@@ -395,6 +412,7 @@ export function FormEditor({
 
         try {
             setIsSaving(true);
+            console.log({ form })
             await onSave(form, form.id);
             toast.success(form.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
 
@@ -443,7 +461,7 @@ export function FormEditor({
 
                     // 복사된 문항에 복사 전용 애니메이션 추가
                     questionElement.classList.add('question-copy');
-                    
+
                     // 제목 입력 필드에 포커스
                     const titleInput = questionElement.querySelector('textarea[placeholder="질문을 입력하세요"]') as HTMLTextAreaElement;
                     if (titleInput) {
@@ -568,41 +586,16 @@ export function FormEditor({
     }, [setForm, setBranchModal]);
 
     // 분기 제거 핸들러
-    const handleBranchDelete = React.useCallback((qIdx: number, optIdx: number) => {
-        setForm(prev => {
-            const questions = [...prev.questions];
-            const question = questions[qIdx];
+    const handleBranchDelete = useCallback((qIdx: number, optIdx: number) => {
+        const question = form.questions[qIdx];
+        if (!question.options) return;
 
-            if (question.question_type === 'composite_single') {
-                // composite_single 문항의 경우 composite_items 수정
-                const compositeItems = [...(question.composite_items || [])];
-                compositeItems[optIdx] = {
-                    ...compositeItems[optIdx],
-                    next_question_id: undefined
-                };
+        const newOptions = [...question.options];
+        delete newOptions[optIdx].next_question_id;
 
-                questions[qIdx] = {
-                    ...question,
-                    composite_items: compositeItems
-                };
-            } else {
-                // 기존 로직 (single_choice, multiple_choice 등)
-                const options = [...(question.options || [])];
-                options[optIdx] = {
-                    ...options[optIdx],
-                    next_question_id: undefined
-                };
-
-                questions[qIdx] = {
-                    ...question,
-                    options
-                };
-            }
-
-            return { ...prev, questions };
-        });
-        setBranchModal(null);
-    }, [setForm, setBranchModal]);
+        const updatedQuestion = { ...question, options: newOptions };
+        updateQuestion(qIdx, updatedQuestion);
+    }, [updateQuestion]);
 
     // 조건부 표시 추가 핸들러
     const handleShowConditionAdd = React.useCallback((qIdx: number, condition: TBranchCondition) => {
@@ -620,21 +613,21 @@ export function FormEditor({
         setConditionModal(null);
     }, [setForm, setConditionModal]);
 
-    const handleShowConditionDelete = React.useCallback((qIdx: number, idx: number) => {
-        setForm(prev => {
-            const questions = [...prev.questions];
-            const question = questions[qIdx];
-            questions[qIdx] = { ...question, show_conditions: question.show_conditions?.filter((_, i) => i !== idx) };
-            return { ...prev, questions };
-        });
-    }, [setForm]);
+    const handleShowConditionDelete = useCallback((qIdx: number, idx: number) => {
+        const question = form.questions[qIdx];
+        if (!question.show_conditions) return;
+
+        const newConditions = question.show_conditions.filter((_, i) => i !== idx);
+        const updatedQuestion = { ...question, show_conditions: newConditions };
+        updateQuestion(qIdx, updatedQuestion);
+    }, [updateQuestion]);
 
     // 다음 문항 연결 추가 핸들러
     const handleNextQuestionAdd = React.useCallback((qIdx: number, nextQuestionId: string) => {
         setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
-            
+
             questions[qIdx] = {
                 ...question,
                 next_question_id: nextQuestionId
@@ -646,26 +639,26 @@ export function FormEditor({
     }, [setForm, setNextQuestionModal]);
 
     // 다음 문항 연결 제거 핸들러
-    const handleNextQuestionDelete = React.useCallback((qIdx: number) => {
-        setForm(prev => {
-            const questions = [...prev.questions];
-            const question = questions[qIdx];
-            
-            questions[qIdx] = {
-                ...question,
-                next_question_id: undefined
-            };
-
-            return { ...prev, questions };
-        });
-    }, [setForm]);
+    const handleNextQuestionDelete = useCallback((qIdx: number) => {
+        const question = form.questions[qIdx];
+        const updatedQuestion = { ...question, next_question_id: undefined };
+        updateQuestion(qIdx, updatedQuestion);
+    }, [updateQuestion]);
 
     // JSON 가져오기 핸들러
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
-        setForm(prev => ({
-            ...surveyData,
-            id: prev.id || undefined
-        }));
+        delete surveyData.id
+        setForm(prev => {
+            console.log({
+                id: prev.id || undefined,
+                ...surveyData,
+            })
+
+            return ({
+                id: prev.id || undefined,
+                ...surveyData,
+            })
+        });
         toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
     }, [setForm]);
 
@@ -851,7 +844,7 @@ export function FormEditor({
                                             <input
                                                 type="text"
                                                 value={form.title}
-                                                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                                                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value.trim() }))}
                                                 className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 placeholder="설문 제목을 입력하세요"
                                                 required
@@ -864,7 +857,7 @@ export function FormEditor({
                                         </label>
                                         <textarea
                                             value={form.description}
-                                            onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                                            onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value.trim() }))}
                                             className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                                             placeholder="설문에 대한 설명을 입력하세요"
                                         />
@@ -953,11 +946,10 @@ export function FormEditor({
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={isSaving}
-                                className={`px-6 py-2 rounded-md transition-all duration-200 btn-hover-lift flex items-center gap-2 ${
-                                    isSaving 
-                                        ? 'bg-gray-400 text-white cursor-not-allowed' 
-                                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                }`}
+                                className={`px-6 py-2 rounded-md transition-all duration-200 btn-hover-lift flex items-center gap-2 ${isSaving
+                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                    }`}
                             >
                                 {isSaving && (
                                     <svg className="w-4 h-4 loading-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1012,7 +1004,7 @@ export function FormEditor({
                 surveyData={form}
             />
 
-            <ToastContainer 
+            <ToastContainer
                 position="top-right"
                 autoClose={5000}
                 hideProgressBar={false}

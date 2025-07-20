@@ -5,6 +5,7 @@
     {
       "id": "4da2c25f-de23-4684-9c58-73d088b4cc5b",
       "title": "안내문입니다.",
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "description",
@@ -13,6 +14,7 @@
     {
       "id": "45f494d1-23c3-4805-bb2e-9b48d4ef234a",
       "title": "단답형",
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "short_text",
@@ -21,6 +23,7 @@
     {
       "id": "7e2778d1-d210-422f-87a1-2a35cab23863",
       "title": "장문형",
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "long_text",
@@ -32,12 +35,12 @@
       "hasEtc": true,
       "options": [
         {
-          "label": "예",
-          "value": "예"
+          "key": "예",
+          "label": "예"
         },
         {
-          "label": "아니오",
-          "value": "아니오"
+          "key": "아니오",
+          "label": "아니오"
         }
       ],
       "required": false,
@@ -51,12 +54,12 @@
       "hasEtc": true,
       "options": [
         {
-          "label": "예",
-          "value": "예"
+          "key": "예",
+          "label": "예 "
         },
         {
-          "label": "아니오",
-          "value": "아니오"
+          "key": "아니오",
+          "label": "아니오"
         }
       ],
       "required": false,
@@ -70,20 +73,20 @@
       "hasEtc": true,
       "options": [
         {
-          "label": "선택1",
-          "value": "선택1"
+          "key": "선택 1",
+          "label": "선택 1"
         },
         {
-          "label": "선택2",
-          "value": "선택2"
+          "key": "선택 2",
+          "label": "선택 2"
         },
         {
-          "label": "선택3",
-          "value": "선택3"
+          "key": "선택 3",
+          "label": "선택 3"
         },
         {
-          "label": "선택4",
-          "value": "선택4"
+          "key": "선택 4",
+          "label": "선택 4"
         }
       ],
       "required": false,
@@ -95,30 +98,31 @@
       "id": "5b6fe70c-137d-4600-999a-bfa2be808a1a",
       "title": "복합 단일",
       "hasEtc": true,
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "composite_single",
       "composite_items": [
         {
-          "key": "",
+          "key": "10대",
           "unit": "세",
           "label": "10대",
           "input_type": "number"
         },
         {
-          "key": "",
+          "key": "20대",
           "unit": "세",
           "label": "20대",
           "input_type": "number"
         },
         {
-          "key": "",
+          "key": "30대",
           "unit": "세",
           "label": "30대",
           "input_type": "number"
         },
         {
-          "key": "",
+          "key": "40대 이상",
           "unit": "세",
           "label": "40대 이상",
           "input_type": "number"
@@ -130,30 +134,31 @@
       "id": "4b82de19-1aa7-4931-9f00-8364d7043006",
       "title": "연락받을 수단",
       "hasEtc": true,
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "composite_multiple",
       "composite_items": [
         {
-          "key": "",
+          "key": "이메일",
           "unit": "",
           "label": "이메일",
           "input_type": "email"
         },
         {
-          "key": "",
+          "key": "전화번호",
           "unit": "",
           "label": "전화번호",
           "input_type": "tel"
         },
         {
-          "key": "",
+          "key": "인스타그램",
           "unit": "DM",
           "label": "인스타그램",
           "input_type": "text"
         },
         {
-          "key": "",
+          "key": "카톡",
           "unit": "ID",
           "label": "카톡",
           "input_type": "text"
@@ -166,13 +171,13 @@
       "title": "객관식 분기 설정",
       "options": [
         {
-          "label": "A루트",
-          "value": "A루트",
+          "key": "A-1 루트",
+          "label": "A-1 루트",
           "next_question_id": "33b831a6-0004-4240-814a-a760a6807f97"
         },
         {
-          "label": "B루트",
-          "value": "B루트",
+          "key": "A-2 루트",
+          "label": "A-2 루트",
           "next_question_id": "0f9f5860-7152-4f2b-9308-68d88b582409"
         }
       ],
@@ -183,19 +188,123 @@
     },
     {
       "id": "33b831a6-0004-4240-814a-a760a6807f97",
-      "title": "A루트로 진입했습니다.",
+      "title": "A-1 루트로 진입했습니다.",
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "description",
-      "show_conditions": []
+      "show_conditions": [],
+      "next_question_id": "5287c80d-4653-4b4d-b6ea-58bd00570489"
     },
     {
       "id": "0f9f5860-7152-4f2b-9308-68d88b582409",
-      "title": "B루트로 진입했습니다.",
+      "title": "A-2 루트로 진입했습니다.",
+      "options": [],
       "required": false,
       "description": "",
       "question_type": "description",
+      "show_conditions": [],
+      "next_question_id": "5287c80d-4653-4b4d-b6ea-58bd00570489"
+    },
+    {
+      "id": "5287c80d-4653-4b4d-b6ea-58bd00570489",
+      "title": "복합 단일 분기입니다.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "composite_single",
+      "composite_items": [
+        {
+          "key": "B-1 루트",
+          "unit": "",
+          "label": "B-1 루트",
+          "input_type": "text",
+          "next_question_id": "6b1e0f57-5c7f-44b3-a95a-cde6dc04d9cf"
+        },
+        {
+          "key": "B-2 루트",
+          "unit": "",
+          "label": "B-2 루트",
+          "input_type": "text",
+          "next_question_id": "1555569f-e35e-4381-b1db-1837aa8483bc"
+        }
+      ],
       "show_conditions": []
+    },
+    {
+      "id": "6b1e0f57-5c7f-44b3-a95a-cde6dc04d9cf",
+      "title": "B-1 루트입니다.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": [],
+      "next_question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+    },
+    {
+      "id": "1555569f-e35e-4381-b1db-1837aa8483bc",
+      "title": "B-2 루트입니다.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": [],
+      "next_question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+    },
+    {
+      "id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab",
+      "title": "복합 다중 답변을 통한 접근 조건 확인입니다.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "composite_multiple",
+      "composite_items": [
+        {
+          "key": "나이",
+          "unit": "세",
+          "label": "나이",
+          "input_type": "number"
+        },
+        {
+          "key": "키",
+          "unit": "cm",
+          "label": "키",
+          "input_type": "number"
+        }
+      ],
+      "show_conditions": []
+    },
+    {
+      "id": "8f6ea609-2c7c-449d-82e1-e6df8bd1248e",
+      "title": "나이가 20세 이상만 보입니다.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": [
+        {
+          "value": "20",
+          "sub_key": "나이",
+          "operator": "gte",
+          "question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+        }
+      ]
+    },
+    {
+      "id": "ecf9df01-956f-4e86-8b8c-a8d162eb63a3",
+      "title": "키가 179cm 초과만 보입니다.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "description",
+      "show_conditions": [
+        {
+          "value": "179",
+          "sub_key": "키",
+          "operator": "gt",
+          "question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+        }
+      ]
     }
   ]
 }

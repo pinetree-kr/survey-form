@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase-ssr'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CompositeQuestionItem } from './components'
+import { TBranchLogic, TOption, TQuestion, TSurvey } from '@/app/components'
+import { formatCondition } from '@/lib/survey-utils'
 
 interface SurveyDetailPageProps {
   params: Promise<{
@@ -11,7 +13,7 @@ interface SurveyDetailPageProps {
 }
 
 // Server Action
-async function getSurvey(surveyId: string) {
+async function getSurvey(surveyId: string): Promise<TSurvey | null> {
   "use server"
 
   const { env } = await getCloudflareContext({ async: true })
@@ -33,7 +35,7 @@ async function getSurvey(surveyId: string) {
       )
     `)
     .eq('id', surveyId)
-    .single()
+    .single<TSurvey>()
 
   if (error || !data) {
     return null
@@ -55,6 +57,94 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
     return date.toLocaleDateString('ko-KR')
   }
 
+  // 문항 번호를 찾는 헬퍼 함수
+  const getQuestionNumber = (questionId: string) => {
+    const index = survey.questions.findIndex(q => q.id === questionId)
+    return index !== -1 ? index + 1 : '?'
+  }
+
+  // 분기 정보를 렌더링하는 컴포넌트
+  const renderBranchInfo = (question: TQuestion, index: number) => {
+    const branchInfo = []
+
+    // 1. 다음 문항 연결
+    if (question.next_question_id) {
+      branchInfo.push(
+        <div key="next" className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+          <span className="text-sm font-medium">→ 다음 문항:</span>
+          <span className="text-sm">Q{getQuestionNumber(question.next_question_id)}</span>
+        </div>
+      )
+    }
+
+    // 2. 옵션별 분기 (단일/중복 객관식)
+    if (question.options) {
+      question.options.forEach((option: any, optIndex: number) => {
+        if (option.next_question_id) {
+          branchInfo.push(
+            <div key={`option-${optIndex}`} className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+              <span className="text-sm font-medium">"{option.label}" 선택 시:</span>
+              <span className="text-sm">→ Q{getQuestionNumber(option.next_question_id)}</span>
+            </div>
+          )
+        }
+      })
+    }
+
+    // 3. 복합 문항의 하위 항목별 분기
+    if (question.composite_items) {
+      question.composite_items.forEach((item: any, itemIndex: number) => {
+        if (item.next_question_id) {
+          branchInfo.push(
+            <div key={`composite-${itemIndex}`} className="flex items-center gap-2 text-purple-600 bg-purple-50 px-3 py-2 rounded-lg">
+              <span className="text-sm font-medium">"{item.label}" 입력 시:</span>
+              <span className="text-sm">→ Q{getQuestionNumber(item.next_question_id)}</span>
+            </div>
+          )
+        }
+      })
+    }
+
+    // 4. 분기 로직
+    if (question.branch_logic && question.branch_logic.length > 0) {
+      question.branch_logic.forEach((logic: TBranchLogic, logicIndex: number) => {
+        const conditions = logic.conditions.map(condition =>
+          formatCondition(condition, survey.questions, getQuestionNumber)
+        ).join(' AND ')
+
+        branchInfo.push(
+          <div key={`logic-${logicIndex}`} className="flex items-center gap-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
+            <span className="text-sm font-medium">조건 ({conditions}):</span>
+            <span className="text-sm">→ Q{getQuestionNumber(logic.next_question_id)}</span>
+          </div>
+        )
+      })
+    }
+
+    // 5. 조건부 표시
+    if (question.show_conditions && question.show_conditions.length > 0) {
+      const conditions = question.show_conditions.map(condition =>
+        formatCondition(condition, survey.questions, getQuestionNumber)
+      ).join(' AND ')
+
+      branchInfo.push(
+        <div key="show-condition" className="flex items-center gap-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          <span className="text-sm font-medium">표시 조건:</span>
+          <span className="text-sm">{conditions}</span>
+        </div>
+      )
+    }
+
+    return branchInfo.length > 0 ? (
+      <div className="mt-4 space-y-2">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">이동 경로 정보</h4>
+        <div className="space-y-2">
+          {branchInfo}
+        </div>
+      </div>
+    ) : null
+  }
+  console.log({ survey })
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 py-6 sm:px-6 lg:px-8 space-y-6 pb-20">
@@ -113,7 +203,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                   생성일
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                  {formatDate(survey.created_at)}
+                  {formatDate(survey.created_at || '')}
                 </div>
               </div>
             </div>
@@ -140,7 +230,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                 수정일
               </label>
               <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                {formatDate(survey.updated_at)}
+                {formatDate(survey.updated_at || '')}
               </div>
             </div>
           </div>
@@ -153,7 +243,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
           <div className="px-6 py-6">
             {survey.questions && survey.questions.length > 0 ? (
               <div className="space-y-8">
-                {survey.questions.map((question: any, index: number) => (
+                {survey.questions.map((question: TQuestion, index: number) => (
                   <div key={question.id} className="border border-gray-200 rounded-lg p-6">
                     {/* 문항 헤더 */}
                     <div className="flex items-start justify-between mb-4">
@@ -175,15 +265,18 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                       <p className="text-gray-600 mb-4 text-sm">{question.description}</p>
                     )}
 
+                    {/* 이동 경로 정보 표시 */}
+                    {renderBranchInfo(question, index)}
+
                     {/* 문항 유형별 렌더링 */}
                     {question.question_type === 'single_choice' && (
                       <div className="space-y-3">
-                        {question.options?.map((option: any, optIndex: number) => (
+                        {question.options?.map((option: TOption, optIndex: number) => (
                           <label key={optIndex} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors">
                             <input
                               type="radio"
                               name={`question-${question.id}`}
-                              value={option.value}
+                              value={option.key}
                               className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                             />
                             <span className="text-gray-700">{option.label}</span>
@@ -199,10 +292,10 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                             <input
                               type="checkbox"
                               name={`question-${question.id}`}
-                              value={option.value}
+                              value={option.key}
                               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             />
-                            <span className="text-gray-700">{option.label}</span>
+                            <span className="text-gray-700">{option.key}</span>
                           </label>
                         ))}
                       </div>
@@ -216,8 +309,8 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                         >
                           <option value="" disabled>선택해주세요</option>
                           {question.options?.map((option: any, optIndex: number) => (
-                            <option key={optIndex} value={option.value}>
-                              {option.label}
+                            <option key={optIndex} value={option.key}>
+                              {option.key}
                             </option>
                           ))}
                         </select>
@@ -253,7 +346,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                             item={item}
                             itemIndex={itemIndex}
                             questionId={question.id}
-                            questionType={question.question_type}
+                            questionType={question.question_type as 'composite_single' | 'composite_multiple'}
                           />
                         ))}
                       </div>

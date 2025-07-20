@@ -1,7 +1,7 @@
 "use client"
 
 import { TQuestion, TBranchCondition, OPERATORS } from "@/app/components";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { Transition, TransitionChild, Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 import { CheckCircleIcon, ChevronUpDownIcon } from "@heroicons/react/24/solid";
@@ -146,7 +146,7 @@ type TSimpleQuestion = {
     id: string;
     options?: {
         label: string;
-        value: string;
+        key: string;
     }[];
     composite_items?: {
         label: string;
@@ -166,6 +166,7 @@ export function ConditionModal({
     questions: TSimpleQuestion[];
     onAdd: (condition: TBranchCondition) => void;
 }) {
+
     const [selectedQuestion, setSelectedQuestion] = useState<number>(-1);
     const [selectedOption, setSelectedOption] = useState<string>('');
     const [selectedSubKey, setSelectedSubKey] = useState<string>('');
@@ -177,24 +178,32 @@ export function ConditionModal({
         setMounted(true);
     }, []);
 
-    const selectedQ = selectedQuestion >= 0 ? questions[selectedQuestion] : null;
-    const isChoiceType = selectedQ && ['single_choice', 'multiple_choice'].includes(selectedQ.question_type);
-    const isCompositeType = selectedQ && ['composite_single', 'composite_multiple'].includes(selectedQ.question_type);
+    useEffect(() => {
+        setSelectedQuestion(-1);
+        setSelectedOption('');
+        setSelectedSubKey('');
+        setOperator('eq');
+        setValue('');
+    }, [isOpen])
+
+    const selectedQ = React.useMemo(() => selectedQuestion >= 0 ? questions[selectedQuestion] : null, [selectedQuestion, questions]);
+    // const isChoiceType = selectedQ && ['single_choice', 'multiple_choice'].includes(selectedQ.question_type);
+    const isChoiceType = React.useMemo(() => selectedQ && ['single_choice', 'multiple_choice', 'dropdown'].includes(selectedQ.question_type), [selectedQ]);
+    // const isCompositeType = selectedQ && ['composite_single', 'composite_multiple'].includes(selectedQ.question_type);
+    const isCompositeType = React.useMemo(() => selectedQ && ['composite_single', 'composite_multiple'].includes(selectedQ.question_type), [selectedQ]);
 
     const handleSubmit = React.useCallback(() => {
-        if (selectedQuestion < 0) return;
-
-        const question = questions[selectedQuestion]
+        if (!selectedQ) return;
 
         const condition: TBranchCondition = {
-            question_id: question.id,
+            question_id: selectedQ.id,
             operator,
             value: isChoiceType ? selectedOption : value,
             ...(isCompositeType && selectedSubKey && { sub_key: selectedSubKey })
         };
 
         onAdd(condition);
-    }, [selectedQuestion, questions, onAdd]);
+    }, [selectedQ, questions, onAdd, operator, value, isChoiceType, isCompositeType, selectedOption, selectedSubKey]);
 
     const handleClose = React.useCallback(() => {
         // 상태 초기화
@@ -256,24 +265,39 @@ export function ConditionModal({
                                                 </span>
                                             </ListboxButton>
                                             <ListboxOptions className="absolute z-50 mt-1 max-h-80 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
-                                                {questions.map((q, qIdx) => (
-                                                    <ListboxOption
-                                                        key={qIdx}
-                                                        value={qIdx}
-                                                        className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
-                                                    >
-                                                        {({ selected }) => (
-                                                            <>
-                                                                <span className="absolute left-2 top-2 flex items-center">
-                                                                    {selected ? <CheckCircleIcon className="h-5 w-5 text-blue-500" /> : <span className="inline-block w-5" />}
-                                                                </span>
-                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                                    {qIdx + 1}번 {q.title ? `- ${q.title}` : ''}
-                                                                </span>
-                                                            </>
-                                                        )}
-                                                    </ListboxOption>
-                                                ))}
+                                                {questions.map((q, qIdx) => {
+                                                    // if (q.question_type !== 'single_choice' && q.question_type !== 'multiple_choice' && q.question_type !== 'dropdown') return null;
+
+                                                    switch (q.question_type) {
+                                                        case 'single_choice':
+                                                        case 'multiple_choice':
+                                                        case 'dropdown':
+                                                        case 'composite_single':
+                                                        case 'composite_multiple':
+                                                            break;
+                                                        default:
+                                                            return null;
+                                                    }
+
+                                                    return (
+                                                        <ListboxOption
+                                                            key={qIdx}
+                                                            value={qIdx}
+                                                            className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
+                                                        >
+                                                            {({ selected }) => (
+                                                                <>
+                                                                    <span className="absolute left-2 top-2 flex items-center">
+                                                                        {selected ? <CheckCircleIcon className="h-5 w-5 text-blue-500" /> : <span className="inline-block w-5" />}
+                                                                    </span>
+                                                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                        {qIdx + 1}번 {q.title ? `- ${q.title}` : ''}
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </ListboxOption>
+                                                    )
+                                                })}
                                             </ListboxOptions>
                                         </div>
                                     </Listbox>
@@ -285,10 +309,7 @@ export function ConditionModal({
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             응답 목록 선택
                                         </label>
-                                        <Listbox value={selectedOption} onChange={(value) => {
-                                            console.log({ value })
-                                            setSelectedOption(value)
-                                        }}>
+                                        <Listbox value={selectedOption} onChange={setSelectedOption}>
                                             <div className="relative">
                                                 <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                     <span className="block truncate">
@@ -301,8 +322,8 @@ export function ConditionModal({
                                                 <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                     {selectedQ.options.map((opt, optIdx) => (
                                                         <ListboxOption
-                                                            key={optIdx}
-                                                            value={opt.value}
+                                                            key={`${selectedQ.id}-${optIdx}`}
+                                                            value={opt.key}
                                                             className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
                                                         >
                                                             {({ selected }) => (
@@ -340,24 +361,27 @@ export function ConditionModal({
                                                     </span>
                                                 </ListboxButton>
                                                 <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
-                                                    {selectedQ.composite_items.map((item) => (
-                                                        <ListboxOption
-                                                            key={item.key}
-                                                            value={item.key}
-                                                            className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
-                                                        >
-                                                            {({ selected }) => (
-                                                                <>
-                                                                    <span className="absolute left-2 top-2 flex items-center">
-                                                                        {selected ? <CheckCircleIcon className="h-5 w-5 text-blue-500" /> : <span className="inline-block w-5" />}
-                                                                    </span>
-                                                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                                        {item.label}
-                                                                    </span>
-                                                                </>
-                                                            )}
-                                                        </ListboxOption>
-                                                    ))}
+                                                    {selectedQ.composite_items.map((item, itemIdx) => {
+                                                        console.log({ item })
+                                                        return (
+                                                            <ListboxOption
+                                                                key={`${selectedQ.id}-${itemIdx}`}
+                                                                value={item.key}
+                                                                className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
+                                                            >
+                                                                {({ selected }) => (
+                                                                    <>
+                                                                        <span className="absolute left-2 top-2 flex items-center">
+                                                                            {selected ? <CheckCircleIcon className="h-5 w-5 text-blue-500" /> : <span className="inline-block w-5" />}
+                                                                        </span>
+                                                                        <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                            {item.label}
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </ListboxOption>
+                                                        )
+                                                    })}
                                                 </ListboxOptions>
                                             </div>
                                         </Listbox>
