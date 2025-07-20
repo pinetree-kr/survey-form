@@ -103,6 +103,55 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  작성자
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                  {survey.creator?.display_name || survey.creator?.username || '알 수 없음'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  작성일
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                  {formatDate(survey.created_at || '')}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  수정자
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                  {survey.updater?.display_name || survey.updater?.username || '수정 없음'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  수정일
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                  {formatDate(survey.updated_at || '')}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  익명 허용 여부
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.allow_anonymous
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-orange-100 text-orange-800'
+                    }`}>
+                    {survey.allow_anonymous ? '허용' : '불가'}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   상태
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
@@ -113,40 +162,6 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
                     {survey.is_active ? '활성' : '비활성'}
                   </span>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  생성일
-                </label>
-                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                  {formatDate(survey.created_at || '')}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  작성자
-                </label>
-                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                  {survey.creator?.display_name || survey.creator?.username || '알 수 없음'}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  수정자
-                </label>
-                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                  {survey.updater?.display_name || survey.updater?.username || '수정 없음'}
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                수정일
-              </label>
-              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                {formatDate(survey.updated_at || '')}
               </div>
             </div>
           </div>

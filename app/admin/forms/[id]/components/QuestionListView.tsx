@@ -32,15 +32,15 @@ export default function QuestionListView({
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
                                         <span className="text-lg font-semibold text-blue-600">Q{index + 1}</span>
-                                        <h3 className="text-lg font-medium text-gray-900">
-                                            {question.title}
-                                        </h3>
+                                        <div className="flex items-center">
+                                            {question.required && (
+                                                <span className="text-red-500 font-bold text-lg mr-1">*</span>
+                                            )}
+                                            <h3 className="text-lg font-medium text-gray-900">
+                                                {question.title}
+                                            </h3>
+                                        </div>
                                     </div>
-                                    {question.required && (
-                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                            필수
-                                        </span>
-                                    )}
                                 </div>
 
                                 {/* 문항 설명 */}
@@ -57,15 +57,28 @@ export default function QuestionListView({
                                 )}
 
                                 {/* 조건부 표시 조건 */}
-                                {question.show_conditions && question.show_conditions.length > 0 && (
-                                    <div className="mb-4 flex items-center gap-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-                                        <span className="text-sm font-medium">문항 활성화 조건:</span>
-                                        <span className="text-sm">
-                                            {question.show_conditions.map(condition =>
-                                                `(${formatCondition(condition, questions, getQuestionNumber)})`
-                                            ).join(' OR ')}
-                                            <span className="text-sm font-medium"> 라고 응답 시</span>
-                                        </span>
+                                {question.is_hidden && question.show_conditions && question.show_conditions.length > 0 && (
+                                    <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                                        <div className="flex items-start gap-2 mb-2">
+                                            <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                            </svg>
+                                            <span className="text-sm font-medium text-red-700">문항 활성화 조건</span>
+                                        </div>
+                                        <div className="ml-6 space-y-1">
+                                            {question.show_conditions?.map((condition, idx) => (
+                                                <div key={idx} className="text-sm text-red-600">
+                                                    <span className="inline-flex items-center">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                                            {formatCondition(condition, questions, getQuestionNumber)}
+                                                        </span>
+                                                        {idx < (question.show_conditions?.length || 0) - 1 && (
+                                                            <span className="ml-2 text-red-500 font-medium">혹은</span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 
