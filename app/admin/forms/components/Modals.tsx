@@ -246,7 +246,7 @@ export function ConditionModal({
                         >
                             <DialogPanel className="w-full max-w-md transform overflow-visible rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                                 <DialogTitle as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                                    접근 조건 설정
+                                    문항 활성화 조건 설정
                                 </DialogTitle>
 
                                 {/* 1. 문항 선택 */}

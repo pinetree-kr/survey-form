@@ -236,15 +236,20 @@ export function FormEditor({
         setForm(prev => {
             // 이전 질문과 새 질문이 실제로 다른지 확인
             const currentQuestion = prev.questions[index];
+            console.log('diff exec')
             if (currentQuestion &&
                 currentQuestion.title === updatedQuestion.title &&
                 JSON.stringify(currentQuestion.options) === JSON.stringify(updatedQuestion.options) &&
+                JSON.stringify(currentQuestion.show_conditions) === JSON.stringify(updatedQuestion.show_conditions) &&
+                JSON.stringify(currentQuestion.branch_logic) === JSON.stringify(updatedQuestion.branch_logic) &&
+                JSON.stringify(currentQuestion.composite_items) === JSON.stringify(updatedQuestion.composite_items) &&
+                JSON.stringify(currentQuestion.next_question_id) === JSON.stringify(updatedQuestion.next_question_id) &&
                 currentQuestion.question_type === updatedQuestion.question_type &&
                 currentQuestion.required === updatedQuestion.required &&
                 currentQuestion.hasEtc === updatedQuestion.hasEtc) {
                 return prev; // 변경사항이 없으면 이전 상태 반환
             }
-
+            console.log('updatedQuestion')
             return {
                 ...prev,
                 questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
@@ -617,6 +622,7 @@ export function FormEditor({
         const question = form.questions[qIdx];
         if (!question.show_conditions) return;
 
+
         const newConditions = question.show_conditions.filter((_, i) => i !== idx);
         const updatedQuestion = { ...question, show_conditions: newConditions };
         updateQuestion(qIdx, updatedQuestion);
@@ -624,6 +630,7 @@ export function FormEditor({
 
     // 다음 문항 연결 추가 핸들러
     const handleNextQuestionAdd = React.useCallback((qIdx: number, nextQuestionId: string) => {
+        console.log({ qIdx, nextQuestionId })
         setForm(prev => {
             const questions = [...prev.questions];
             const question = questions[qIdx];
@@ -648,17 +655,10 @@ export function FormEditor({
     // JSON 가져오기 핸들러
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
         delete surveyData.id
-        setForm(prev => {
-            console.log({
-                id: prev.id || undefined,
-                ...surveyData,
-            })
-
-            return ({
-                id: prev.id || undefined,
-                ...surveyData,
-            })
-        });
+        setForm(prev => ({
+            id: prev.id || undefined,
+            ...surveyData,
+        }));
         toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
     }, [setForm]);
 
@@ -875,30 +875,34 @@ export function FormEditor({
                                         </div>
                                     ) : (
                                         <div className="space-y-6">
-                                            {form.questions.map((question, index, questions) => (
-                                                <QuestionPanel
-                                                    key={`p${question.id}`}
-                                                    question={question}
-                                                    questionIndex={index}
-                                                    questions={questions}
-                                                    onUpdate={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
-                                                    onDelete={() => deleteQuestion(index)}
-                                                    onCopy={() => copyQuestion(index)}
-                                                    onImageClick={(type, optIdx) => {
-                                                        let urls: string[] = [];
-                                                        if (type === 'question' && question.images) urls = question.images;
-                                                        if (type === 'option' && optIdx !== undefined && question.options && question.options[optIdx]?.images) urls = question.options[optIdx].images;
-                                                        setImageModal({ type, qIdx: index, optIdx, urls });
-                                                    }}
-                                                    onBranchAdd={(optIdx) => setBranchModal({ qIdx: index, optIdx })}
-                                                    onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
-                                                    onShowConditionAdd={() => setConditionModal({ qIdx: index })}
-                                                    onShowConditionDelete={(idx) => handleShowConditionDelete(index, idx)}
-                                                    onNextQuestionAdd={() => setNextQuestionModal({ qIdx: index })}
-                                                    onNextQuestionDelete={() => handleNextQuestionDelete(index)}
-                                                    deletingQuestionId={deletingQuestionId}
-                                                />
-                                            ))}
+                                            {form.questions.map((question, index) => {
+                                                return (
+                                                    <QuestionPanel
+                                                        key={`p${question.id}`}
+                                                        question={question}
+                                                        questionIndex={index}
+                                                        questions={form.questions}
+                                                        onUpdate={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
+                                                        onDelete={() => deleteQuestion(index)}
+                                                        onCopy={() => copyQuestion(index)}
+                                                        onImageClick={(type, optIdx) => {
+                                                            let urls: string[] = [];
+                                                            if (type === 'question' && question.images) urls = question.images;
+                                                            if (type === 'option' && optIdx !== undefined && question.options && question.options[optIdx]?.images) urls = question.options[optIdx].images;
+                                                            setImageModal({ type, qIdx: index, optIdx, urls });
+                                                        }}
+                                                        onBranchAdd={(optIdx) => setBranchModal({ qIdx: index, optIdx })}
+                                                        onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
+                                                        onShowConditionAdd={() => setConditionModal({ qIdx: index })}
+                                                        onShowConditionDelete={(questionId, condIdx) => {
+                                                            handleShowConditionDelete(index, condIdx)
+                                                        }}
+                                                        onNextQuestionAdd={() => setNextQuestionModal({ qIdx: index })}
+                                                        onNextQuestionDelete={() => handleNextQuestionDelete(index)}
+                                                        deletingQuestionId={deletingQuestionId}
+                                                    />
+                                                )
+                                            })}
                                         </div>
                                     )}
                                 </div>

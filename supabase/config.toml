@@ -58,6 +58,8 @@ enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = ["./seed.sql"]
+# TypeScript/JavaScript seed files (alternative to SQL) -- 사용안됨
+# script_paths = ["./seed.ts"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.

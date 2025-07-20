@@ -1,0 +1,948 @@
+{
+  "title": "소소한 호강 설문조사",
+  "description": "소소한 호강 프로그램 참여자 대상 설문조사입니다.",
+  "questions": [
+    {
+      "title": "당신의 성별은?",
+      "options": [
+        {
+          "key": "남",
+          "label": "남"
+        },
+        {
+          "key": "여",
+          "label": "여"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "당신의 연령대는?",
+      "options": [
+        {
+          "key": "10대",
+          "label": "10대"
+        },
+        {
+          "key": "20대",
+          "label": "20대"
+        },
+        {
+          "key": "30대",
+          "label": "30대"
+        },
+        {
+          "key": "40대",
+          "label": "40대"
+        },
+        {
+          "key": "50대 이상",
+          "label": "50대 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "당신의 거주지역은?",
+      "options": [
+        {
+          "key": "충주시",
+          "label": "충주시"
+        },
+        {
+          "key": "서울특별시",
+          "label": "서울특별시"
+        },
+        {
+          "key": "경기도",
+          "label": "경기도"
+        },
+        {
+          "key": "전라도",
+          "label": "전라도"
+        },
+        {
+          "key": "경상도",
+          "label": "경상도"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "거주 행정구역은 어디십니까?",
+      "options": [
+        {
+          "key": "가주동",
+          "label": "가주동"
+        },
+        {
+          "key": "교현2동",
+          "label": "교현2동"
+        },
+        {
+          "key": "교현안림동",
+          "label": "교현안림동"
+        },
+        {
+          "key": "금릉동(칠금,금릉동)",
+          "label": "금릉동(칠금,금릉동)"
+        },
+        {
+          "key": "달천동",
+          "label": "달천동"
+        },
+        {
+          "key": "목행동(목행용탄동)",
+          "label": "목행동(목행용탄동)"
+        },
+        {
+          "key": "문화동",
+          "label": "문화동"
+        },
+        {
+          "key": "봉방동",
+          "label": "봉방동"
+        },
+        {
+          "key": "성내충인동",
+          "label": "성내충인동"
+        },
+        {
+          "key": "연수동",
+          "label": "연수동"
+        },
+        {
+          "key": "용산동",
+          "label": "용산동"
+        },
+        {
+          "key": "지현동",
+          "label": "지현동"
+        },
+        {
+          "key": "호암직동",
+          "label": "호암직동"
+        },
+        {
+          "key": "주덕읍",
+          "label": "주덕읍"
+        },
+        {
+          "key": "금가면",
+          "label": "금가면"
+        },
+        {
+          "key": "노은면",
+          "label": "노은면"
+        },
+        {
+          "key": "대소원면",
+          "label": "대소원면"
+        },
+        {
+          "key": "동량면",
+          "label": "동량면"
+        },
+        {
+          "key": "산척면",
+          "label": "산척면"
+        },
+        {
+          "key": "살미면",
+          "label": "살미면"
+        },
+        {
+          "key": "소태면",
+          "label": "소태면"
+        },
+        {
+          "key": "수안보면",
+          "label": "수안보면"
+        },
+        {
+          "key": "신니면",
+          "label": "신니면"
+        },
+        {
+          "key": "앙성면",
+          "label": "앙성면"
+        },
+        {
+          "key": "엄정면",
+          "label": "엄정면"
+        },
+        {
+          "key": "중앙탑면",
+          "label": "중앙탑면"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "오늘 소소한 호강 프로그램은 누구와 함께 오셨나요?",
+      "options": [
+        {
+          "key": "혼자",
+          "label": "혼자"
+        },
+        {
+          "key": "가족",
+          "label": "가족"
+        },
+        {
+          "key": "친구",
+          "label": "친구"
+        },
+        {
+          "key": "연인",
+          "label": "연인"
+        },
+        {
+          "key": "동료",
+          "label": "동료"
+        },
+        {
+          "key": "기타",
+          "label": "기타"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "multiple_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "오늘 동행자 중 소소한 호강 참여를 제안한 사람은 누구입니까?",
+      "options": [
+        {
+          "key": "본인",
+          "label": "본인"
+        },
+        {
+          "key": "동행자",
+          "label": "동행자"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "소소한 호강 정보는 어디서 얻으셨습니까?",
+      "options": [
+        {
+          "key": "가족/친구",
+          "label": "가족/친구"
+        },
+        {
+          "key": "SNS(인스타그램, 페이스북 등)",
+          "label": "SNS(인스타그램, 페이스북 등)"
+        },
+        {
+          "key": "온라인 예매 사이트",
+          "label": "온라인 예매 사이트"
+        },
+        {
+          "key": "공연장 홈페이지",
+          "label": "공연장 홈페이지"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "multiple_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "소소한 호강 참여 후, 이 프로그램을 추천하거나 정보를 공유할 의향이 있습니까?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "정보를 공유하신다면, 누구에게 공유하실 계획이실까요?",
+      "options": [
+        {
+          "key": "가족",
+          "label": "가족"
+        },
+        {
+          "key": "친구",
+          "label": "친구"
+        },
+        {
+          "key": "동료",
+          "label": "동료"
+        },
+        {
+          "key": "SNS",
+          "label": "SNS"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": false,
+      "description": "",
+      "question_type": "multiple_choice",
+      "hasEtc": true,
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q8"
+        }
+      ]
+    },
+    {
+      "title": "소소한 호강 참여 전에 식사를 하셨나요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "소소한 호강 참여 전에 식사를 하셨나요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "식사에 사용하신 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q10"
+        }
+      ]
+    },
+    {
+      "title": "소소한 호강 참여 전에 카페를 방문하셨나요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "카페에 사용하신 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q13"
+        }
+      ]
+    },
+    {
+      "title": "소소한 호강 참여 전에 쇼핑을 즐기셨나요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "쇼핑에 사용하신 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q15"
+        }
+      ]
+    },
+    {
+      "title": "그 외에 하신 활동이 있나요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "어떠한 활동을 하셨나요?",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "short_text",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q17"
+        }
+      ]
+    },
+    {
+      "title": "활동에 사용하신 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q17"
+        }
+      ]
+    },
+    {
+      "title": "오늘 참여 장소까지 어떻게 오셨습니까?",
+      "options": [
+        {
+          "key": "도보",
+          "label": "도보"
+        },
+        {
+          "key": "대중교통",
+          "label": "대중교통"
+        },
+        {
+          "key": "자가용",
+          "label": "자가용"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "오늘 참여 장소까지 어떻게 오셨습니까?",
+      "options": [
+        {
+          "key": "버스",
+          "label": "버스"
+        },
+        {
+          "key": "자가용",
+          "label": "자가용"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "오늘 소소한 호강 참여 후에 식사를 할 계획이 있으신가요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "식사에 사용하실 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q22"
+        }
+      ]
+    },
+    {
+      "title": "오늘 소소한 호강 참여 후에 카페를 방문할 계획이 있으신가요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "카페에 사용하실 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q24"
+        }
+      ]
+    },
+    {
+      "title": "오늘 소소한 호강 참여 후에 전시나 문화 공간에 방문하실 계획이 있으신가요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "전시나 문화 공간에 사용하실 금액은 어느 정도이십니까?",
+      "options": [
+        {
+          "key": "0원",
+          "label": "0원"
+        },
+        {
+          "key": "1만원 내외",
+          "label": "1만원 내외"
+        },
+        {
+          "key": "1~3만원 내외",
+          "label": "1~3만원 내외"
+        },
+        {
+          "key": "3~5만원 내외",
+          "label": "3~5만원 내외"
+        },
+        {
+          "key": "5~10만원 내외",
+          "label": "5~10만원 내외"
+        },
+        {
+          "key": "10만원 이상",
+          "label": "10만원 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q26"
+        }
+      ]
+    },
+    {
+      "title": "그 외에 계획하고 계신 다른 활동이 있으신가요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "어떠한 활동을 계획하고 계신가요?",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "short_text",
+      "show_conditions": [
+        {
+          "value": "예",
+          "operator": "eq",
+          "question_id": "q28"
+        }
+      ]
+    },
+    {
+      "title": "참여 장소로부터 귀가까지 예상 소요 시간은 어느 정도인가요?",
+      "options": [
+        {
+          "key": "30분 이내",
+          "label": "30분 이내"
+        },
+        {
+          "key": "1시간 이내",
+          "label": "1시간 이내"
+        },
+        {
+          "key": "2시간 이내",
+          "label": "2시간 이내"
+        },
+        {
+          "key": "2시간 이상",
+          "label": "2시간 이상"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "소소한 호강 참여를 결정한 과정에서 거친 단계를 모두 선택해주세요.",
+      "options": [
+        {
+          "key": "주변 사람(가족/친구/동료)과 공연에 대해 이야기함",
+          "label": "주변 사람(가족/친구/동료)과 공연에 대해 이야기함"
+        },
+        {
+          "key": "SNS나 인터넷에서 공연 정보를 탐색함",
+          "label": "SNS나 인터넷에서 공연 정보를 탐색함"
+        },
+        {
+          "key": "공연 예매 사이트에서 공연을 검색함",
+          "label": "공연 예매 사이트에서 공연을 검색함"
+        },
+        {
+          "key": "동행할 사람을 정함",
+          "label": "동행할 사람을 정함"
+        },
+        {
+          "key": "공연 날짜와 시간을 결정함",
+          "label": "공연 날짜와 시간을 결정함"
+        },
+        {
+          "key": "티켓을 예매함",
+          "label": "티켓을 예매함"
+        },
+        {
+          "key": "공연장 위치와 교통편을 확인함",
+          "label": "공연장 위치와 교통편을 확인함"
+        },
+        {
+          "key": "공연장 방문을 위한 일정을 조율함",
+          "label": "공연장 방문을 위한 일정을 조율함"
+        },
+        {
+          "key": "기타",
+          "label": "기타..."
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "multiple_choice",
+      "hasEtc": true,
+      "show_conditions": []
+    },
+    {
+      "title": "소소한 호강 참여 경험에 대한 전반적 만족도를 평가해 주세요",
+      "options": [
+        {
+          "key": "매우 만족",
+          "label": "매우 만족"
+        },
+        {
+          "key": "만족",
+          "label": "만족"
+        },
+        {
+          "key": "보통",
+          "label": "보통"
+        },
+        {
+          "key": "불만족",
+          "label": "불만족"
+        },
+        {
+          "key": "매우 불만족",
+          "label": "매우 불만족"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "title": "소소한 호강 체험과 대한민국 문화도시 충주 사업 관련하여 건의사항이나 느낀 점이 있다면 자유롭게 적어주세요.",
+      "options": [],
+      "required": false,
+      "description": "",
+      "question_type": "long_text",
+      "show_conditions": []
+    }
+  ]
+} 

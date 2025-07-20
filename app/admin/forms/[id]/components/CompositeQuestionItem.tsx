@@ -4,6 +4,7 @@ interface CompositeItem {
     label: string
     input_type: 'text' | 'number' | 'date' | 'email'
     unit?: string
+    next_question_id?: string
 }
 
 interface CompositeQuestionItemProps {
@@ -11,13 +12,15 @@ interface CompositeQuestionItemProps {
     itemIndex: number
     questionId: string
     questionType: 'composite_single' | 'composite_multiple'
+    getQuestionNumber?: (questionId: string) => number | string
 }
 
 export default function CompositeQuestionItem({
     item,
     itemIndex,
     questionId,
-    questionType
+    questionType,
+    getQuestionNumber
 }: CompositeQuestionItemProps) {
     const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
         // input이나 label 클릭 시 이벤트 전파 방지
@@ -59,6 +62,11 @@ export default function CompositeQuestionItem({
                     />
                 )}
                 <span className="font-medium text-gray-700">{item.label}</span>
+                {item.next_question_id && getQuestionNumber && (
+                    <span className="ml-auto text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                        응답 시 → Q{getQuestionNumber(item.next_question_id)}
+                    </span>
+                )}
             </div>
             <div className="ml-7 space-y-2">
                 {item.input_type === 'text' && (

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { TSurvey } from '@/app/components';
+import { v4 as uuidv4 } from 'uuid';
 
 interface JsonImportModalProps {
   isOpen: boolean;
@@ -39,8 +40,9 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
       for (let i = 0; i < parsedData.questions.length; i++) {
         const question = parsedData.questions[i];
         if (!question.id || question.id.trim() === '') {
-          setError(`${i + 1}번 문항의 ID가 없습니다. 모든 문항은 고유한 ID를 가져야 합니다.`);
-          return;
+          // setError(`${i + 1}번 문항의 ID가 없습니다. 모든 문항은 고유한 ID를 가져야 합니다.`);
+          // return;
+          question.id = uuidv4();
         }
       }
 

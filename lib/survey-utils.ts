@@ -35,7 +35,8 @@ export function formatCondition(
 
             if (condition.sub_key) {
                 const compositeItem = targetQuestion.composite_items?.find(item => item.key === condition.sub_key)
-                return `${targetNumber}번 문항에서 "${compositeItem?.label || condition.sub_key}" 조건이 ${condition.value} ${operatorText}`
+                const unit = compositeItem?.unit ? `${compositeItem.unit}` : ''
+                return `${targetNumber}번 문항에서 "${compositeItem?.label || condition.sub_key}" 조건이 ${condition.value}${unit} ${operatorText}`
             }
             return `${targetNumber}번 문항에서 조건이 ${condition.value} ${operatorText}`
 

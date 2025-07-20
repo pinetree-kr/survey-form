@@ -43,6 +43,45 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 JWT_SECRET=your_jwt_secret_here
 ```
 
+### 데이터베이스 초기화 및 Seed 데이터
+
+로컬 개발 환경에서 데이터베이스를 초기화하고 샘플 데이터를 삽입하려면:
+
+```bash
+# Supabase 로컬 서버 시작
+supabase start
+
+# 데이터베이스 리셋 (마이그레이션 + 시드 데이터 적용)
+supabase db reset
+
+# 또는 마이그레이션만 실행
+supabase db push
+
+# 시드 데이터만 실행
+supabase db seed
+```
+
+### Seed 데이터 수정
+
+#### SQL 기반 Seed (기본)
+`supabase/seed.sql` 파일을 수정하여 원하는 샘플 데이터를 추가할 수 있습니다.
+
+#### TypeScript 기반 Seed (고급)
+`supabase/seed.ts` 파일을 사용하여 TypeScript로 seed를 작성할 수 있습니다:
+
+```bash
+# config.toml에서 script_paths 활성화 후
+supabase db seed
+```
+
+#### API 기반 Seed (웹 인터페이스)
+관리자 대시보드에서 "시드 데이터 삽입" 버튼을 클릭하여 웹에서 seed를 실행할 수 있습니다.
+
+#### 포함된 기본 데이터
+- 관리자 계정: `admin@example.com` / `password123`
+- 일반 사용자 계정: `user@example.com` / `password123`
+- 샘플 설문조사 1개 (텍스트, 라디오, 체크박스, 텍스트영역 질문 포함)
+
 ### Cloudflare Hyperdrive 설정
 
 Cloudflare에 배포하기 위해서는 Hyperdrive를 설정해야 합니다:

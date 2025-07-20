@@ -55,7 +55,7 @@ export const QuestionPanel = React.memo(({
     onBranchAdd: (optIdx: number) => void;
     onBranchDelete: (optIdx: number) => void;
     onShowConditionAdd: () => void;
-    onShowConditionDelete: (idx: number) => void;
+    onShowConditionDelete: (questionId: string, condIndex: number) => void;
     onNextQuestionAdd: () => void;
     onNextQuestionDelete: () => void;
     deletingQuestionId?: string | null;
@@ -200,12 +200,15 @@ export const QuestionPanel = React.memo(({
 
     // 조건부 표시 정보는 useMemo로 최적화
     const showConditionsInfo = useMemo(() => {
-        if (!question.show_conditions?.length) return null;
+        // if (!question.show_conditions?.length) return null;
+        if (!question.show_conditions || question.show_conditions?.length === 0) return null;
 
-        return question.show_conditions.map((condition, idx) => (
-            <button key={idx}
+        return question.show_conditions.map((condition, condIndex) => (
+            <button key={condIndex}
                 className="px-2 h-7 text-green-600 bg-green-100 hover:bg-green-200 text-xs"
-                onClick={() => onShowConditionDelete(idx)}>
+                onClick={() => {
+                    onShowConditionDelete(question.id, condIndex)
+                }}>
                 {formatCondition(condition, questions, getQuestionNumber)}
             </button>
         ));
@@ -541,13 +544,13 @@ export const QuestionPanel = React.memo(({
 
             {/* 문항 패널 하단에 분기/조건부 표시 UI 추가 */}
             <div className="mt-6 space-y-4">
-                {/* 접근 조건 버튼과 다음 문항 연결 버튼 */}
+                {/* 문항 활성화 조건 버튼과 다음 문항 연결 버튼 */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={onShowConditionAdd}
                         className="px-3 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 text-sm"
                     >
-                        접근 조건 추가
+                        문항 활성화 조건 추가
                     </button>
                     <button
                         onClick={question.next_question_id ? onNextQuestionDelete : onNextQuestionAdd}

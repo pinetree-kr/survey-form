@@ -1,0 +1,441 @@
+import { createClient } from '@supabase/supabase-js'
+import { Database } from '../app/types'
+
+// Supabase 클라이언트 생성 (서비스 롤 키 사용)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
+
+const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
+
+async function seed() {
+    console.log('🌱 시작: 데이터베이스 시드 실행...')
+
+    try {
+        // 1. 사용자 데이터 삽입
+        console.log('👤 사용자 데이터 삽입 중...')
+
+        const users = [
+            {
+                email: 'vanadate.kr@gmail.com',
+                password: 'jhsong85',
+                full_name: '관리자',
+                role: 'admin' as const
+            },
+            {
+                email: 'vanadate@naver.com',
+                password: 'jhsong85',
+                full_name: '일반사용자',
+                role: 'user' as const
+            }
+        ]
+
+        let userId = ''
+        for (const user of users) {
+            // auth.users에 사용자 생성
+            const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+                email: user.email,
+                password: user.password,
+                email_confirm: true,
+                user_metadata: {
+                    full_name: user.full_name
+                }
+            })
+
+            if (authError) {
+                console.error(`❌ 사용자 생성 실패 (${user.email}):`, authError.message)
+                continue
+            }
+
+            if (user.role === 'user') {
+                userId = authUser.user.id
+            }
+
+            console.log(`✅ 사용자 생성 완료: ${user.email}`)
+
+            // // profiles 테이블에 프로필 데이터 삽입
+            // const { error: profileError } = await supabase
+            //     .from('profiles')
+            //     .upsert({
+            //         id: user.id,
+            //         username: user.email,
+            //         display_name: user.full_name,
+            //         role: user.role,
+            //         created_at: new Date().toISOString(),
+            //         updated_at: new Date().toISOString()
+            //     })
+
+            // if (profileError) {
+            //     console.error(`❌ 프로필 생성 실패 (${user.email}):`, profileError.message)
+            // } else {
+            //     console.log(`✅ 프로필 생성 완료: ${user.email}`)
+            // }
+        }
+
+        // 2. 설문 데이터 삽입
+        console.log('📝 설문 데이터 삽입 중...')
+
+        const surveyData = {
+            "user_id": userId,
+            "title": "타이틀",
+            "description": "설명",
+            "questions": [
+                {
+                    "id": "4da2c25f-de23-4684-9c58-73d088b4cc5b",
+                    "title": "안내문입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": []
+                },
+                {
+                    "id": "45f494d1-23c3-4805-bb2e-9b48d4ef234a",
+                    "title": "단답형",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "short_text",
+                    "show_conditions": []
+                },
+                {
+                    "id": "7e2778d1-d210-422f-87a1-2a35cab23863",
+                    "title": "장문형",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "long_text",
+                    "show_conditions": []
+                },
+                {
+                    "id": "3a8cbdac-afa5-4784-9755-8535768106da",
+                    "title": "객관식",
+                    "hasEtc": true,
+                    "options": [
+                        {
+                            "key": "예",
+                            "label": "예"
+                        },
+                        {
+                            "key": "아니오",
+                            "label": "아니오"
+                        }
+                    ],
+                    "required": false,
+                    "description": "",
+                    "question_type": "single_choice",
+                    "show_conditions": []
+                },
+                {
+                    "id": "8ea43e50-dc17-42ae-baf3-aa90c9fad1cb",
+                    "title": "체크박스",
+                    "hasEtc": true,
+                    "options": [
+                        {
+                            "key": "예",
+                            "label": "예 "
+                        },
+                        {
+                            "key": "아니오",
+                            "label": "아니오"
+                        }
+                    ],
+                    "required": false,
+                    "description": "",
+                    "question_type": "multiple_choice",
+                    "show_conditions": []
+                },
+                {
+                    "id": "da092973-3501-44c7-9188-ebedc0ca4b12",
+                    "title": "드롭다운",
+                    "hasEtc": true,
+                    "options": [
+                        {
+                            "key": "선택 1",
+                            "label": "선택 1"
+                        },
+                        {
+                            "key": "선택 2",
+                            "label": "선택 2"
+                        },
+                        {
+                            "key": "선택 3",
+                            "label": "선택 3"
+                        },
+                        {
+                            "key": "선택 4",
+                            "label": "선택 4"
+                        }
+                    ],
+                    "required": false,
+                    "description": "",
+                    "question_type": "dropdown",
+                    "show_conditions": []
+                },
+                {
+                    "id": "5b6fe70c-137d-4600-999a-bfa2be808a1a",
+                    "title": "복합 단일",
+                    "hasEtc": true,
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "composite_single",
+                    "composite_items": [
+                        {
+                            "key": "10대",
+                            "unit": "세",
+                            "label": "10대",
+                            "input_type": "number"
+                        },
+                        {
+                            "key": "20대",
+                            "unit": "세",
+                            "label": "20대",
+                            "input_type": "number"
+                        },
+                        {
+                            "key": "30대",
+                            "unit": "세",
+                            "label": "30대",
+                            "input_type": "number"
+                        },
+                        {
+                            "key": "40대 이상",
+                            "unit": "세",
+                            "label": "40대 이상",
+                            "input_type": "number"
+                        }
+                    ],
+                    "show_conditions": []
+                },
+                {
+                    "id": "4b82de19-1aa7-4931-9f00-8364d7043006",
+                    "title": "연락받을 수단",
+                    "hasEtc": true,
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "composite_multiple",
+                    "composite_items": [
+                        {
+                            "key": "이메일",
+                            "unit": "",
+                            "label": "이메일",
+                            "input_type": "email"
+                        },
+                        {
+                            "key": "전화번호",
+                            "unit": "",
+                            "label": "전화번호",
+                            "input_type": "tel"
+                        },
+                        {
+                            "key": "인스타그램",
+                            "unit": "DM",
+                            "label": "인스타그램",
+                            "input_type": "text"
+                        },
+                        {
+                            "key": "카톡",
+                            "unit": "ID",
+                            "label": "카톡",
+                            "input_type": "text"
+                        }
+                    ],
+                    "show_conditions": []
+                },
+                {
+                    "id": "7ad32107-df2d-4979-b142-364a78376bfd",
+                    "title": "객관식 분기 설정",
+                    "options": [
+                        {
+                            "key": "A-1 루트",
+                            "label": "A-1 루트",
+                            "next_question_id": "33b831a6-0004-4240-814a-a760a6807f97"
+                        },
+                        {
+                            "key": "A-2 루트",
+                            "label": "A-2 루트",
+                            "next_question_id": "0f9f5860-7152-4f2b-9308-68d88b582409"
+                        }
+                    ],
+                    "required": false,
+                    "description": "",
+                    "question_type": "single_choice",
+                    "show_conditions": []
+                },
+                {
+                    "id": "33b831a6-0004-4240-814a-a760a6807f97",
+                    "title": "A-1 루트로 진입했습니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": [],
+                    "next_question_id": "5287c80d-4653-4b4d-b6ea-58bd00570489"
+                },
+                {
+                    "id": "0f9f5860-7152-4f2b-9308-68d88b582409",
+                    "title": "A-2 루트로 진입했습니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": [],
+                    "next_question_id": "5287c80d-4653-4b4d-b6ea-58bd00570489"
+                },
+                {
+                    "id": "5287c80d-4653-4b4d-b6ea-58bd00570489",
+                    "title": "복합 단일 분기입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "composite_single",
+                    "composite_items": [
+                        {
+                            "key": "B-1 루트",
+                            "unit": "",
+                            "label": "B-1 루트",
+                            "input_type": "text",
+                            "next_question_id": "6b1e0f57-5c7f-44b3-a95a-cde6dc04d9cf"
+                        },
+                        {
+                            "key": "B-2 루트",
+                            "unit": "",
+                            "label": "B-2 루트",
+                            "input_type": "text",
+                            "next_question_id": "1555569f-e35e-4381-b1db-1837aa8483bc"
+                        }
+                    ],
+                    "show_conditions": []
+                },
+                {
+                    "id": "6b1e0f57-5c7f-44b3-a95a-cde6dc04d9cf",
+                    "title": "B-1 루트입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": [],
+                    "next_question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+                },
+                {
+                    "id": "1555569f-e35e-4381-b1db-1837aa8483bc",
+                    "title": "B-2 루트입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": [],
+                    "next_question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+                },
+                {
+                    "id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab",
+                    "title": "복합 다중 답변을 통한 문항 활성화 조건 확인입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "composite_multiple",
+                    "composite_items": [
+                        {
+                            "key": "나이",
+                            "unit": "세",
+                            "label": "나이",
+                            "input_type": "number"
+                        },
+                        {
+                            "key": "키",
+                            "unit": "cm",
+                            "label": "키",
+                            "input_type": "number"
+                        }
+                    ],
+                    "show_conditions": []
+                },
+                {
+                    "id": "8f6ea609-2c7c-449d-82e1-e6df8bd1248e",
+                    "title": "나이가 20세 이상만 보입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": [
+                        {
+                            "value": "20",
+                            "sub_key": "나이",
+                            "operator": "gte",
+                            "question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+                        }
+                    ]
+                },
+                {
+                    "id": "ecf9df01-956f-4e86-8b8c-a8d162eb63a3",
+                    "title": "키가 179cm 초과만 보입니다.",
+                    "options": [],
+                    "required": false,
+                    "description": "",
+                    "question_type": "description",
+                    "show_conditions": [
+                        {
+                            "value": "179",
+                            "sub_key": "키",
+                            "operator": "gt",
+                            "question_id": "e4fc7ccf-bd6a-4881-85af-765e553c13ab"
+                        }
+                    ]
+                }
+            ]
+        }
+
+        const { error: surveyError } = await supabase
+            .from('surveys')
+            .upsert({
+                ...surveyData,
+                // created_at: new Date().toISOString(),
+                // updated_at: new Date().toISOString()
+            })
+
+        if (surveyError) {
+            console.error('❌ 설문 생성 실패:', surveyError.message)
+        } else {
+            console.log('✅ 설문 생성 완료')
+        }
+
+        // // 3. 샘플 응답 데이터 삽입 (선택사항)
+        // console.log('📊 응답 데이터 삽입 중...')
+
+        // const responseData = {
+        //     id: '44444444-4444-4444-4444-444444444444',
+        //     survey_id: '33333333-3333-3333-3333-333333333333',
+        //     respondent_id: '22222222-2222-2222-2222-222222222222',
+        //     answers: {
+        //         q1: '홍길동',
+        //         q2: '남성',
+        //         q3: ['기술', '여행'],
+        //         q4: '매우 유용한 설문이었습니다.'
+        //     },
+        //     started_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1시간 전
+        //     completed_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30분 전
+        //     ip_address: '127.0.0.1',
+        //     user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        // }
+
+        // const { error: responseError } = await supabase
+        //     .from('survey_responses')
+        //     .upsert(responseData)
+
+        // if (responseError) {
+        //     console.error('❌ 응답 데이터 생성 실패:', responseError.message)
+        // } else {
+        //     console.log('✅ 응답 데이터 생성 완료')
+        // }
+
+        console.log('🎉 시드 데이터 삽입 완료!')
+
+    } catch (error) {
+        console.error('❌ 시드 실행 중 오류 발생:', error)
+        process.exit(1)
+    }
+}
+
+// 스크립트 실행
+seed() 
