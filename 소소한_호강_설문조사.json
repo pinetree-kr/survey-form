@@ -70,10 +70,6 @@
         {
           "key": "경상도",
           "label": "경상도"
-        },
-        {
-          "key": "기타",
-          "label": "기타..."
         }
       ],
       "required": true,
@@ -239,10 +235,6 @@
         {
           "key": "동행자",
           "label": "동행자"
-        },
-        {
-          "key": "기타",
-          "label": "기타..."
         }
       ],
       "required": true,
@@ -269,10 +261,6 @@
         {
           "key": "공연장 홈페이지",
           "label": "공연장 홈페이지"
-        },
-        {
-          "key": "기타",
-          "label": "기타..."
         }
       ],
       "required": true,
@@ -316,10 +304,6 @@
         {
           "key": "SNS",
           "label": "SNS"
-        },
-        {
-          "key": "기타",
-          "label": "기타..."
         }
       ],
       "required": false,
@@ -604,10 +588,7 @@
           "key": "자가용",
           "label": "자가용"
         },
-        {
-          "key": "기타",
-          "label": "기타..."
-        }
+        {}
       ],
       "required": true,
       "description": "",
@@ -626,10 +607,7 @@
           "key": "자가용",
           "label": "자가용"
         },
-        {
-          "key": "기타",
-          "label": "기타..."
-        }
+        {}
       ],
       "required": true,
       "description": "",
@@ -896,10 +874,7 @@
           "key": "공연장 방문을 위한 일정을 조율함",
           "label": "공연장 방문을 위한 일정을 조율함"
         },
-        {
-          "key": "기타",
-          "label": "기타..."
-        }
+        {}
       ],
       "required": true,
       "description": "",
@@ -945,4 +920,4 @@
       "show_conditions": []
     }
   ]
-} 
+}

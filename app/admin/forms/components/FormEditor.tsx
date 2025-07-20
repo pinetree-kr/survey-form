@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TSurvey, TQuestion, TBranchCondition } from "@/app/components";
 import { toast, ToastContainer } from "react-toastify";
-import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel, JsonImportModal, JsonExportModal } from ".";
+import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel, JsonImportModal, JsonExportModal, SurveyBasicInfo } from ".";
 import {
     DndContext,
     closestCenter,
@@ -40,28 +40,20 @@ export function FormEditor({
         "questions": data?.questions || []
     });
 
+    // 설문 기본 정보 업데이트 핸들러
+    const handleBasicInfoUpdate = useCallback((updates: { title: string; description: string }) => {
+        setForm(prev => ({
+            ...prev,
+            title: updates.title,
+            description: updates.description
+        }));
+    }, []);
+
     // DnD 센서 훅은 최상단에서 한 번만 호출
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor)
     );
-
-    // 이미지 모달 상태
-    const [imageModal, setImageModal] = useState<null | { type: 'question' | 'option', qIdx: number, optIdx?: number, urls: string[] }>(null);
-
-    // 분기 모달 상태 추가
-    const [branchModal, setBranchModal] = useState<null | { qIdx: number, optIdx: number }>(null);
-
-    // 다음 문항 연결 모달 상태 추가
-    const [nextQuestionModal, setNextQuestionModal] = useState<null | { qIdx: number }>(null);
-
-    const [conditionModal, setConditionModal] = useState<null | { qIdx: number }>(null);
-
-    // JSON 가져오기 모달 상태
-    const [showJsonImportModal, setShowJsonImportModal] = useState(false);
-
-    // JSON 미리보기 모달 상태
-    const [showJsonExportModal, setShowJsonExportModal] = useState(false);
 
     // 현재 활성화된 문항 인덱스 (스크롤 감지용)
     const [activeQuestionIndex, setActiveQuestionIndex] = useState<number | null>(null);
@@ -71,6 +63,12 @@ export function FormEditor({
 
     // 저장 중 로딩 상태
     const [isSaving, setIsSaving] = useState(false);
+
+    // JSON 가져오기 모달 상태
+    const [showJsonImportModal, setShowJsonImportModal] = useState(false);
+
+    // JSON 미리보기 모달 상태
+    const [showJsonExportModal, setShowJsonExportModal] = useState(false);
 
     // DOM 요소를 찾는 헬퍼 함수
     const findQuestionElement = React.useCallback((questionId: string) => {
@@ -106,6 +104,7 @@ export function FormEditor({
             show_conditions: []
         };
 
+        console.log('addQuestion', { newQuestion })
         setForm(prev => {
             // 현재 활성화된 문항 인덱스 확인
             const insertIndex = activeQuestionIndex !== null ? activeQuestionIndex + 1 : prev.questions.length;
@@ -233,23 +232,8 @@ export function FormEditor({
 
     // 문항 업데이트 함수를 useCallback으로 메모이제이션
     const updateQuestion = useCallback((index: number, updatedQuestion: TQuestion) => {
+        console.log('updateQuestion', { index, updatedQuestion })
         setForm(prev => {
-            // 이전 질문과 새 질문이 실제로 다른지 확인
-            const currentQuestion = prev.questions[index];
-            console.log('diff exec')
-            if (currentQuestion &&
-                currentQuestion.title === updatedQuestion.title &&
-                JSON.stringify(currentQuestion.options) === JSON.stringify(updatedQuestion.options) &&
-                JSON.stringify(currentQuestion.show_conditions) === JSON.stringify(updatedQuestion.show_conditions) &&
-                JSON.stringify(currentQuestion.branch_logic) === JSON.stringify(updatedQuestion.branch_logic) &&
-                JSON.stringify(currentQuestion.composite_items) === JSON.stringify(updatedQuestion.composite_items) &&
-                JSON.stringify(currentQuestion.next_question_id) === JSON.stringify(updatedQuestion.next_question_id) &&
-                currentQuestion.question_type === updatedQuestion.question_type &&
-                currentQuestion.required === updatedQuestion.required &&
-                currentQuestion.hasEtc === updatedQuestion.hasEtc) {
-                return prev; // 변경사항이 없으면 이전 상태 반환
-            }
-            console.log('updatedQuestion')
             return {
                 ...prev,
                 questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
@@ -271,6 +255,7 @@ export function FormEditor({
 
         // 애니메이션 완료 후 실제 삭제
         setTimeout(() => {
+            console.log('deleteQuestion', { questionToDelete })
             setForm(prev => ({
                 ...prev,
                 questions: prev.questions.filter(q => q.id !== questionToDelete.id)
@@ -279,8 +264,6 @@ export function FormEditor({
             setDeletingQuestionId(null);
         }, 500); // 애니메이션 지속 시간과 동일
     }, [setForm]);
-
-
 
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -418,13 +401,39 @@ export function FormEditor({
         try {
             setIsSaving(true);
             console.log({ form })
-            await onSave(form, form.id);
-            toast.success(form.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다.");
+            const savedSurvey = await onSave(form, form.id);
 
-            // 성공 후 설문 목록 페이지로 이동
-            setTimeout(() => {
-                window.location.href = '/admin/forms';
-            }, 1500);
+            // 성공 토스트 표시 (클릭 가능하도록 설정)
+            const toastId = toast.success(
+                <div>
+                    {form.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다."}
+                    <br />
+                    <span className="text-xs text-blue-600 cursor-pointer hover:underline">
+                        클릭하여 목록으로 이동
+                    </span>
+                </div>,
+                {
+                    onClick: () => {
+                        // 클릭 시 항상 목록으로 이동
+                        window.location.href = '/admin/forms';
+                    },
+                    onClose: () => {
+                        // 자동으로 닫힐 때는 수정 페이지로 이동
+                        if (form.id) {
+                            // 기존 설문 수정인 경우 현재 페이지 새로고침
+                            window.location.reload();
+                        } else {
+                            // 새로 생성된 경우 해당 설문의 수정 페이지로 이동
+                            window.location.href = `/admin/forms/${savedSurvey.id}/edit`;
+                        }
+                    },
+                    style: { cursor: 'pointer' },
+                    autoClose: 5000,
+                    closeOnClick: true,
+                    draggable: true,
+                    pauseOnHover: true
+                }
+            );
         } catch (error) {
             toast.error(error instanceof Error ? error.message : (form.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
         } finally {
@@ -437,6 +446,7 @@ export function FormEditor({
         const originalQuestion = form.questions[index];
         const copiedQuestion: TQuestion = { ...originalQuestion, id: uuidv4() };
 
+        console.log('copyQuestion', { index, copiedQuestion })
         setForm(prev => {
             const newQuestions = [
                 ...prev.questions.slice(0, index + 1),
@@ -505,37 +515,12 @@ export function FormEditor({
         }, 100); // React 상태 업데이트 대기
     }, [setForm, form.questions]);
 
-    // 이미지 저장 핸들러
-    const handleImageSave = React.useCallback((urls: string[]) => {
-        if (!imageModal) return;
-        setForm(prev => {
-            const questions = [...prev.questions];
-            if (imageModal.type === 'question') {
-                questions[imageModal.qIdx] = {
-                    ...questions[imageModal.qIdx],
-                    images: urls
-                };
-            } else if (imageModal.type === 'option' && imageModal.optIdx !== undefined) {
-                const opts = [...(questions[imageModal.qIdx].options || [])];
-                opts[imageModal.optIdx] = {
-                    ...opts[imageModal.optIdx],
-                    images: urls
-                };
-                questions[imageModal.qIdx] = {
-                    ...questions[imageModal.qIdx],
-                    options: opts
-                };
-            }
-            return { ...prev, questions };
-        });
-        setImageModal(null);
-    }, [setForm, imageModal]);
-
     // 드래그 앤 드롭 핸들러
     const handleDragEnd = React.useCallback((event: DragEndEvent) => {
         const { active, over } = event;
 
         if (active.id !== over?.id) {
+            console.log('handleDragEnd', { active, over })
             setForm(prev => {
                 const oldIndex = prev.questions.findIndex((_, index) => index === active.id);
                 const newIndex = prev.questions.findIndex((_, index) => index === over?.id);
@@ -553,105 +538,6 @@ export function FormEditor({
         }
     }, [setForm]);
 
-    // 분기 추가 핸들러
-    const handleBranchAdd = React.useCallback((qIdx: number, optIdx: number, nextQuestionId: string) => {
-        setForm(prev => {
-            const questions = [...prev.questions];
-            const question = questions[qIdx];
-
-            if (question.question_type === 'composite_single') {
-                // composite_single 문항의 경우 composite_items 수정
-                const compositeItems = [...(question.composite_items || [])];
-                compositeItems[optIdx] = {
-                    ...compositeItems[optIdx],
-                    next_question_id: nextQuestionId
-                };
-
-                questions[qIdx] = {
-                    ...question,
-                    composite_items: compositeItems
-                };
-            } else {
-                // 기존 로직 (single_choice, multiple_choice 등)
-                const options = [...(question.options || [])];
-                options[optIdx] = {
-                    ...options[optIdx],
-                    next_question_id: nextQuestionId
-                };
-
-                questions[qIdx] = {
-                    ...question,
-                    options
-                };
-            }
-
-            return { ...prev, questions };
-        });
-        setBranchModal(null);
-    }, [setForm, setBranchModal]);
-
-    // 분기 제거 핸들러
-    const handleBranchDelete = useCallback((qIdx: number, optIdx: number) => {
-        const question = form.questions[qIdx];
-        if (!question.options) return;
-
-        const newOptions = [...question.options];
-        delete newOptions[optIdx].next_question_id;
-
-        const updatedQuestion = { ...question, options: newOptions };
-        updateQuestion(qIdx, updatedQuestion);
-    }, [updateQuestion]);
-
-    // 조건부 표시 추가 핸들러
-    const handleShowConditionAdd = React.useCallback((qIdx: number, condition: TBranchCondition) => {
-        setForm(prev => {
-            const questions = [...prev.questions];
-            const question = questions[qIdx];
-
-            questions[qIdx] = {
-                ...question,
-                show_conditions: [condition]
-            };
-
-            return { ...prev, questions };
-        });
-        setConditionModal(null);
-    }, [setForm, setConditionModal]);
-
-    const handleShowConditionDelete = useCallback((qIdx: number, idx: number) => {
-        const question = form.questions[qIdx];
-        if (!question.show_conditions) return;
-
-
-        const newConditions = question.show_conditions.filter((_, i) => i !== idx);
-        const updatedQuestion = { ...question, show_conditions: newConditions };
-        updateQuestion(qIdx, updatedQuestion);
-    }, [updateQuestion]);
-
-    // 다음 문항 연결 추가 핸들러
-    const handleNextQuestionAdd = React.useCallback((qIdx: number, nextQuestionId: string) => {
-        console.log({ qIdx, nextQuestionId })
-        setForm(prev => {
-            const questions = [...prev.questions];
-            const question = questions[qIdx];
-
-            questions[qIdx] = {
-                ...question,
-                next_question_id: nextQuestionId
-            };
-
-            return { ...prev, questions };
-        });
-        setNextQuestionModal(null);
-    }, [setForm, setNextQuestionModal]);
-
-    // 다음 문항 연결 제거 핸들러
-    const handleNextQuestionDelete = useCallback((qIdx: number) => {
-        const question = form.questions[qIdx];
-        const updatedQuestion = { ...question, next_question_id: undefined };
-        updateQuestion(qIdx, updatedQuestion);
-    }, [updateQuestion]);
-
     // JSON 가져오기 핸들러
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
         delete surveyData.id
@@ -661,25 +547,6 @@ export function FormEditor({
         }));
         toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
     }, [setForm]);
-
-    const MemoizedSimpleQuestionList = React.useMemo(() => {
-        return form.questions.map((question, index) => ({
-            title: question.title,
-            id: question.id,
-            question_type: question.question_type,
-            options: question.options,
-            composite_items: question.composite_items
-        }))
-    }, [form.questions])
-
-    const MemoizedConditionModal = React.useMemo(() => {
-        return <ConditionModal
-            isOpen={!!conditionModal}
-            onClose={() => setConditionModal(null)}
-            questions={MemoizedSimpleQuestionList}
-            onAdd={(condition) => handleShowConditionAdd(conditionModal!.qIdx, condition)}
-        />
-    }, [conditionModal, MemoizedSimpleQuestionList, handleShowConditionAdd]);
 
     return (
         <div className="flex h-[calc(100vh-168px)] bg-gray-50 relative">
@@ -750,20 +617,25 @@ export function FormEditor({
                                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                                                     {index + 1}
                                                 </span>
-                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                                    {question.title || '제목 없음'}
+                                                </h3>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                                                <span>
                                                     {question.question_type === 'single_choice' ? '단일선택' :
                                                         question.question_type === 'multiple_choice' ? '다중선택' :
                                                             question.question_type === 'short_text' ? '단답형' :
                                                                 question.question_type === 'long_text' ? '서술형' :
-                                                                    question.question_type === 'dropdown' ? '드롭다운' : question.question_type}
+                                                                    question.question_type === 'dropdown' ? '드롭다운' :
+                                                                        question.question_type === 'composite_single' ? '복합 단일' :
+                                                                            question.question_type === 'composite_multiple' ? '복합 다중' :
+                                                                                question.question_type === 'description' ? '안내문' : question.question_type}
                                                 </span>
+                                                {question.required && (
+                                                    <span className="text-red-500">필수</span>
+                                                )}
                                             </div>
-                                            <h3 className="text-sm font-medium text-gray-900 truncate">
-                                                {question.title || '제목 없음'}
-                                            </h3>
-                                            {question.required && (
-                                                <span className="text-xs text-red-500 mt-1 block">필수</span>
-                                            )}
                                         </div>
                                         <div className="flex gap-1 ml-2">
                                             <button
@@ -826,43 +698,12 @@ export function FormEditor({
                                 </div> */}
 
                                 {/* 설문 기본 정보 */}
-                                <div className="bg-white p-6 rounded-md shadow-md mb-6">
-                                    <h2 className="text-xl font-semibold mb-4">설문 기본 정보</h2>
-                                    <div className="flex flex-col gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                설문 ID
-                                            </label>
-                                            <div className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-500">
-                                                {form.id || "자동생성"}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                설문 제목 <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={form.title}
-                                                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value.trim() }))}
-                                                className="w-full border rounded px-3 py-2 text-base min-h-[40px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                placeholder="설문 제목을 입력하세요"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="mt-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            설문 설명
-                                        </label>
-                                        <textarea
-                                            value={form.description}
-                                            onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value.trim() }))}
-                                            className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                            placeholder="설문에 대한 설명을 입력하세요"
-                                        />
-                                    </div>
-                                </div>
+                                <SurveyBasicInfo
+                                    id={form.id}
+                                    title={form.title}
+                                    description={form.description || ""}
+                                    onUpdate={handleBasicInfoUpdate}
+                                />
 
                                 <div className="border-t border-gray-200 my-6"></div>
 
@@ -882,23 +723,12 @@ export function FormEditor({
                                                         question={question}
                                                         questionIndex={index}
                                                         questions={form.questions}
-                                                        onUpdate={(updatedQuestion) => updateQuestion(index, updatedQuestion)}
+                                                        onUpdate={(updatedQuestion) => {
+                                                            console.log('onUpdate', { updatedQuestion })
+                                                            updateQuestion(index, updatedQuestion)
+                                                        }}
                                                         onDelete={() => deleteQuestion(index)}
                                                         onCopy={() => copyQuestion(index)}
-                                                        onImageClick={(type, optIdx) => {
-                                                            let urls: string[] = [];
-                                                            if (type === 'question' && question.images) urls = question.images;
-                                                            if (type === 'option' && optIdx !== undefined && question.options && question.options[optIdx]?.images) urls = question.options[optIdx].images;
-                                                            setImageModal({ type, qIdx: index, optIdx, urls });
-                                                        }}
-                                                        onBranchAdd={(optIdx) => setBranchModal({ qIdx: index, optIdx })}
-                                                        onBranchDelete={(optIdx) => handleBranchDelete(index, optIdx)}
-                                                        onShowConditionAdd={() => setConditionModal({ qIdx: index })}
-                                                        onShowConditionDelete={(questionId, condIdx) => {
-                                                            handleShowConditionDelete(index, condIdx)
-                                                        }}
-                                                        onNextQuestionAdd={() => setNextQuestionModal({ qIdx: index })}
-                                                        onNextQuestionDelete={() => handleNextQuestionDelete(index)}
                                                         deletingQuestionId={deletingQuestionId}
                                                     />
                                                 )
@@ -967,33 +797,6 @@ export function FormEditor({
                 </div>
             </div>
 
-            {/* 이미지 URL 입력 모달 */}
-            <ImageUrlModal
-                open={!!imageModal}
-                urls={imageModal?.urls || []}
-                onChange={urls => setImageModal(imageModal ? { ...imageModal, urls } : null)}
-                onCancel={() => setImageModal(null)}
-                onSave={handleImageSave}
-            />
-            {/* 분기 모달 */}
-            <BranchModal
-                isOpen={!!branchModal}
-                onClose={() => setBranchModal(null)}
-                questions={form.questions}
-                onAdd={(nextQuestionId) => handleBranchAdd(branchModal!.qIdx, branchModal!.optIdx, nextQuestionId)}
-            />
-
-            {/* 다음 문항 연결 모달 */}
-            <BranchModal
-                isOpen={!!nextQuestionModal}
-                onClose={() => setNextQuestionModal(null)}
-                questions={form.questions}
-                onAdd={(nextQuestionId) => handleNextQuestionAdd(nextQuestionModal!.qIdx, nextQuestionId)}
-            />
-
-            {/* 조건부 표시 모달 */}
-            {MemoizedConditionModal}
-
             {/* JSON 가져오기 모달 */}
             <JsonImportModal
                 isOpen={showJsonImportModal}
@@ -1013,13 +816,14 @@ export function FormEditor({
                 autoClose={5000}
                 hideProgressBar={false}
                 newestOnTop={false}
-                closeOnClick
+                closeOnClick={true}
                 rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
+                pauseOnFocusLoss={false}
+                draggable={true}
+                pauseOnHover={true}
                 theme="light"
                 toastClassName="toast-enter"
+                limit={3}
             />
         </div>
     );

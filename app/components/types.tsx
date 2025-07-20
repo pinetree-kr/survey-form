@@ -71,6 +71,8 @@ export type TQuestion = {
     show_conditions?: TBranchCondition[];
     // 다음 문항 연결 (설정이 없으면 자동으로 다음 문항으로 이동)
     next_question_id?: string;
+    // 문항 가리기 여부
+    is_hidden?: boolean;
 };
 
 // 설문 전체 타입

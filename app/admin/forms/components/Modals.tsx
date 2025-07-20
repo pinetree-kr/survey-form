@@ -17,7 +17,7 @@ export function BranchModal({
     isOpen: boolean;
     onClose: () => void;
     questions: TQuestion[];
-    onAdd: (nextQuestionId: string) => void;
+    onAdd: (nextQuestionId: string | null) => void;
 }) {
     const [selectedQuestionId, setSelectedQuestionId] = useState<string>('');
     const [mounted, setMounted] = useState(false);
@@ -31,16 +31,20 @@ export function BranchModal({
     }, [isOpen])
 
 
-    const handleSubmit = () => {
-        if (selectedQuestionId) {
+    const handleSubmit = React.useCallback(() => {
+        if (selectedQuestionId === 'remove') {
+            // "다음 문항으로 진행하기" 선택 시 연결 제거
+            onAdd(null);
+        } else if (selectedQuestionId) {
             // 선택된 인덱스에 해당하는 question의 id를 사용
             const selectedIndex = parseInt(selectedQuestionId);
             const selectedQuestion = questions[selectedIndex];
-            if (selectedQuestion) {
+
+            if (selectedQuestion && onAdd) {
                 onAdd(selectedQuestion.id);
             }
         }
-    };
+    }, [selectedQuestionId, questions, onAdd]);
 
     // 클라이언트에서만 렌더링
     if (!mounted) return null;
@@ -84,13 +88,34 @@ export function BranchModal({
                                         <div className="relative">
                                             <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <span className="block truncate">
-                                                    {selectedQuestionId ? `${parseInt(selectedQuestionId) + 1}번 ${questions[parseInt(selectedQuestionId)]?.title || ''}` : '문항 선택'}
+                                                    {selectedQuestionId === 'remove' ? '다음 문항으로 진행하기' : 
+                                                     selectedQuestionId ? `${parseInt(selectedQuestionId) + 1}번 ${questions[parseInt(selectedQuestionId)]?.title || ''}` : '문항 선택'}
                                                 </span>
                                                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                                                     <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                                                 </span>
                                             </ListboxButton>
                                             <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                {/* 다음 문항으로 진행하기 옵션 */}
+                                                <ListboxOption
+                                                    value="remove"
+                                                    className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}
+                                                >
+                                                    {({ selected }) => (
+                                                        <>
+                                                            <span className="absolute left-2 top-2 flex items-center">
+                                                                {selected ? <CheckCircleIcon className="h-5 w-5 text-blue-500" /> : <span className="inline-block w-5" />}
+                                                            </span>
+                                                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                다음 문항으로 진행하기
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </ListboxOption>
+                                                
+                                                {/* 구분선 */}
+                                                <div className="border-t border-gray-200 my-1"></div>
+                                                
                                                 {questions.map((q, qIdx) => (
                                                     <ListboxOption
                                                         key={qIdx}
@@ -264,7 +289,7 @@ export function ConditionModal({
                                                     <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                                                 </span>
                                             </ListboxButton>
-                                            <ListboxOptions className="absolute z-50 mt-1 max-h-80 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                            <ListboxOptions className="absolute z-50 mt-1 max-h680 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
                                                 {questions.map((q, qIdx) => {
                                                     // if (q.question_type !== 'single_choice' && q.question_type !== 'multiple_choice' && q.question_type !== 'dropdown') return null;
 
