@@ -41,12 +41,13 @@ export function FormEditor({
     });
 
     // 설문 기본 정보 업데이트 핸들러
-    const handleBasicInfoUpdate = useCallback((updates: { title: string; description: string; allow_anonymous?: boolean }) => {
+    const handleBasicInfoUpdate = useCallback((updates: { title: string; description: string; allow_anonymous?: boolean; is_active?: boolean }) => {
         setForm(prev => ({
             ...prev,
             title: updates.title,
             description: updates.description,
-            allow_anonymous: updates.allow_anonymous
+            allow_anonymous: updates.allow_anonymous,
+            is_active: updates.is_active
         }));
     }, []);
 
@@ -718,6 +719,7 @@ export function FormEditor({
                                     title={form.title}
                                     description={form.description || ""}
                                     allow_anonymous={form.allow_anonymous}
+                                    is_active={form.is_active}
                                     onUpdate={handleBasicInfoUpdate}
                                 />
 

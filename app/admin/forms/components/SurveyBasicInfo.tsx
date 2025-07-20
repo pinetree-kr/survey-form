@@ -24,14 +24,16 @@ interface SurveyBasicInfoProps {
     title: string;
     description: string;
     allow_anonymous?: boolean;
-    onUpdate: (updates: { title: string; description: string; allow_anonymous?: boolean }) => void;
+    is_active?: boolean;
+    onUpdate: (updates: { title: string; description: string; allow_anonymous?: boolean; is_active?: boolean }) => void;
 }
 
-export function SurveyBasicInfo({ id, title, description, allow_anonymous = false, onUpdate }: SurveyBasicInfoProps) {
+export function SurveyBasicInfo({ id, title, description, allow_anonymous = false, is_active = true, onUpdate }: SurveyBasicInfoProps) {
     // 로컬 상태로 즉시 반응하는 UI
     const [localTitle, setLocalTitle] = useState(title);
     const [localDescription, setLocalDescription] = useState(description);
     const [localAllowAnonymous, setLocalAllowAnonymous] = useState(allow_anonymous);
+    const [localIsActive, setLocalIsActive] = useState(is_active);
 
     // 디바운스된 값들
     const debouncedTitle = useDebounce(localTitle, 300);
@@ -42,16 +44,18 @@ export function SurveyBasicInfo({ id, title, description, allow_anonymous = fals
         setLocalTitle(title);
         setLocalDescription(description);
         setLocalAllowAnonymous(allow_anonymous);
-    }, [title, description, allow_anonymous]);
+        setLocalIsActive(is_active);
+    }, [title, description, allow_anonymous, is_active]);
 
     // 디바운스된 값이 변경될 때 부모 컴포넌트에 알림
     useEffect(() => {
         onUpdate({
             title: debouncedTitle,
             description: debouncedDescription,
-            allow_anonymous: localAllowAnonymous
+            allow_anonymous: localAllowAnonymous,
+            is_active: localIsActive
         });
-    }, [debouncedTitle, debouncedDescription, localAllowAnonymous, onUpdate]);
+    }, [debouncedTitle, debouncedDescription, localAllowAnonymous, localIsActive, onUpdate]);
 
     return (
         <div className="bg-white p-6 rounded-md shadow-md mb-6">
@@ -112,6 +116,31 @@ export function SurveyBasicInfo({ id, title, description, allow_anonymous = fals
                         <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                                 localAllowAnonymous ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                    </button>
+                </div>
+            </div>
+            <div className="mt-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            설문 활성화
+                        </label>
+                        <p className="text-xs text-gray-500">
+                            설문을 활성화하여 응답을 받을 수 있도록 합니다
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setLocalIsActive(!localIsActive)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                            localIsActive ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                    >
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                localIsActive ? 'translate-x-6' : 'translate-x-1'
                             }`}
                         />
                     </button>

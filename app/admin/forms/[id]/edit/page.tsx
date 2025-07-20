@@ -69,6 +69,7 @@ async function handleUpdate(formData: TSurvey, surveyId?: string) {
       description: formData.description || null,
       questions: formData.questions || [],
       allow_anonymous: formData.allow_anonymous || false,
+      is_active: formData.is_active !== undefined ? formData.is_active : true,
       updated_by: user.id,
       updated_at: new Date().toISOString()
     })
