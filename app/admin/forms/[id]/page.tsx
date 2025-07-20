@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { CompositeQuestionItem } from './components'
 import { TBranchLogic, TOption, TQuestion, TSurvey } from '@/app/components'
 import { formatCondition } from '@/lib/survey-utils'
-import SurveyPreview from './components/SurveyPreview'
+import QuestionListView from './components/QuestionListView'
 
 interface SurveyDetailPageProps {
   params: Promise<{
@@ -152,7 +152,7 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
           </div>
         </div>
 
-        <SurveyPreview survey={survey} />
+        <QuestionListView questions={survey.questions} />
         <div className="bg-white rounded-lg shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">JSON 데이터</h2>
@@ -178,6 +178,12 @@ export default async function SurveyDetailPage({ params }: SurveyDetailPageProps
               </Link>
             </div>
             <div className="flex space-x-3">
+              <Link
+                href={`/admin/forms/${survey.id}/preview`}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Preview
+              </Link>
               <Link
                 href={`/admin/forms/${survey.id}/edit`}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"

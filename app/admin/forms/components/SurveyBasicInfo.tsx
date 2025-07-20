@@ -23,13 +23,15 @@ interface SurveyBasicInfoProps {
     id?: string;
     title: string;
     description: string;
-    onUpdate: (updates: { title: string; description: string }) => void;
+    allow_anonymous?: boolean;
+    onUpdate: (updates: { title: string; description: string; allow_anonymous?: boolean }) => void;
 }
 
-export function SurveyBasicInfo({ id, title, description, onUpdate }: SurveyBasicInfoProps) {
+export function SurveyBasicInfo({ id, title, description, allow_anonymous = false, onUpdate }: SurveyBasicInfoProps) {
     // 로컬 상태로 즉시 반응하는 UI
     const [localTitle, setLocalTitle] = useState(title);
     const [localDescription, setLocalDescription] = useState(description);
+    const [localAllowAnonymous, setLocalAllowAnonymous] = useState(allow_anonymous);
 
     // 디바운스된 값들
     const debouncedTitle = useDebounce(localTitle, 300);
@@ -39,15 +41,17 @@ export function SurveyBasicInfo({ id, title, description, onUpdate }: SurveyBasi
     useEffect(() => {
         setLocalTitle(title);
         setLocalDescription(description);
-    }, [title, description]);
+        setLocalAllowAnonymous(allow_anonymous);
+    }, [title, description, allow_anonymous]);
 
     // 디바운스된 값이 변경될 때 부모 컴포넌트에 알림
     useEffect(() => {
         onUpdate({
             title: debouncedTitle,
-            description: debouncedDescription
+            description: debouncedDescription,
+            allow_anonymous: localAllowAnonymous
         });
-    }, [debouncedTitle, debouncedDescription, onUpdate]);
+    }, [debouncedTitle, debouncedDescription, localAllowAnonymous, onUpdate]);
 
     return (
         <div className="bg-white p-6 rounded-md shadow-md mb-6">
@@ -87,6 +91,31 @@ export function SurveyBasicInfo({ id, title, description, onUpdate }: SurveyBasi
                     className="w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     placeholder="설문에 대한 설명을 입력하세요"
                 />
+            </div>
+            <div className="mt-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            익명 응답 허용
+                        </label>
+                        <p className="text-xs text-gray-500">
+                            익명으로 설문에 응답할 수 있도록 허용합니다
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setLocalAllowAnonymous(!localAllowAnonymous)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                            localAllowAnonymous ? 'bg-blue-600' : 'bg-gray-200'
+                        }`}
+                    >
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                localAllowAnonymous ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                    </button>
+                </div>
             </div>
         </div>
     );

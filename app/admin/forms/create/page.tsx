@@ -30,6 +30,7 @@ async function handleCreate(formData: TSurvey) {
       title: formData.title,
       description: formData.description || null,
       questions: formData.questions || [],
+      allow_anonymous: formData.allow_anonymous || false,
       is_active: true,
       created_by: user.id,
       // created_at: new Date().toISOString(),

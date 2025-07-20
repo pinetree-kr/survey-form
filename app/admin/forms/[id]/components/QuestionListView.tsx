@@ -5,28 +5,28 @@ import { formatCondition } from "@/lib";
 import CompositeQuestionItem from "./CompositeQuestionItem";
 
 
-export default function SurveyPreview({
-    survey
+export default function QuestionListView({
+    questions
 }: {
-    survey: TSurvey,
+    questions: TQuestion[],
 }) {
 
 
     // 문항 번호를 찾는 헬퍼 함수
     const getQuestionNumber = (questionId: string) => {
-        const index = survey.questions.findIndex(q => q.id === questionId)
+        const index = questions.findIndex(q => q.id === questionId)
         return index !== -1 ? index + 1 : '?'
     }
 
     return (
         <div className="bg-white rounded-lg shadow-sm">
             <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">설문 미리보기</h2>
+                <h2 className="text-lg font-medium text-gray-900">문항 목록</h2>
             </div>
             <div className="px-6 py-6">
-                {survey.questions && survey.questions.length > 0 ? (
+                {questions && questions.length > 0 ? (
                     <div className="space-y-8">
-                        {survey.questions.map((question: TQuestion, index: number) => (
+                        {questions.map((question: TQuestion, index: number) => (
                             <div key={question.id} className="border border-gray-200 rounded-lg p-6">
                                 {/* 문항 헤더 */}
                                 <div className="flex items-start justify-between mb-4">
@@ -62,8 +62,8 @@ export default function SurveyPreview({
                                         <span className="text-sm font-medium">문항 활성화 조건:</span>
                                         <span className="text-sm">
                                             {question.show_conditions.map(condition =>
-                                                `(${formatCondition(condition, survey.questions, getQuestionNumber)})`
-                                            ).join(' AND ')}
+                                                `(${formatCondition(condition, questions, getQuestionNumber)})`
+                                            ).join(' OR ')}
                                             <span className="text-sm font-medium"> 라고 응답 시</span>
                                         </span>
                                     </div>
@@ -191,4 +191,4 @@ export default function SurveyPreview({
             </div>
         </div>
     )
-}
+} 

@@ -750,7 +750,7 @@ export const QuestionPanel = ({
                             <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span className="text-sm font-medium text-amber-800">활성화 조건</span>
+                            <span className="text-sm font-medium text-amber-800">활성화 조건 (OR)</span>
                         </div>
                         {showConditionsInfo ? (
                             <div className="space-y-3">
@@ -776,6 +776,7 @@ export const QuestionPanel = ({
                                     <div className="text-sm">
                                         <p className="font-medium mb-1">활성화 조건이 없습니다</p>
                                         <p className="text-amber-600">아래의 "추가" 버튼을 클릭하여 조건을 설정해주세요</p>
+                                        <p className="text-amber-500 text-xs mt-1">※ 여러 조건을 설정하면 OR 조건으로 작동합니다</p>
                                     </div>
                                 </div>
                                 <button

@@ -81,6 +81,7 @@ export type TSurvey = {
     title: string;
     description?: string;
     is_active?: boolean;
+    allow_anonymous?: boolean;
     questions: TQuestion[];
     created_at?: string;
     updated_at?: string;
@@ -98,6 +99,26 @@ export type TSurvey = {
     };
 }
 
+// 설문 응답 타입
+export type TSurveyResponse = {
+    id?: string;
+    survey_id: string;
+    respondent_id?: string | null;
+    is_anonymous?: boolean;
+    answers: Record<string, any>;
+    started_at?: string;
+    completed_at?: string | null;
+    ip_address?: string | null;
+    user_agent?: string | null;
+};
+
+// 익명 응답 통계 타입
+export type TAnonymousResponseSummary = {
+    survey_id: string;
+    total_anonymous_responses: number;
+    completed_anonymous_responses: number;
+    avg_completion_time_minutes: number | null;
+};
 
 // 문항 유형 리스트
 export const QUESTION_TYPE_OPTIONS: { value: TQuestionType; label: string; icon: ReactNode }[] = [

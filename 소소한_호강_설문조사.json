@@ -1,8 +1,10 @@
 {
+  "id": "b20489b3-d658-470b-9a26-ab2dd4ba1b4f",
   "title": "소소한 호강 설문조사",
   "description": "소소한 호강 프로그램 참여자 대상 설문조사입니다.",
   "questions": [
     {
+      "id": "9f33c5cc-34f3-47a8-9f8d-13ef90e48742",
       "title": "당신의 성별은?",
       "options": [
         {
@@ -20,6 +22,7 @@
       "show_conditions": []
     },
     {
+      "id": "f9e826f9-8a8e-48c1-98e9-884b3b379530",
       "title": "당신의 연령대는?",
       "options": [
         {
@@ -49,7 +52,9 @@
       "show_conditions": []
     },
     {
+      "id": "09c0bc1f-ab96-46e4-ae58-5a65adaea4b7",
       "title": "당신의 거주지역은?",
+      "hasEtc": true,
       "options": [
         {
           "key": "충주시",
@@ -75,10 +80,10 @@
       "required": true,
       "description": "",
       "question_type": "single_choice",
-      "hasEtc": true,
       "show_conditions": []
     },
     {
+      "id": "0895238f-5af0-472e-b82b-61cd55009098",
       "title": "거주 행정구역은 어디십니까?",
       "options": [
         {
@@ -187,12 +192,21 @@
         }
       ],
       "required": true,
+      "is_hidden": true,
       "description": "",
       "question_type": "single_choice",
-      "show_conditions": []
+      "show_conditions": [
+        {
+          "value": "충주시",
+          "operator": "eq",
+          "question_id": "09c0bc1f-ab96-46e4-ae58-5a65adaea4b7"
+        }
+      ]
     },
     {
+      "id": "328296ca-c846-4f67-8d5c-a4e45ff792b1",
       "title": "오늘 소소한 호강 프로그램은 누구와 함께 오셨나요?",
+      "hasEtc": true,
       "options": [
         {
           "key": "혼자",
@@ -213,20 +227,17 @@
         {
           "key": "동료",
           "label": "동료"
-        },
-        {
-          "key": "기타",
-          "label": "기타"
         }
       ],
       "required": true,
       "description": "",
       "question_type": "multiple_choice",
-      "hasEtc": true,
       "show_conditions": []
     },
     {
+      "id": "eee2ef7b-4f28-402d-9885-f9b295f5143f",
       "title": "오늘 동행자 중 소소한 호강 참여를 제안한 사람은 누구입니까?",
+      "hasEtc": true,
       "options": [
         {
           "key": "본인",
@@ -238,13 +249,36 @@
         }
       ],
       "required": true,
+      "is_hidden": true,
       "description": "",
       "question_type": "single_choice",
-      "hasEtc": true,
-      "show_conditions": []
+      "show_conditions": [
+        {
+          "value": "가족",
+          "operator": "eq",
+          "question_id": "328296ca-c846-4f67-8d5c-a4e45ff792b1"
+        },
+        {
+          "value": "친구",
+          "operator": "eq",
+          "question_id": "328296ca-c846-4f67-8d5c-a4e45ff792b1"
+        },
+        {
+          "value": "연인",
+          "operator": "eq",
+          "question_id": "328296ca-c846-4f67-8d5c-a4e45ff792b1"
+        },
+        {
+          "value": "동료",
+          "operator": "eq",
+          "question_id": "328296ca-c846-4f67-8d5c-a4e45ff792b1"
+        }
+      ]
     },
     {
+      "id": "5ac67da0-3e79-46ef-b0d7-826736584653",
       "title": "소소한 호강 정보는 어디서 얻으셨습니까?",
+      "hasEtc": true,
       "options": [
         {
           "key": "가족/친구",
@@ -264,21 +298,24 @@
         }
       ],
       "required": true,
+      "is_hidden": false,
       "description": "",
       "question_type": "multiple_choice",
-      "hasEtc": true,
       "show_conditions": []
     },
     {
+      "id": "218c9cb9-9459-410c-9269-dd8694077be0",
       "title": "소소한 호강 참여 후, 이 프로그램을 추천하거나 정보를 공유할 의향이 있습니까?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "e250777a-b342-437c-97a9-a53169d6b479"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "a079876b-9f90-4074-879e-abfabaf67e2b"
         }
       ],
       "required": true,
@@ -287,7 +324,9 @@
       "show_conditions": []
     },
     {
+      "id": "e250777a-b342-437c-97a9-a53169d6b479",
       "title": "정보를 공유하신다면, 누구에게 공유하실 계획이실까요?",
+      "hasEtc": true,
       "options": [
         {
           "key": "가족",
@@ -307,27 +346,24 @@
         }
       ],
       "required": false,
+      "is_hidden": false,
       "description": "",
       "question_type": "multiple_choice",
-      "hasEtc": true,
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q8"
-        }
-      ]
+      "show_conditions": []
     },
     {
+      "id": "a079876b-9f90-4074-879e-abfabaf67e2b",
       "title": "소소한 호강 참여 전에 식사를 하셨나요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "df80ad00-9dcd-433a-a032-617072f72d1d"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "57e163ec-077f-4ed8-a7fa-fceed361d867"
         }
       ],
       "required": true,
@@ -336,23 +372,7 @@
       "show_conditions": []
     },
     {
-      "title": "소소한 호강 참여 전에 식사를 하셨나요?",
-      "options": [
-        {
-          "key": "예",
-          "label": "예"
-        },
-        {
-          "key": "아니오",
-          "label": "아니오"
-        }
-      ],
-      "required": true,
-      "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
-    },
-    {
+      "id": "df80ad00-9dcd-433a-a032-617072f72d1d",
       "title": "식사에 사용하신 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -392,15 +412,18 @@
       ]
     },
     {
+      "id": "57e163ec-077f-4ed8-a7fa-fceed361d867",
       "title": "소소한 호강 참여 전에 카페를 방문하셨나요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "2e59728d-4e40-4d9c-af3c-026aac907f08"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "a9ed3168-3c13-41e8-8f79-9872d46b6da0"
         }
       ],
       "required": true,
@@ -409,6 +432,7 @@
       "show_conditions": []
     },
     {
+      "id": "2e59728d-4e40-4d9c-af3c-026aac907f08",
       "title": "카페에 사용하신 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -448,15 +472,18 @@
       ]
     },
     {
+      "id": "a9ed3168-3c13-41e8-8f79-9872d46b6da0",
       "title": "소소한 호강 참여 전에 쇼핑을 즐기셨나요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "feffa0c4-8f5f-4218-be94-18c88028683f"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "a42ac564-ad0a-471a-9fdf-d86efc42a730"
         }
       ],
       "required": true,
@@ -465,6 +492,7 @@
       "show_conditions": []
     },
     {
+      "id": "feffa0c4-8f5f-4218-be94-18c88028683f",
       "title": "쇼핑에 사용하신 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -504,15 +532,18 @@
       ]
     },
     {
+      "id": "a42ac564-ad0a-471a-9fdf-d86efc42a730",
       "title": "그 외에 하신 활동이 있나요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "5b8b98e2-bed3-4e77-8f9e-7d80c4f3ea80"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "23643658-0dbb-4222-838a-529844185714"
         }
       ],
       "required": true,
@@ -521,9 +552,10 @@
       "show_conditions": []
     },
     {
+      "id": "5b8b98e2-bed3-4e77-8f9e-7d80c4f3ea80",
       "title": "어떠한 활동을 하셨나요?",
       "options": [],
-      "required": false,
+      "required": true,
       "description": "",
       "question_type": "short_text",
       "show_conditions": [
@@ -535,6 +567,7 @@
       ]
     },
     {
+      "id": "0f88c606-66fe-4e1d-a0b7-5b2a55d7107b",
       "title": "활동에 사용하신 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -574,7 +607,9 @@
       ]
     },
     {
+      "id": "23643658-0dbb-4222-838a-529844185714",
       "title": "오늘 참여 장소까지 어떻게 오셨습니까?",
+      "hasEtc": true,
       "options": [
         {
           "key": "도보",
@@ -587,44 +622,6 @@
         {
           "key": "자가용",
           "label": "자가용"
-        },
-        {}
-      ],
-      "required": true,
-      "description": "",
-      "question_type": "single_choice",
-      "hasEtc": true,
-      "show_conditions": []
-    },
-    {
-      "title": "오늘 참여 장소까지 어떻게 오셨습니까?",
-      "options": [
-        {
-          "key": "버스",
-          "label": "버스"
-        },
-        {
-          "key": "자가용",
-          "label": "자가용"
-        },
-        {}
-      ],
-      "required": true,
-      "description": "",
-      "question_type": "single_choice",
-      "hasEtc": true,
-      "show_conditions": []
-    },
-    {
-      "title": "오늘 소소한 호강 참여 후에 식사를 할 계획이 있으신가요?",
-      "options": [
-        {
-          "key": "예",
-          "label": "예"
-        },
-        {
-          "key": "아니오",
-          "label": "아니오"
         }
       ],
       "required": true,
@@ -633,6 +630,27 @@
       "show_conditions": []
     },
     {
+      "id": "a0291de4-a764-496a-9f3c-009b83e92dd8",
+      "title": "오늘 소소한 호강 참여 후에 식사를 할 계획이 있으신가요?",
+      "options": [
+        {
+          "key": "예",
+          "label": "예",
+          "next_question_id": "8bc743a2-cbf2-41ac-b563-3865affdb058"
+        },
+        {
+          "key": "아니오",
+          "label": "아니오",
+          "next_question_id": "fae663fb-471e-46ec-8893-c6d7f2290b7a"
+        }
+      ],
+      "required": true,
+      "description": "",
+      "question_type": "single_choice",
+      "show_conditions": []
+    },
+    {
+      "id": "8bc743a2-cbf2-41ac-b563-3865affdb058",
       "title": "식사에 사용하실 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -672,15 +690,18 @@
       ]
     },
     {
+      "id": "fae663fb-471e-46ec-8893-c6d7f2290b7a",
       "title": "오늘 소소한 호강 참여 후에 카페를 방문할 계획이 있으신가요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "bf4aefab-78f9-459d-8d52-1edceb50f566"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "25b6a559-551e-414a-bf74-02d913f34c2c"
         }
       ],
       "required": true,
@@ -689,6 +710,7 @@
       "show_conditions": []
     },
     {
+      "id": "bf4aefab-78f9-459d-8d52-1edceb50f566",
       "title": "카페에 사용하실 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -728,15 +750,18 @@
       ]
     },
     {
+      "id": "25b6a559-551e-414a-bf74-02d913f34c2c",
       "title": "오늘 소소한 호강 참여 후에 전시나 문화 공간에 방문하실 계획이 있으신가요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "6449fc9a-bed1-4ef7-998f-85349e690062"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "d1b4d52e-a86d-44d4-8319-97daca2fc148"
         }
       ],
       "required": true,
@@ -745,6 +770,7 @@
       "show_conditions": []
     },
     {
+      "id": "6449fc9a-bed1-4ef7-998f-85349e690062",
       "title": "전시나 문화 공간에 사용하실 금액은 어느 정도이십니까?",
       "options": [
         {
@@ -784,15 +810,18 @@
       ]
     },
     {
+      "id": "d1b4d52e-a86d-44d4-8319-97daca2fc148",
       "title": "그 외에 계획하고 계신 다른 활동이 있으신가요?",
       "options": [
         {
           "key": "예",
-          "label": "예"
+          "label": "예",
+          "next_question_id": "700085a4-4eb4-46fe-ac48-c4ede7668dd5"
         },
         {
           "key": "아니오",
-          "label": "아니오"
+          "label": "아니오",
+          "next_question_id": "261df9d0-801c-4d39-89ae-5f78816e3024"
         }
       ],
       "required": true,
@@ -801,6 +830,7 @@
       "show_conditions": []
     },
     {
+      "id": "700085a4-4eb4-46fe-ac48-c4ede7668dd5",
       "title": "어떠한 활동을 계획하고 계신가요?",
       "options": [],
       "required": false,
@@ -815,6 +845,7 @@
       ]
     },
     {
+      "id": "261df9d0-801c-4d39-89ae-5f78816e3024",
       "title": "참여 장소로부터 귀가까지 예상 소요 시간은 어느 정도인가요?",
       "options": [
         {
@@ -840,7 +871,9 @@
       "show_conditions": []
     },
     {
+      "id": "ac4056e9-c21d-49cd-96d6-d3effda08ff1",
       "title": "소소한 호강 참여를 결정한 과정에서 거친 단계를 모두 선택해주세요.",
+      "hasEtc": true,
       "options": [
         {
           "key": "주변 사람(가족/친구/동료)과 공연에 대해 이야기함",
@@ -873,16 +906,15 @@
         {
           "key": "공연장 방문을 위한 일정을 조율함",
           "label": "공연장 방문을 위한 일정을 조율함"
-        },
-        {}
+        }
       ],
       "required": true,
       "description": "",
       "question_type": "multiple_choice",
-      "hasEtc": true,
       "show_conditions": []
     },
     {
+      "id": "ee37f5e9-6430-4792-9282-ab3b98abc520",
       "title": "소소한 호강 참여 경험에 대한 전반적 만족도를 평가해 주세요",
       "options": [
         {
@@ -912,12 +944,14 @@
       "show_conditions": []
     },
     {
+      "id": "b8bb9bf1-638a-4a25-8a75-2225ece39eee",
       "title": "소소한 호강 체험과 대한민국 문화도시 충주 사업 관련하여 건의사항이나 느낀 점이 있다면 자유롭게 적어주세요.",
       "options": [],
-      "required": false,
+      "required": true,
       "description": "",
       "question_type": "long_text",
       "show_conditions": []
     }
-  ]
+  ],
+  "allow_anonymous": false
 }

@@ -78,6 +78,7 @@ export interface Database {
                     description: string | null
                     questions: Json
                     is_active: boolean
+                    allow_anonymous: boolean
                     created_by: string
                     updated_by: string | null
                     created_at: string
@@ -89,6 +90,7 @@ export interface Database {
                     description?: string | null
                     questions?: Json
                     is_active?: boolean
+                    allow_anonymous?: boolean
                     created_by: string
                     updated_by?: string | null
                     created_at?: string
@@ -100,6 +102,7 @@ export interface Database {
                     description?: string | null
                     questions?: Json
                     is_active?: boolean
+                    allow_anonymous?: boolean
                     created_by?: string
                     updated_by?: string | null
                     created_at?: string
@@ -111,6 +114,7 @@ export interface Database {
                     id: string
                     survey_id: string
                     respondent_id: string | null
+                    is_anonymous: boolean
                     answers: Json
                     started_at: string
                     completed_at: string | null
@@ -121,6 +125,7 @@ export interface Database {
                     id?: string
                     survey_id: string
                     respondent_id?: string | null
+                    is_anonymous?: boolean
                     answers?: Json
                     started_at?: string
                     completed_at?: string | null
@@ -131,6 +136,7 @@ export interface Database {
                     id?: string
                     survey_id?: string
                     respondent_id?: string | null
+                    is_anonymous?: boolean
                     answers?: Json
                     started_at?: string
                     completed_at?: string | null

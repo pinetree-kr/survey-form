@@ -13,10 +13,10 @@ interface JsonExportModalProps {
 export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModalProps) {
   const [copied, setCopied] = useState(false);
 
-  // ID를 제거하는 함수 (survey의 id만 제거)
-  const removeIds = (data: any): any => {
+  // ID를 제거하고 is_hidden: false인 문항의 show_conditions를 비우는 함수
+  const processExportData = (data: any): any => {
     if (Array.isArray(data)) {
-      return data.map(item => removeIds(item));
+      return data.map(item => processExportData(item));
     }
 
     if (data && typeof data === 'object') {
@@ -27,7 +27,21 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
           // survey 객체의 id만 제거 (questions 배열이 없는 최상위 객체)
           continue;
         }
-        newData[key] = removeIds(value);
+        
+        // questions 배열인 경우 is_hidden: false인 문항의 show_conditions를 비움
+        if (key === 'questions' && Array.isArray(value)) {
+          newData[key] = value.map((question: any) => {
+            if (question.is_hidden === false) {
+              return {
+                ...question,
+                show_conditions: []
+              };
+            }
+            return question;
+          });
+        } else {
+          newData[key] = processExportData(value);
+        }
       }
       return newData;
     }
@@ -37,14 +51,12 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
 
   const handleCopy = async () => {
     try {
-      // ID를 제거한 데이터로 JSON 생성
-      // const dataWithoutIds = removeIds(surveyData);
-
-      delete surveyData.id
-      const jsonString = JSON.stringify(surveyData, null, 2);
+      // ID를 제거하고 is_hidden: false인 문항의 show_conditions를 비운 데이터로 JSON 생성
+      const processedData = processExportData(surveyData);
+      const jsonString = JSON.stringify(processedData, null, 2);
       await navigator.clipboard.writeText(jsonString);
       setCopied(true);
-      toast.success('JSON이 클립보드에 복사되었습니다. (ID 제거됨)');
+      toast.success('JSON이 클립보드에 복사되었습니다. (ID 제거됨, is_hidden: false 문항의 show_conditions 비움)');
 
       // 2초 후 복사 상태 초기화
       setTimeout(() => setCopied(false), 2000);
@@ -56,9 +68,9 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
 
   const handleDownload = () => {
     try {
-      // ID를 제거한 데이터로 JSON 생성
-      const dataWithoutIds = removeIds(surveyData);
-      const jsonString = JSON.stringify(dataWithoutIds, null, 2);
+      // ID를 제거하고 is_hidden: false인 문항의 show_conditions를 비운 데이터로 JSON 생성
+      const processedData = processExportData(surveyData);
+      const jsonString = JSON.stringify(processedData, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -68,7 +80,7 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success('JSON 파일이 다운로드되었습니다. (ID 제거됨)');
+      toast.success('JSON 파일이 다운로드되었습니다. (ID 제거됨, is_hidden: false 문항의 show_conditions 비움)');
     } catch (err) {
       toast.error('파일 다운로드에 실패했습니다.');
       console.error('파일 다운로드 오류:', err);

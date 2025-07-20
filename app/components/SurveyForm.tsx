@@ -28,6 +28,21 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             valueToCompare = (conditionValue as Record<string, string>)[condition.sub_key];
         }
 
+        // multiple_choice의 경우 배열 처리를 위해 특별히 처리
+        if (Array.isArray(conditionValue)) {
+            switch (condition.operator) {
+                case "eq":
+                    return conditionValue.includes(String(condition.value));
+                case "neq":
+                    return !conditionValue.includes(String(condition.value));
+                case "contains":
+                    return conditionValue.some(val => String(val).includes(String(condition.value)));
+                default:
+                    return false; // 배열에서는 gt, lt, gte, lte 연산자 사용 불가
+            }
+        }
+
+        // 단일 값 처리
         switch (condition.operator) {
             case "eq":
                 return valueToCompare === condition.value;
@@ -63,13 +78,14 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             return true; // 조건이 없으면 항상 보여줌
         }
 
+        // OR 조건: 하나라도 만족하면 보여줌
         for (const condition of question.show_conditions) {
-            if (!checkCondition(condition)) {
-                return false; // 조건이 만족되지 않으면 보여주지 않음
+            if (checkCondition(condition)) {
+                return true; // 하나라도 조건이 만족되면 보여줌
             }
         }
 
-        return true; // 모든 조건이 만족되면 보여줌
+        return false; // 모든 조건이 만족되지 않으면 보여주지 않음
     }, [checkCondition]);
 
     // show_condition을 만족하는 문항들만 필터링
@@ -116,7 +132,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         // 1. 옵션별 직접 이동 로직 (단일/중복 객관식의 경우)
         if ((currentQuestion.question_type === "single_choice" || currentQuestion.question_type === "multiple_choice") &&
             typeof currentAnswer === 'string') {
-            const selectedOption = currentQuestion.options?.find(opt => opt.value === currentAnswer);
+            const selectedOption = currentQuestion.options?.find(opt => opt.key === currentAnswer);
             if (selectedOption?.next_question_id) {
                 const targetIndex = visibleQuestions.findIndex(q => q.id === selectedOption.next_question_id);
                 if (targetIndex !== -1) {
@@ -267,16 +283,16 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                                                 <input
                                                     type="checkbox"
                                                     name={question.id}
-                                                    value={opt.value}
+                                                    value={opt.key}
                                                     checked={Array.isArray(currentAnswer?.value) &&
-                                                        (currentAnswer?.value as string[]).includes(opt.value)}
+                                                        (currentAnswer?.value as string[]).includes(opt.key)}
                                                     onChange={(e) => {
                                                         const currentValues = Array.isArray(currentAnswer?.value)
                                                             ? (currentAnswer?.value as string[])
                                                             : [];
                                                         const newValues = e.target.checked
-                                                            ? [...currentValues, opt.value]
-                                                            : currentValues.filter(v => v !== opt.value);
+                                                            ? [...currentValues, opt.key]
+                                                            : currentValues.filter(v => v !== opt.key);
                                                         handleAnswerChange(question.id, newValues);
                                                     }}
                                                     className="form-checkbox text-blue-600"

@@ -41,11 +41,12 @@ export function FormEditor({
     });
 
     // 설문 기본 정보 업데이트 핸들러
-    const handleBasicInfoUpdate = useCallback((updates: { title: string; description: string }) => {
+    const handleBasicInfoUpdate = useCallback((updates: { title: string; description: string; allow_anonymous?: boolean }) => {
         setForm(prev => ({
             ...prev,
             title: updates.title,
-            description: updates.description
+            description: updates.description,
+            allow_anonymous: updates.allow_anonymous
         }));
     }, []);
 
@@ -400,8 +401,22 @@ export function FormEditor({
 
         try {
             setIsSaving(true);
-            console.log({ form })
-            const savedSurvey = await onSave(form, form.id);
+            
+            // is_hidden: false인 문항의 show_conditions를 비우는 로직
+            const processedForm = {
+                ...form,
+                questions: form.questions.map(question => {
+                    if (question.is_hidden === false) {
+                        return {
+                            ...question,
+                            show_conditions: []
+                        };
+                    }
+                    return question;
+                })
+            };
+            
+            const savedSurvey = await onSave(processedForm, form.id);
 
             // 성공 토스트 표시 (클릭 가능하도록 설정)
             const toastId = toast.success(
@@ -702,6 +717,7 @@ export function FormEditor({
                                     id={form.id}
                                     title={form.title}
                                     description={form.description || ""}
+                                    allow_anonymous={form.allow_anonymous}
                                     onUpdate={handleBasicInfoUpdate}
                                 />
 
