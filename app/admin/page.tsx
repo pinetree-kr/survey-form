@@ -3,7 +3,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase-ssr'
 import SeedButton from './components/SeedButton'
 
-export default async function AdminDashboardPage() {
+interface AdminDashboardPageProps {
+  searchParams: Promise<{ error?: string }>
+}
+
+export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
+  const params = await searchParams
+  const hasAccessError = params.error === 'access_denied'
     const { env } = await getCloudflareContext({ async: true });
     const supabase = await createClient(env)
 
@@ -25,6 +31,26 @@ export default async function AdminDashboardPage() {
 
     return (
         <div className="py-6 sm:px-6 lg:px-8 space-y-6">
+            {hasAccessError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                    <div className="flex">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-red-800">
+                                접근 권한이 없습니다
+                            </h3>
+                            <div className="mt-2 text-sm text-red-700">
+                                <p>시스템 설정 페이지에 접근하려면 관리자 권한이 필요합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">관리자 대시보드</h1>
                 <p className="mt-1 text-sm text-gray-500">
@@ -99,39 +125,41 @@ export default async function AdminDashboardPage() {
                     </div>
                 </div>
 
-                <div className="bg-white overflow-hidden shadow rounded-lg">
-                    <div className="p-5">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
+                {userRole === 'admin' && (
+                    <div className="bg-white overflow-hidden shadow rounded-lg">
+                        <div className="p-5">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div className="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt className="text-sm font-medium text-gray-500 truncate">
+                                            설정
+                                        </dt>
+                                        <dd>
+                                            <div className="text-lg font-medium text-gray-900">
+                                                시스템 설정
+                                            </div>
+                                        </dd>
+                                    </dl>
                                 </div>
                             </div>
-                            <div className="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt className="text-sm font-medium text-gray-500 truncate">
-                                        설정
-                                    </dt>
-                                    <dd>
-                                        <div className="text-lg font-medium text-gray-900">
-                                            시스템 설정
-                                        </div>
-                                    </dd>
-                                </dl>
+                        </div>
+                        <div className="bg-gray-50 px-5 py-3">
+                            <div className="text-sm">
+                                <Link href="/admin/settings" className="font-medium text-blue-700 hover:text-blue-900">
+                                    설정 보기 →
+                                </Link>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-gray-50 px-5 py-3">
-                        <div className="text-sm">
-                            <Link href="/admin/settings" className="font-medium text-blue-700 hover:text-blue-900">
-                                설정 보기 →
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                )}
 
                 {userRole === 'admin' && (
                     <>

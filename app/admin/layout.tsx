@@ -21,17 +21,48 @@ export default async function AdminLayout({
         redirect('/auth/sign-in')
     }
 
+    // 사용자 역할 확인
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    const isAdmin = profile?.role === 'admin'
+
     return (
         <div className="min-h-screen bg-gray-50">
             <nav className="bg-white shadow-sm border-b">
                 <div className="px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex items-center">
-                            <h1 className="text-xl font-semibold text-gray-900">
+                            <h1 className="text-xl font-semibold text-gray-900 mr-8">
                                 <Link href="/admin">
                                     관리자 대시보드
                                 </Link>
                             </h1>
+                            <nav className="flex space-x-8">
+                                <Link
+                                    href="/admin/forms"
+                                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md"
+                                >
+                                    설문 관리
+                                </Link>
+                                <Link
+                                    href="/admin/users"
+                                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md"
+                                >
+                                    사용자 관리
+                                </Link>
+                                {isAdmin && (
+                                    <Link
+                                        href="/admin/settings"
+                                        className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md"
+                                    >
+                                        시스템 설정
+                                    </Link>
+                                )}
+                            </nav>
                         </div>
                         <div className="flex items-center">
                             <Link
