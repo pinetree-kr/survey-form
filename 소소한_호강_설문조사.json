@@ -1,6 +1,14 @@
 {
+  "id": "be349a40-0489-436e-adac-14475e8deaca",
   "title": "소소한 호강 설문조사",
   "description": "소소한 호강 프로그램 참여자 대상 설문조사입니다.",
+  "is_active": true,
+  "allow_anonymous": true,
+  "allow_url_param": true,
+  "email_required": true,
+  "url_param_name": "id",
+  "allow_email_response_view": true,
+  "allow_duplicate_responses": true,
   "questions": [
     {
       "id": "9f33c5cc-34f3-47a8-9f8d-13ef90e48742",
@@ -870,7 +878,5 @@
       "description": "",
       "question_type": "long_text"
     }
-  ],
-  "allow_anonymous": false,
-  "is_active": true
+  ]
 }

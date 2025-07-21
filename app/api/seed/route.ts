@@ -102,6 +102,12 @@ export async function POST(request: NextRequest) {
         }
       ],
       is_active: true,
+      allow_anonymous: true,
+      allow_url_param: false,
+      email_required: false,
+      url_param_name: 'id',
+      allow_email_response_view: false,
+      allow_duplicate_responses: true,
       created_by: '11111111-1111-1111-1111-111111111111'
     }
 
@@ -125,7 +131,8 @@ export async function POST(request: NextRequest) {
     const responseData = {
       id: '44444444-4444-4444-4444-444444444444',
       survey_id: '33333333-3333-3333-3333-333333333333',
-      respondent_id: '22222222-2222-2222-2222-222222222222',
+      respondent_id: '22222222-2222-2222-2222-222222222222', // UUID를 text로 저장
+      is_anonymous: false,
       answers: {
         q1: '홍길동',
         q2: '남성',

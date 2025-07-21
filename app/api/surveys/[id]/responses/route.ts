@@ -11,10 +11,10 @@ export async function POST(
         const { env } = await getCloudflareContext({ async: true });
         const supabase = await createClient(env);
 
-        // 설문 존재 여부 및 익명 허용 여부 확인
+        // 설문 존재 여부 및 설정 확인
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, allow_anonymous, is_active')
+            .select('id, allow_anonymous, is_active, allow_url_param, email_required, url_param_name, allow_duplicate_responses')
             .eq('id', surveyId)
             .single();
 
@@ -37,8 +37,11 @@ export async function POST(
         }
 
         // 요청 본문 파싱
-        const body = await request.json() as { answers?: Record<string, any> };
-        const { answers } = body;
+        const body = await request.json() as { 
+            answers?: Record<string, any>;
+            respondent_id?: string;
+        };
+        const { answers, respondent_id } = body;
 
         if (!answers) {
             return NextResponse.json({ error: '응답 데이터가 필요합니다.' }, { status: 400 });
@@ -50,11 +53,57 @@ export async function POST(
                          'unknown';
         const userAgent = request.headers.get('user-agent') || 'unknown';
 
+        // 응답자 ID 결정
+        let finalRespondentId: string | null = null;
+        let finalIsAnonymous = false;
+
+        // 이메일 입력이 필수인 경우
+        if (survey.email_required) {
+            if (!respondent_id) {
+                return NextResponse.json({ error: '이메일 주소가 필요합니다.' }, { status: 400 });
+            }
+            // 간단한 이메일 형식 검증
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(respondent_id)) {
+                return NextResponse.json({ error: '유효한 이메일 주소를 입력해주세요.' }, { status: 400 });
+            }
+            finalRespondentId = respondent_id;
+            finalIsAnonymous = false;
+        }
+        // URL 파라미터가 허용된 경우
+        else if (survey.allow_url_param && respondent_id) {
+            finalRespondentId = respondent_id;
+            finalIsAnonymous = false;
+        }
+        // 익명 응답이 허용된 경우
+        else if (survey.allow_anonymous) {
+            finalRespondentId = null;
+            finalIsAnonymous = true;
+        }
+        // 어떤 방법도 허용되지 않은 경우
+        else {
+            return NextResponse.json({ error: '응답 방법이 설정되지 않았습니다.' }, { status: 400 });
+        }
+
+        // 중복 응답 확인
+        if (!survey.allow_duplicate_responses && finalRespondentId) {
+            const { data: existingResponse, error: checkError } = await supabase
+                .from('survey_responses')
+                .select('id')
+                .eq('survey_id', surveyId)
+                .eq('respondent_id', finalRespondentId)
+                .single();
+
+            if (existingResponse) {
+                return NextResponse.json({ error: '이미 응답한 사용자입니다.' }, { status: 400 });
+            }
+        }
+
         // 응답 데이터 생성
         const responseData = {
             survey_id: surveyId,
-            respondent_id: user?.id || null,
-            is_anonymous: isAnonymous,
+            respondent_id: finalRespondentId,
+            is_anonymous: finalIsAnonymous,
             answers: answers,
             ip_address: ipAddress,
             user_agent: userAgent,

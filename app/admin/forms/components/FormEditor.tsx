@@ -37,17 +37,21 @@ export function FormEditor({
         "id": data?.id || "",
         "title": data?.title || "",
         "description": data?.description || "",
+        "is_active": data?.is_active ?? true,
+        "allow_anonymous": data?.allow_anonymous ?? true,
+        "allow_url_param": data?.allow_url_param ?? false,
+        "email_required": data?.email_required ?? false,
+        "url_param_name": data?.url_param_name ?? 'id',
+        "allow_email_response_view": data?.allow_email_response_view ?? false,
+        "allow_duplicate_responses": data?.allow_duplicate_responses ?? true,
         "questions": data?.questions || []
     });
 
     // 설문 기본 정보 업데이트 핸들러
-    const handleBasicInfoUpdate = useCallback((updates: { title: string; description: string; allow_anonymous?: boolean; is_active?: boolean }) => {
+    const handleBasicInfoUpdate = useCallback((updates: Partial<Omit<TSurvey, 'questions'>>) => {
         setForm(prev => ({
             ...prev,
-            title: updates.title,
-            description: updates.description,
-            allow_anonymous: updates.allow_anonymous,
-            is_active: updates.is_active
+            ...updates
         }));
     }, []);
 
@@ -523,6 +527,22 @@ export function FormEditor({
         }, 100); // React 상태 업데이트 대기
     }, [setForm, form.questions]);
 
+    const basicInfo = React.useMemo(() => {
+        const { questions, ...rest } = form
+        return rest
+    }, [
+        form.id,
+        form.title,
+        form.description,
+        form.is_active,
+        form.allow_anonymous,
+        form.allow_url_param,
+        form.email_required,
+        form.url_param_name,
+        form.allow_email_response_view,
+        form.allow_duplicate_responses
+    ])
+
     // 드래그 앤 드롭 핸들러
     const handleDragEnd = React.useCallback((event: DragEndEvent) => {
         const { active, over } = event;
@@ -710,11 +730,7 @@ export function FormEditor({
 
                                 {/* 설문 기본 정보 */}
                                 <SurveyBasicInfo
-                                    id={form.id}
-                                    title={form.title}
-                                    description={form.description || ""}
-                                    allow_anonymous={form.allow_anonymous}
-                                    is_active={form.is_active}
+                                    survey={basicInfo}
                                     onUpdate={handleBasicInfoUpdate}
                                 />
 

@@ -82,6 +82,11 @@ export type TSurvey = {
     description?: string;
     is_active?: boolean;
     allow_anonymous?: boolean;
+    allow_url_param?: boolean;
+    email_required?: boolean;
+    url_param_name?: string;
+    allow_email_response_view?: boolean;
+    allow_duplicate_responses?: boolean;
     questions: TQuestion[];
     created_at?: string;
     updated_at?: string;

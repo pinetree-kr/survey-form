@@ -40,8 +40,6 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
       for (let i = 0; i < parsedData.questions.length; i++) {
         const question = parsedData.questions[i];
         if (!question.id || question.id.trim() === '') {
-          // setError(`${i + 1}번 문항의 ID가 없습니다. 모든 문항은 고유한 ID를 가져야 합니다.`);
-          // return;
           question.id = uuidv4();
         }
       }
@@ -58,11 +56,35 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         return processedQuestion;
       });
 
-      // TSurvey 형태로 변환
+      // 응답자 식별 설정 유효성 검사
+      const allowAnonymous = parsedData.allow_anonymous ?? true;
+      const allowUrlParam = parsedData.allow_url_param ?? false;
+      const emailRequired = parsedData.email_required ?? false;
+
+      // 최소 하나의 식별 방법은 허용되어야 함
+      if (!allowAnonymous && !allowUrlParam && !emailRequired) {
+        setError('최소 하나의 응답자 식별 방법을 허용해야 합니다. (allow_anonymous, allow_url_param, email_required 중 하나 이상이 true여야 함)');
+        return;
+      }
+
+      // URL 파라미터 설정 검증
+      if (allowUrlParam && !parsedData.url_param_name) {
+        setError('URL 파라미터 방식을 허용하는 경우 url_param_name을 설정해야 합니다.');
+        return;
+      }
+
+      // TSurvey 형태로 변환 (새로운 필드들 포함)
       const surveyData: TSurvey = {
         id: parsedData.id || '',
         title: parsedData.title,
         description: parsedData.description || '',
+        is_active: parsedData.is_active ?? true,
+        allow_anonymous: allowAnonymous,
+        allow_url_param: allowUrlParam,
+        email_required: emailRequired,
+        url_param_name: parsedData.url_param_name || 'id',
+        allow_email_response_view: parsedData.allow_email_response_view ?? false,
+        allow_duplicate_responses: parsedData.allow_duplicate_responses ?? true,
         questions: processedQuestions
       };
 
@@ -93,8 +115,9 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
 
   return (
     <div className="fixed inset-0 bg-gray-500/30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-semibold text-gray-900">JSON에서 설문 가져오기</h2>
           <button
             onClick={(e) => {
@@ -110,7 +133,8 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               JSON 데이터 입력
@@ -134,10 +158,17 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
             <textarea
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
-              className="w-full h-64 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+              className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
               placeholder={`{
   "title": "설문 제목",
   "description": "설문 설명",
+  "is_active": true,
+  "allow_anonymous": true,
+  "allow_url_param": false,
+  "email_required": false,
+  "url_param_name": "id",
+  "allow_email_response_view": false,
+  "allow_duplicate_responses": true,
   "questions": [
     {
       "id": "question-1",
@@ -148,7 +179,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
       "options": [
         {
           "label": "옵션 1",
-          "value": "option1"
+          "key": "option1"
         }
       ]
     }
@@ -165,18 +196,47 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="text-sm font-medium text-blue-900 mb-2">JSON 형식 가이드</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>title</strong>: 설문 제목 (필수)</li>
-              <li>• <strong>description</strong>: 설문 설명 (선택)</li>
-              <li>• <strong>questions</strong>: 문항 배열 (필수)</li>
-              <li>• 각 문항은 <strong>id</strong>, <strong>title</strong>, <strong>question_type</strong>을 포함해야 합니다</li>
-              <li>• <strong>id</strong>: 각 문항의 고유 ID (필수, 비어있으면 안됨)</li>
-              <li>• <strong>question_type</strong>은 "single_choice", "multiple_choice", "text", "dropdown" 중 하나여야 합니다</li>
-            </ul>
+            <div className="text-sm text-blue-800 space-y-3">
+              <div>
+                <h4 className="font-medium">기본 정보</h4>
+                <ul className="space-y-1 ml-4">
+                  <li>• <strong>title</strong>: 설문 제목 (필수)</li>
+                  <li>• <strong>description</strong>: 설문 설명 (선택)</li>
+                  <li>• <strong>is_active</strong>: 설문 활성화 여부 (기본값: true)</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-medium">응답자 식별 설정</h4>
+                <ul className="space-y-1 ml-4">
+                  <li>• <strong>allow_anonymous</strong>: 익명 응답 허용 (기본값: true)</li>
+                  <li>• <strong>allow_url_param</strong>: URL 파라미터로 응답자 ID 받기 (기본값: false)</li>
+                  <li>• <strong>email_required</strong>: 이메일 입력 필수 (기본값: false)</li>
+                  <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: "id")</li>
+                  <li>• <strong>allow_email_response_view</strong>: 이메일로 응답 조회 허용 (기본값: false)</li>
+                  <li>• <strong>allow_duplicate_responses</strong>: 중복 응답 허용 (기본값: true)</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-medium">문항 정보</h4>
+                <ul className="space-y-1 ml-4">
+                  <li>• <strong>questions</strong>: 문항 배열 (필수)</li>
+                  <li>• 각 문항은 <strong>id</strong>, <strong>title</strong>, <strong>question_type</strong>을 포함해야 합니다</li>
+                  <li>• <strong>id</strong>: 각 문항의 고유 ID (필수, 비어있으면 자동 생성)</li>
+                  <li>• <strong>question_type</strong>은 "single_choice", "multiple_choice", "text", "dropdown" 등</li>
+                </ul>
+              </div>
+
+              <div className="text-xs text-blue-600 bg-blue-100 p-2 rounded">
+                <strong>주의:</strong> 최소 하나의 응답자 식별 방법(allow_anonymous, allow_url_param, email_required)을 허용해야 합니다.
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        {/* Fixed Footer */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}

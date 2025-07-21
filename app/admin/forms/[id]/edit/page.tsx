@@ -70,6 +70,11 @@ async function handleUpdate(formData: TSurvey, surveyId?: string) {
       questions: formData.questions || [],
       allow_anonymous: formData.allow_anonymous || false,
       is_active: formData.is_active !== undefined ? formData.is_active : true,
+      allow_url_param: formData.allow_url_param || false,
+      email_required: formData.email_required || false,
+      url_param_name: formData.url_param_name || 'id',
+      allow_email_response_view: formData.allow_email_response_view || false,
+      allow_duplicate_responses: formData.allow_duplicate_responses || true,
       updated_by: user.id,
       updated_at: new Date().toISOString()
     })

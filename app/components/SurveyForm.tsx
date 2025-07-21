@@ -12,6 +12,10 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
     const [currentPanel, setCurrentPanel] = useState(0);
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
+    const [respondentId, setRespondentId] = useState<string>('');
+    const [showEmailInput, setShowEmailInput] = useState(false);
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [isDuplicateChecked, setIsDuplicateChecked] = useState(false);
 
     // 조건을 확인하는 함수
     const checkCondition = React.useCallback((condition: TBranchCondition): boolean => {
@@ -196,6 +200,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             const nextPanel = getNextPanel(currentAnswer.value);
 
             if (nextPanel >= visibleQuestions.length) {
+                // 설문 완료
                 setIsCompleted(true);
             } else {
                 setCurrentPanel(nextPanel);
@@ -204,12 +209,13 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
             // 답변이 없어도 다음 패널로 이동 (선택사항인 경우)
             const nextPanel = currentPanel + 1;
             if (nextPanel >= visibleQuestions.length) {
+                // 설문 완료
                 setIsCompleted(true);
             } else {
                 setCurrentPanel(nextPanel);
             }
         }
-    }, [currentQuestion, visibleQuestions, answers, getNextPanel]);
+    }, [currentQuestion, visibleQuestions, answers, getNextPanel, survey.email_required]);
 
     const handlePrevious = React.useCallback(() => {
         if (currentPanel > 0) {
@@ -217,10 +223,55 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         }
     }, [currentPanel, setCurrentPanel]);
 
-    const handleSubmit = React.useCallback(() => {
-        console.log('설문 완료:', answers);
-        // 여기에 제출 로직 추가
-    }, [answers]);
+    const handleSubmit = React.useCallback(async () => {
+        try {
+            // URL 파라미터에서 respondent_id 가져오기
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlRespondentId = urlParams.get(survey.url_param_name || 'id');
+
+            // 응답자 ID 결정
+            let finalRespondentId: string | undefined;
+            
+            // 이메일 입력이 필수인 경우
+            if (survey.email_required) {
+                finalRespondentId = respondentId;
+            }
+            // URL 파라미터가 허용된 경우
+            else if (survey.allow_url_param && urlRespondentId) {
+                finalRespondentId = urlRespondentId;
+            }
+            // 익명 응답이 허용된 경우
+            else if (survey.allow_anonymous) {
+                finalRespondentId = undefined;
+            }
+
+            // API로 응답 전송
+            const response = await fetch(`/api/surveys/${survey.id}/responses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    answers: answers.reduce((acc, answer) => {
+                        acc[answer.questionId] = answer.value;
+                        return acc;
+                    }, {} as Record<string, any>),
+                    respondent_id: finalRespondentId
+                }),
+            });
+
+            if (response.ok) {
+                alert('설문이 성공적으로 제출되었습니다!');
+                // 성공 후 처리 (예: 감사 페이지로 이동)
+            } else {
+                const errorData = await response.json() as { error?: string };
+                alert(`제출 실패: ${errorData.error || '알 수 없는 오류가 발생했습니다.'}`);
+            }
+        } catch (error) {
+            console.error('설문 제출 오류:', error);
+            alert('설문 제출 중 오류가 발생했습니다.');
+        }
+    }, [answers, survey.id, survey.email_required, survey.allow_url_param, survey.allow_anonymous, survey.url_param_name, respondentId]);
 
     const renderQuestion = React.useCallback((question: TQuestion) => {
         const currentAnswer = answers.find(a => a.questionId === question.id);
@@ -372,6 +423,76 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         );
     }, [handleAnswerChange, visibleQuestions, answers, currentPanel]);
 
+    // 이메일 입력 UI (설문 시작 전)
+    if (survey.email_required && !isEmailVerified) {
+        return (
+            <div className="max-w-2xl mx-auto p-8">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-center mb-2">{survey.title}</h1>
+                    {survey.description && (
+                        <p className="text-gray-600 text-center">{survey.description}</p>
+                    )}
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-4">이메일 주소 입력</h2>
+                    <p className="text-gray-600 mb-4">
+                        설문을 시작하기 전에 이메일 주소를 입력해주세요.
+                    </p>
+                    
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            이메일 주소 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="email"
+                            value={respondentId}
+                            onChange={(e) => setRespondentId(e.target.value)}
+                            placeholder="example@email.com"
+                            className="w-full border px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button
+                            onClick={async () => {
+                                if (respondentId.trim()) {
+                                    // 중복 확인
+                                    if (!survey.allow_duplicate_responses) {
+                                        try {
+                                            const response = await fetch(`/api/surveys/${survey.id}/responses/email?email=${encodeURIComponent(respondentId)}`);
+                                            if (response.ok) {
+                                                const data = await response.json() as { count: number };
+                                                if (data.count > 0) {
+                                                    alert('이미 응답한 이메일 주소입니다.');
+                                                    return;
+                                                }
+                                            }
+                                        } catch (error) {
+                                            console.error('중복 확인 오류:', error);
+                                        }
+                                    }
+                                    
+                                    setIsEmailVerified(true);
+                                    setIsDuplicateChecked(true);
+                                }
+                            }}
+                            disabled={!respondentId.trim()}
+                            className={`px-6 py-2 rounded-lg transition-colors ${
+                                respondentId.trim() 
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                            설문 시작하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (isCompleted) {
         return (
             <div className="max-w-2xl mx-auto p-8 text-center">
@@ -398,6 +519,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                             setIsCompleted(false);
                             setCurrentPanel(0);
                             setAnswers([]);
+                            setRespondentId('');
                         }}
                         className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
