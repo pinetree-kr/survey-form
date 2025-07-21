@@ -424,13 +424,38 @@ body {
   }
 }
 
-/* ===== 토스트 애니메이션 ===== */
-.toast-enter {
-  animation: toast-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* ===== 버튼 클릭 영역 개선 ===== */
+button {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.toast-exit {
-  animation: toast-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* 작은 버튼들의 클릭 영역 확장 */
+button.p-1 {
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* x버튼 스타일 개선 */
+button[title*="삭제"],
+button[title*="제거"] {
+  position: relative;
+  z-index: 10;
+}
+
+button[title*="삭제"]:hover,
+button[title*="제거"]:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
 }
 
 @keyframes toast-slide-in {

@@ -56,12 +56,26 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
       const jsonString = JSON.stringify(processedData, null, 2);
       await navigator.clipboard.writeText(jsonString);
       setCopied(true);
-      toast.success('JSON이 클립보드에 복사되었습니다. (ID 제거됨, is_hidden: false 문항의 show_conditions 비움)');
+      toast.success('JSON이 클립보드에 복사되었습니다. (ID 제거됨, is_hidden: false 문항의 show_conditions 비움)', {
+        autoClose: 3000,
+        closeOnClick: true,
+        draggable: true,
+        pauseOnHover: true,
+        closeButton: true,
+        hideProgressBar: false
+      });
 
       // 2초 후 복사 상태 초기화
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      toast.error('클립보드 복사에 실패했습니다.');
+      toast.error('클립보드 복사에 실패했습니다.', {
+        autoClose: 3000,
+        closeOnClick: true,
+        draggable: true,
+        pauseOnHover: true,
+        closeButton: true,
+        hideProgressBar: false
+      });
       console.error('클립보드 복사 오류:', err);
     }
   };
@@ -80,9 +94,23 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success('JSON 파일이 다운로드되었습니다. (ID 제거됨, is_hidden: false 문항의 show_conditions 비움)');
+      toast.success('JSON 파일이 다운로드되었습니다. (ID 제거됨, is_hidden: false 문항의 show_conditions 비움)', {
+        autoClose: 3000,
+        closeOnClick: true,
+        draggable: true,
+        pauseOnHover: true,
+        closeButton: true,
+        hideProgressBar: false
+      });
     } catch (err) {
-      toast.error('파일 다운로드에 실패했습니다.');
+      toast.error('파일 다운로드에 실패했습니다.', {
+        autoClose: 3000,
+        closeOnClick: true,
+        draggable: true,
+        pauseOnHover: true,
+        closeButton: true,
+        hideProgressBar: false
+      });
       console.error('파일 다운로드 오류:', err);
     }
   };
@@ -95,8 +123,12 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">설문 JSON Export</h2>
           <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer p-1 rounded hover:bg-gray-100"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

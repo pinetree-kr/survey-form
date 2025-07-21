@@ -46,7 +46,17 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         }
       }
 
-      const processedQuestions = parsedData.questions;
+      // questions 처리: show_conditions는 is_hidden이 true일 때만 가져오기
+      const processedQuestions = parsedData.questions.map((question: any) => {
+        const processedQuestion = { ...question };
+        
+        // is_hidden이 true가 아닌 경우 show_conditions 제거
+        if (!processedQuestion.is_hidden) {
+          delete processedQuestion.show_conditions;
+        }
+        
+        return processedQuestion;
+      });
 
       // TSurvey 형태로 변환
       const surveyData: TSurvey = {
@@ -87,8 +97,12 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">JSON에서 설문 가져오기</h2>
           <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer p-1 rounded hover:bg-gray-100"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

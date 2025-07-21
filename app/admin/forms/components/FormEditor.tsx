@@ -402,7 +402,7 @@ export function FormEditor({
 
         try {
             setIsSaving(true);
-            
+
             // is_hidden: false인 문항의 show_conditions를 비우는 로직
             const processedForm = {
                 ...form,
@@ -416,7 +416,7 @@ export function FormEditor({
                     return question;
                 })
             };
-            
+
             const savedSurvey = await onSave(processedForm, form.id);
 
             // 성공 토스트 표시 (클릭 가능하도록 설정)
@@ -445,13 +445,19 @@ export function FormEditor({
                     },
                     style: { cursor: 'pointer' },
                     autoClose: 5000,
-                    closeOnClick: true,
                     draggable: true,
-                    pauseOnHover: true
+                    pauseOnHover: true,
                 }
             );
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : (form.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."));
+            toast.error(error instanceof Error ? error.message : (form.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."), {
+                autoClose: 5000,
+                closeOnClick: true,
+                draggable: true,
+                pauseOnHover: true,
+                closeButton: true,
+                hideProgressBar: false
+            });
         } finally {
             setIsSaving(false);
         }
@@ -561,13 +567,16 @@ export function FormEditor({
             id: prev.id || undefined,
             ...surveyData,
         }));
-        toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
+        toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.', {
+            autoClose: 3000,
+            closeOnClick: true,
+        });
     }, [setForm]);
 
     return (
         <div className="flex h-[calc(100vh-168px)] bg-gray-50 relative">
             {/* 좌측 사이드바 - 문항 목록 (상위 컨테이너 기준 고정) */}
-            <div className="w-[280px] bg-white border-r rounded-md shadow-md border-gray-200 flex flex-col fixed top-[170px] left-[16px] bottom-[80px] z-30">
+            <div className="w-[270px] bg-white border-r rounded-md shadow-md border-gray-200 flex flex-col fixed top-[170px] left-[20px] bottom-[120px] z-30">
                 <div className="p-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900">문항 목록</h2>
                     <p className="text-sm text-gray-500 mt-1">총 {form.questions.length}개 문항</p>
@@ -831,17 +840,8 @@ export function FormEditor({
 
             <ToastContainer
                 position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick={true}
-                rtl={false}
-                pauseOnFocusLoss={false}
-                draggable={true}
-                pauseOnHover={true}
                 theme="light"
                 toastClassName="toast-enter"
-                limit={3}
             />
         </div>
     );

@@ -1,5 +1,4 @@
 {
-  "id": "b20489b3-d658-470b-9a26-ab2dd4ba1b4f",
   "title": "소소한 호강 설문조사",
   "description": "소소한 호강 프로그램 참여자 대상 설문조사입니다.",
   "questions": [
@@ -18,8 +17,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "f9e826f9-8a8e-48c1-98e9-884b3b379530",
@@ -48,8 +46,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "09c0bc1f-ab96-46e4-ae58-5a65adaea4b7",
@@ -79,8 +76,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "0895238f-5af0-472e-b82b-61cd55009098",
@@ -231,8 +227,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "multiple_choice",
-      "show_conditions": []
+      "question_type": "multiple_choice"
     },
     {
       "id": "eee2ef7b-4f28-402d-9885-f9b295f5143f",
@@ -320,8 +315,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "e250777a-b342-437c-97a9-a53169d6b479",
@@ -368,8 +362,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "df80ad00-9dcd-433a-a032-617072f72d1d",
@@ -402,14 +395,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q10"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "57e163ec-077f-4ed8-a7fa-fceed361d867",
@@ -428,8 +414,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "2e59728d-4e40-4d9c-af3c-026aac907f08",
@@ -462,14 +447,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q13"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "a9ed3168-3c13-41e8-8f79-9872d46b6da0",
@@ -488,8 +466,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "feffa0c4-8f5f-4218-be94-18c88028683f",
@@ -522,14 +499,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q15"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "a42ac564-ad0a-471a-9fdf-d86efc42a730",
@@ -548,8 +518,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "5b8b98e2-bed3-4e77-8f9e-7d80c4f3ea80",
@@ -557,14 +526,7 @@
       "options": [],
       "required": true,
       "description": "",
-      "question_type": "short_text",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q17"
-        }
-      ]
+      "question_type": "short_text"
     },
     {
       "id": "0f88c606-66fe-4e1d-a0b7-5b2a55d7107b",
@@ -597,14 +559,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q17"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "23643658-0dbb-4222-838a-529844185714",
@@ -626,8 +581,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "a0291de4-a764-496a-9f3c-009b83e92dd8",
@@ -646,8 +600,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "8bc743a2-cbf2-41ac-b563-3865affdb058",
@@ -680,14 +633,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q22"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "fae663fb-471e-46ec-8893-c6d7f2290b7a",
@@ -706,8 +652,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "bf4aefab-78f9-459d-8d52-1edceb50f566",
@@ -740,14 +685,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q24"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "25b6a559-551e-414a-bf74-02d913f34c2c",
@@ -766,8 +704,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "6449fc9a-bed1-4ef7-998f-85349e690062",
@@ -800,14 +737,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q26"
-        }
-      ]
+      "question_type": "single_choice"
     },
     {
       "id": "d1b4d52e-a86d-44d4-8319-97daca2fc148",
@@ -826,8 +756,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "700085a4-4eb4-46fe-ac48-c4ede7668dd5",
@@ -835,14 +764,7 @@
       "options": [],
       "required": false,
       "description": "",
-      "question_type": "short_text",
-      "show_conditions": [
-        {
-          "value": "예",
-          "operator": "eq",
-          "question_id": "q28"
-        }
-      ]
+      "question_type": "short_text"
     },
     {
       "id": "261df9d0-801c-4d39-89ae-5f78816e3024",
@@ -867,8 +789,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "ac4056e9-c21d-49cd-96d6-d3effda08ff1",
@@ -910,8 +831,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "multiple_choice",
-      "show_conditions": []
+      "question_type": "multiple_choice"
     },
     {
       "id": "ee37f5e9-6430-4792-9282-ab3b98abc520",
@@ -940,8 +860,7 @@
       ],
       "required": true,
       "description": "",
-      "question_type": "single_choice",
-      "show_conditions": []
+      "question_type": "single_choice"
     },
     {
       "id": "b8bb9bf1-638a-4a25-8a75-2225ece39eee",
@@ -949,9 +868,9 @@
       "options": [],
       "required": true,
       "description": "",
-      "question_type": "long_text",
-      "show_conditions": []
+      "question_type": "long_text"
     }
   ],
-  "allow_anonymous": false
+  "allow_anonymous": false,
+  "is_active": true
 }

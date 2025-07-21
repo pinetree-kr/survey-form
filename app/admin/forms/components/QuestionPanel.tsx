@@ -516,9 +516,13 @@ export const QuestionPanel = ({
                             <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2" />
                             <span>&nbsp;기타...</span>
                             <button
-                                className="ml-1 p-1 text-gray-400 hover:text-red-500"
+                                className="ml-1 p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center"
                                 title="기타 옵션 제거"
-                                onClick={() => handleChange({ hasEtc: false })}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleChange({ hasEtc: false });
+                                }}
                                 type="button"
                             >
                                 ✕
@@ -550,7 +554,17 @@ export const QuestionPanel = ({
                             </div>
                             <div className="flex items-center gap-1 min-w-[150px] justify-end">
                                 <button onClick={() => handleImageClick('option', idx)} className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가">📷</button>
-                                <button onClick={() => deleteOption(idx)} className="p-1 text-gray-400 hover:text-red-500" title="삭제">✕</button>
+                                <button 
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        deleteOption(idx);
+                                    }} 
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center" 
+                                    title="삭제"
+                                >
+                                    ✕
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -571,9 +585,13 @@ export const QuestionPanel = ({
                             <span className="inline-block w-4 h-4 rounded-full border border-blue-400 bg-white mr-2" />
                             <span>&nbsp;기타...</span>
                             <button
-                                className="ml-1 p-1 text-gray-400 hover:text-red-500"
+                                className="ml-1 p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center"
                                 title="기타 옵션 제거"
-                                onClick={() => handleChange({ hasEtc: false })}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleChange({ hasEtc: false });
+                                }}
                                 type="button"
                             >
                                 ✕
@@ -673,10 +691,18 @@ export const QuestionPanel = ({
                                             </button>
                                         )
                                     )}
-                                <button className="p-1 text-gray-400 hover:text-red-500" title="삭제" onClick={() => {
-                                    const newItems = (question.composite_items || []).filter((_, i) => i !== idx);
-                                    handleChange({ composite_items: newItems });
-                                }}>✕</button>
+                                <button 
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center" 
+                                    title="삭제" 
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        const newItems = (question.composite_items || []).filter((_, i) => i !== idx);
+                                        handleChange({ composite_items: newItems });
+                                    }}
+                                >
+                                    ✕
+                                </button>
                             </div>
                         </div>
                     ))}
