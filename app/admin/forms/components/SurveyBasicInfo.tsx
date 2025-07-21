@@ -2,6 +2,7 @@
 
 import { TSurvey } from "@/app/components";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useFormEditor } from "./FormEditorContext";
 
 // 디바운스 훅
 function useDebounce<T>(value: T, delay: number): T {
@@ -20,42 +21,35 @@ function useDebounce<T>(value: T, delay: number): T {
     return debouncedValue;
 }
 
-interface SurveyBasicInfoProps {
-    survey: Omit<TSurvey, 'questions'>;
-    onUpdate: (updates: Partial<Omit<TSurvey, 'questions'>>) => void;
-}
-
-export const SurveyBasicInfo = React.memo(function SurveyBasicInfo({
-    survey,
-    onUpdate
-}: SurveyBasicInfoProps) {
+export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
+    const { formBasicInfo, updateFormBasicInfo } = useFormEditor();
     // 로컬 상태로 관리하여 즉시 UI 업데이트
-    const [localSurvey, setLocalSurvey] = useState(survey);
-    
+    const [localSurvey, setLocalSurvey] = useState(formBasicInfo);
+
     // 외부 survey가 변경되면 로컬 상태 동기화
     useEffect(() => {
-        setLocalSurvey(survey);
-    }, [survey]);
+        setLocalSurvey(formBasicInfo);
+    }, [formBasicInfo]);
 
     // 디바운스된 업데이트를 위한 상태
     const [pendingUpdates, setPendingUpdates] = useState<Partial<Omit<TSurvey, 'questions'>>>({});
-    
+
     // 디바운스된 업데이트 적용
     const debouncedPendingUpdates = useDebounce(pendingUpdates, 500);
 
     // 디바운스된 업데이트가 변경되면 부모에게 전달
     useEffect(() => {
         if (Object.keys(debouncedPendingUpdates).length > 0) {
-            onUpdate(debouncedPendingUpdates);
+            updateFormBasicInfo(debouncedPendingUpdates);
             setPendingUpdates({});
         }
-    }, [debouncedPendingUpdates, onUpdate]);
+    }, [debouncedPendingUpdates, updateFormBasicInfo]);
 
     // 즉시 업데이트가 필요한 필드들 (토글 버튼들)
     const handleImmediateUpdate = useCallback((updates: Partial<Omit<TSurvey, 'questions'>>) => {
         setLocalSurvey(prev => ({ ...prev, ...updates }));
-        onUpdate(updates);
-    }, [onUpdate]);
+        updateFormBasicInfo(updates);
+    }, [updateFormBasicInfo]);
 
     // 디바운스된 업데이트가 필요한 필드들 (텍스트 입력들)
     const handleDebouncedUpdate = useCallback((updates: Partial<Omit<TSurvey, 'questions'>>) => {
@@ -71,8 +65,8 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo({
     const handleTitleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
         const trimmedValue = e.target.value.trim();
         setLocalSurvey(prev => ({ ...prev, title: trimmedValue }));
-        onUpdate({ title: trimmedValue });
-    }, [onUpdate]);
+        updateFormBasicInfo({ title: trimmedValue });
+    }, [updateFormBasicInfo]);
 
     const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         handleDebouncedUpdate({ description: e.target.value });
@@ -81,8 +75,8 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo({
     const handleDescriptionBlur = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
         const trimmedValue = e.target.value.trim();
         setLocalSurvey(prev => ({ ...prev, description: trimmedValue }));
-        onUpdate({ description: trimmedValue });
-    }, [onUpdate]);
+        updateFormBasicInfo({ description: trimmedValue });
+    }, [updateFormBasicInfo]);
 
     const handleUrlParamNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         handleDebouncedUpdate({ url_param_name: e.target.value });

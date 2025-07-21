@@ -9,11 +9,13 @@ import { OPERATORS, TBranchCondition, TQuestion } from '@/app/components'
  */
 export function formatCondition(
     condition: TBranchCondition,
-    questions: TQuestion[],
-    getQuestionNumber: (questionId: string) => string | number
+    targetQuestion: TQuestion | undefined,
+    targetNumber: number
+    // getQuestionNumber: (questionId: string) => string | number
 ): string {
-    const targetQuestion = questions.find(q => q.id === condition.question_id)
-    const targetNumber = getQuestionNumber(condition.question_id)
+    // const targetQuestion = questions.find(q => q.id === condition.question_id)
+
+    // const targetNumber = getQuestionNumber(condition.question_id)
 
     if (!targetQuestion) {
         return `Q${targetNumber} 조건`

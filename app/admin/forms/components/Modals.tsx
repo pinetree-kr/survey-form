@@ -6,21 +6,21 @@ import { Transition, TransitionChild, Dialog, DialogPanel, DialogTitle } from "@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 import { CheckCircleIcon, ChevronUpDownIcon } from "@heroicons/react/24/solid";
 import React from "react";
+import { useFormEditor } from "./FormEditorContext";
 
 // 분기 모달 컴포넌트
 export function BranchModal({
     isOpen,
     onClose,
-    questions,
     onAdd
 }: {
     isOpen: boolean;
     onClose: () => void;
-    questions: TQuestion[];
     onAdd: (nextQuestionId: string | null) => void;
 }) {
     const [selectedQuestionId, setSelectedQuestionId] = useState<string>('');
     const [mounted, setMounted] = useState(false);
+    const { questions, findQuestionByIndex } = useFormEditor();
 
     useEffect(() => {
         setMounted(true);
@@ -38,13 +38,13 @@ export function BranchModal({
         } else if (selectedQuestionId) {
             // 선택된 인덱스에 해당하는 question의 id를 사용
             const selectedIndex = parseInt(selectedQuestionId);
-            const selectedQuestion = questions[selectedIndex];
+            const selectedQuestion = findQuestionByIndex(selectedIndex);
 
             if (selectedQuestion && onAdd) {
                 onAdd(selectedQuestion.id);
             }
         }
-    }, [selectedQuestionId, questions, onAdd]);
+    }, [selectedQuestionId, findQuestionByIndex, onAdd]);
 
     // 클라이언트에서만 렌더링
     if (!mounted) return null;
@@ -88,8 +88,8 @@ export function BranchModal({
                                         <div className="relative">
                                             <ListboxButton className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                                 <span className="block truncate">
-                                                    {selectedQuestionId === 'remove' ? '다음 문항으로 진행하기' : 
-                                                     selectedQuestionId ? `${parseInt(selectedQuestionId) + 1}번 ${questions[parseInt(selectedQuestionId)]?.title || ''}` : '문항 선택'}
+                                                    {selectedQuestionId === 'remove' ? '다음 문항으로 진행하기' :
+                                                        selectedQuestionId ? `${parseInt(selectedQuestionId) + 1}번 ${findQuestionByIndex(parseInt(selectedQuestionId))?.title || ''}` : '문항 선택'}
                                                 </span>
                                                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                                                     <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -112,10 +112,10 @@ export function BranchModal({
                                                         </>
                                                     )}
                                                 </ListboxOption>
-                                                
+
                                                 {/* 구분선 */}
                                                 <div className="border-t border-gray-200 my-1"></div>
-                                                
+
                                                 {questions.map((q, qIdx) => (
                                                     <ListboxOption
                                                         key={qIdx}
@@ -165,30 +165,28 @@ export function BranchModal({
     );
 }
 
-type TSimpleQuestion = {
-    title: string;
-    question_type: string;
-    id: string;
-    options?: {
-        label: string;
-        key: string;
-    }[];
-    composite_items?: {
-        label: string;
-        key: string;
-    }[];
-}
+// type TSimpleQuestion = {
+//     title: string;
+//     question_type: string;
+//     id: string;
+//     options?: {
+//         label: string;
+//         key: string;
+//     }[];
+//     composite_items?: {
+//         label: string;
+//         key: string;
+//     }[];
+// }
 
 // 조건부 표시 모달 컴포넌트
 export function ConditionModal({
     isOpen,
     onClose,
-    questions,
     onAdd
 }: {
     isOpen: boolean;
     onClose: () => void;
-    questions: TSimpleQuestion[];
     onAdd: (condition: TBranchCondition) => void;
 }) {
 
@@ -198,6 +196,7 @@ export function ConditionModal({
     const [operator, setOperator] = useState<"eq" | "neq" | "contains" | "gt" | "lt" | "gte" | "lte">('eq');
     const [value, setValue] = useState<string>('');
     const [mounted, setMounted] = useState(false);
+    const { questions } = useFormEditor();
 
     useEffect(() => {
         setMounted(true);

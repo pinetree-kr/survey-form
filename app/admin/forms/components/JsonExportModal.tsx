@@ -1,18 +1,19 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { TSurvey } from '@/app/components';
 import { toast } from 'react-toastify';
+import { useFormEditor } from './FormEditorContext';
 
 interface JsonExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  surveyData: TSurvey;
 }
 
-export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModalProps) {
+export function JsonExportModal({ isOpen, onClose }: JsonExportModalProps) {
+  const { getFullForm } = useFormEditor();
   const [copied, setCopied] = useState(false);
-
+  const form = useMemo(() => getFullForm(), [getFullForm]);
   // ID를 제거하고 is_hidden: false인 문항의 show_conditions를 비우는 함수
   const processExportData = (data: any): any => {
     if (Array.isArray(data)) {
@@ -27,7 +28,7 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
           // survey 객체의 id만 제거 (questions 배열이 없는 최상위 객체)
           continue;
         }
-        
+
         // questions 배열인 경우 is_hidden: false인 문항의 show_conditions를 비움
         if (key === 'questions' && Array.isArray(value)) {
           newData[key] = value.map((question: any) => {
@@ -52,7 +53,7 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
   const handleCopy = async () => {
     try {
       // ID를 제거하고 is_hidden: false인 문항의 show_conditions를 비운 데이터로 JSON 생성
-      const processedData = processExportData(surveyData);
+      const processedData = processExportData(form);
       const jsonString = JSON.stringify(processedData, null, 2);
       await navigator.clipboard.writeText(jsonString);
       setCopied(true);
@@ -83,13 +84,14 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
   const handleDownload = () => {
     try {
       // ID를 제거하고 is_hidden: false인 문항의 show_conditions를 비운 데이터로 JSON 생성
-      const processedData = processExportData(surveyData);
+
+      const processedData = processExportData(form);
       const jsonString = JSON.stringify(processedData, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${surveyData.title || 'survey'}.json`;
+      a.download = `${form.title || 'survey'}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -139,7 +141,7 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-gray-600">
-              설문 제목: <span className="font-medium">{surveyData.title || '제목 없음'}</span>
+              설문 제목: <span className="font-medium">{form.title || '제목 없음'}</span>
             </div>
             <div className="flex gap-2">
               <button
@@ -156,8 +158,8 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
                 type="button"
                 onClick={handleCopy}
                 className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${copied
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-green-600 text-white hover:bg-green-700'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-green-600 text-white hover:bg-green-700'
                   }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +173,7 @@ export function JsonExportModal({ isOpen, onClose, surveyData }: JsonExportModal
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="text-xs text-gray-500 mb-2">미리보기 (ID 포함)</div>
             <pre className="text-sm overflow-auto max-h-96 font-mono text-gray-800">
-              {JSON.stringify(surveyData, null, 2)}
+              {JSON.stringify(form, null, 2)}
             </pre>
           </div>
 

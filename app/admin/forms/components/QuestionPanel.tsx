@@ -9,7 +9,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { QUESTION_TYPE_OPTIONS } from "@/app/components";
-import { ImagePreview, CompositeItemCombobox, ImageUrlModal, BranchModal, ConditionModal } from "./";
+import { ImagePreview, CompositeItemCombobox, ImageUrlModal, BranchModal, ConditionModal, useFormEditor } from "./";
 import { formatCondition } from '@/lib/survey-utils'
 
 // 디바운스 훅
@@ -45,21 +45,22 @@ const areOptionsEqual = (options1: TOption[] | undefined, options2: TOption[] | 
 
 export const QuestionPanel = ({
     question,
-    questionIndex,
-    onUpdate,
-    onDelete,
-    onCopy,
-    questions,
-    deletingQuestionId,
+    questionIndex
 }: {
     question: TQuestion;
     questionIndex: number;
-    onUpdate: (question: TQuestion) => void;
-    onDelete: (questionId: string) => void;
-    onCopy: (questionId: string) => void;
-    questions: TQuestion[];
-    deletingQuestionId?: string | null;
 }) => {
+    const { updateQuestion, deleteQuestion, copyQuestion, deletingQuestionId, registerQuestionObserver, unregisterQuestionObserver } = useFormEditor();
+
+    // Observer 등록/해제
+    useEffect(() => {
+        registerQuestionObserver(question.id, questionIndex);
+
+        return () => {
+            unregisterQuestionObserver(question.id);
+        };
+    }, [question.id, questionIndex, registerQuestionObserver, unregisterQuestionObserver]);
+
     const {
         attributes,
         listeners,
@@ -87,6 +88,8 @@ export const QuestionPanel = ({
     const [isTitleDebouncing, setIsTitleDebouncing] = useState(false);
     const [isOptionsDebouncing, setIsOptionsDebouncing] = useState(false);
 
+    const { findQuestionIndexById, findQuestionById } = useFormEditor();
+
     // 디바운스 상태 업데이트
     useEffect(() => {
         setIsTitleDebouncing(localTitle !== debouncedTitle);
@@ -99,16 +102,16 @@ export const QuestionPanel = ({
     // 디바운스된 값이 변경되면 부모에게 업데이트
     useEffect(() => {
         if (debouncedTitle !== question.title) {
-            onUpdate({ ...question, title: debouncedTitle });
+            updateQuestion({ ...question, title: debouncedTitle });
         }
-    }, [debouncedTitle, question.title, onUpdate, question.id]); // question 전체 대신 id만 의존성으로 사용
+    }, [debouncedTitle, question.title, updateQuestion, question.id]); // question 전체 대신 id만 의존성으로 사용
 
     useEffect(() => {
         if (!areOptionsEqual(debouncedOptions, question.options)) {
             console.log('useEffect1', { debouncedOptions, question })
-            onUpdate({ ...question, options: debouncedOptions });
+            updateQuestion({ ...question, options: debouncedOptions });
         }
-    }, [debouncedOptions, onUpdate, question.id]); // question.options 제거
+    }, [debouncedOptions, updateQuestion, question.id]); // question.options 제거
 
     // question이 외부에서 변경되면 로컬 상태 동기화
     useEffect(() => {
@@ -125,8 +128,8 @@ export const QuestionPanel = ({
     // 핵심 업데이트 함수만 useCallback 사용
     const handleChange = useCallback((patch: Partial<TQuestion>) => {
         console.log('handleChange', { patch })
-        onUpdate({ ...question, ...patch });
-    }, [question.id, onUpdate]); // question 전체 대신 id만 의존성으로 사용
+        updateQuestion({ ...question, ...patch });
+    }, [question.id, updateQuestion]); // question 전체 대신 id만 의존성으로 사용
 
     // 단순한 이벤트 핸들러들은 useCallback 불필요
     const addOption = () => {
@@ -191,40 +194,49 @@ export const QuestionPanel = ({
     }, [handleChange, localOptions, question.composite_items]);
 
     // 계산이 필요한 값들만 useMemo 사용
+    // const questionNumber = useMemo(() => {
+    //     return questions.findIndex(q => q.id === question.id) + 1;
+    // }, [questions, question.id]);
+
     const questionNumber = useMemo(() => {
-        return questions.findIndex(q => q.id === question.id) + 1;
-    }, [questions, question.id]);
+        return findQuestionIndexById(question.id) + 1;
+    }, [findQuestionIndexById, question.id]);
 
     const nextQuestionNumber = useMemo(() => {
         if (!question.next_question_id) return null;
-        return questions.findIndex(q => q.id === question.next_question_id) + 1;
-    }, [questions, question.next_question_id]);
+        return questionNumber + 1;
+    }, [questionNumber, question.next_question_id]);
 
     const getQuestionNumber = useCallback((questionId: string) => {
-        const index = questions.findIndex(q => q.id === questionId);
-        return index !== -1 ? index + 1 : '?';
-    }, [questions]);
+        return questionNumber !== -1 ? questionNumber + 1 : '?';
+    }, [questionNumber]);
 
     // 조건부 표시 정보는 useMemo로 최적화
     const showConditionsInfo = useMemo(() => {
         if (!question.show_conditions || question.show_conditions?.length === 0) return null;
 
-        return question.show_conditions.map((condition, condIndex) => (
-            <div key={condIndex}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-300 text-gray-800 text-xs rounded-full hover:bg-gray-400 transition-colors">
-                <span>{formatCondition(condition, questions, getQuestionNumber)}</span>
-                <button
-                    onClick={() => {
-                        handleShowConditionDelete(condIndex)
-                    }}
-                    className="text-gray-600 hover:text-red-500 transition-colors font-bold text-sm"
-                    title="조건 삭제"
-                >
-                    ✕
-                </button>
-            </div>
-        ));
-    }, [question.show_conditions, questions, getQuestionNumber]);
+        return question.show_conditions.map((condition, condIndex) => {
+
+            const targetQuestion = findQuestionById(condition.question_id)
+            const targetQuestionNumber = findQuestionIndexById(condition.question_id) + 1;
+
+            return (
+                <div key={condIndex}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-300 text-gray-800 text-xs rounded-full hover:bg-gray-400 transition-colors">
+                    <span>{formatCondition(condition, targetQuestion, targetQuestionNumber)}</span>
+                    <button
+                        onClick={() => {
+                            handleShowConditionDelete(condIndex)
+                        }}
+                        className="text-gray-600 hover:text-red-500 transition-colors font-bold text-sm"
+                        title="조건 삭제"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )
+        });
+    }, [question.show_conditions, findQuestionById, findQuestionIndexById]);
 
     // 브랜치 추가 함수 추가 (handleChange 함수 다음에 추가)
     const handleBranchAdd = useCallback((optIdx: number, nextQuestionId: string | null) => {
@@ -308,8 +320,8 @@ export const QuestionPanel = ({
         const newConditions = question.show_conditions.filter((_, i) => i !== condIndex);
         const updatedQuestion = { ...question, show_conditions: newConditions };
         // console.log('handleShowConditionDelete', { updatedQuestion })
-        onUpdate(updatedQuestion);
-    }, [onUpdate, question]);
+        updateQuestion(updatedQuestion);
+    }, [updateQuestion, question]);
 
     // 다음 문항 연결 추가 핸들러
     const handleNextQuestionAdd = useCallback((nextQuestionId: string | null) => {
@@ -328,8 +340,8 @@ export const QuestionPanel = ({
     const handleNextQuestionDelete = useCallback(() => {
         const updatedQuestion = { ...question, next_question_id: undefined };
         // console.log('handleNextQuestionDelete', { updatedQuestion })
-        onUpdate(updatedQuestion);
-    }, [onUpdate, question]);
+        updateQuestion(updatedQuestion);
+    }, [updateQuestion, question]);
 
     // 이미지 저장 핸들러
     const handleImageSave = useCallback((urls: string[]) => {
@@ -482,7 +494,7 @@ export const QuestionPanel = ({
                                                 onClick={() => handleBranchDelete(idx)}
                                                 className="px-2 py-1 text-green-600 bg-green-100 hover:bg-green-200 text-xs flex items-center gap-1"
                                             >
-                                                → {questions.findIndex(q => q.id === opt.next_question_id) + 1}번
+                                                → {findQuestionIndexById(opt.next_question_id) + 1}번
                                                 <span className="text-red-500 font-bold">✕</span>
                                             </button>
                                         ) : (
@@ -679,7 +691,7 @@ export const QuestionPanel = ({
                                                 onClick={() => handleBranchDelete(idx)}
                                                 className="px-2 py-1 text-green-600 bg-green-100 hover:bg-green-200 text-xs flex items-center gap-1"
                                             >
-                                                → {questions.findIndex(q => q.id === item.next_question_id) + 1}번
+                                                → {findQuestionIndexById(item.next_question_id) + 1}번
                                                 <span className="text-red-500 font-bold">✕</span>
                                             </button>
                                         ) : (
@@ -836,9 +848,9 @@ export const QuestionPanel = ({
                 {/* 문항 기본 설정 */}
                 <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                     <div className="flex gap-2">
-                        <button onClick={() => onCopy(question.id)} className="p-2 text-gray-500 hover:text-blue-500" title="복사">복사</button>
+                        <button onClick={() => copyQuestion(question.id)} className="p-2 text-gray-500 hover:text-blue-500" title="복사">복사</button>
                         <button
-                            onClick={() => onDelete(question.id)}
+                            onClick={() => deleteQuestion(question.id)}
                             className="p-2 text-gray-500 hover:text-red-500"
                             title="삭제"
                             style={{ pointerEvents: 'auto' }}
@@ -861,7 +873,6 @@ export const QuestionPanel = ({
             <BranchModal
                 isOpen={!!branchModal}
                 onClose={() => setBranchModal(null)}
-                questions={questions}
                 onAdd={(nextQuestionId) => {
                     if (branchModal) {
                         handleBranchAdd(branchModal.optIdx, nextQuestionId);
@@ -872,7 +883,6 @@ export const QuestionPanel = ({
             <BranchModal
                 isOpen={nextQuestionModal}
                 onClose={() => setNextQuestionModal(false)}
-                questions={questions}
                 onAdd={(nextQuestionId) => {
                     handleNextQuestionAdd(nextQuestionId);
                 }}
@@ -881,13 +891,6 @@ export const QuestionPanel = ({
             <ConditionModal
                 isOpen={conditionModal}
                 onClose={() => setConditionModal(false)}
-                questions={questions.map((q, index) => ({
-                    title: q.title,
-                    id: q.id,
-                    question_type: q.question_type,
-                    options: q.options,
-                    composite_items: q.composite_items
-                }))}
                 onAdd={handleShowConditionAdd}
             />
         </div>

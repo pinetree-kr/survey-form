@@ -1,33 +1,57 @@
 "use client"
 
 import React, { useCallback, useMemo } from "react";
-import { TQuestion } from "@/app/components";
 import { QuestionSidebarItem } from "./QuestionSidebarItem";
+import { useFormQuestions, useFormUI, useFormActions } from "./FormEditorContext";
 
-interface QuestionSidebarProps {
-    questions: TQuestion[];
-    activeQuestionIndex: number | null;
-    deletingQuestionId: string | null;
-    onQuestionClick: (questionId: string) => void;
-    onCopyQuestion: (questionId: string) => void;
-    onDeleteQuestion: (questionId: string) => void;
-    onAddQuestion: () => void;
-}
-
-export const QuestionSidebar = React.memo(function QuestionSidebar({
-    questions,
-    activeQuestionIndex,
-    deletingQuestionId,
-    onQuestionClick,
-    onCopyQuestion,
-    onDeleteQuestion,
-    onAddQuestion
-}: QuestionSidebarProps) {
-
+export const QuestionSidebar = React.memo(function QuestionSidebar() {
+    const questions = useFormQuestions();
+    const { activeQuestionIndex, deletingQuestionId } = useFormUI();
+    const { addQuestion, copyQuestion, deleteQuestion } = useFormActions();
+    
     // 문항 클릭 핸들러
     const handleQuestionClick = useCallback((questionId: string) => {
-        onQuestionClick(questionId);
-    }, [onQuestionClick]);
+        // 문항 클릭 시 해당 문항으로 스크롤
+        const questionElement = document.getElementById(`question-${questionId}`);
+        if (questionElement) {
+            questionElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            // 스크롤 완료 후 하이라이트 효과
+            setTimeout(() => {
+                // 기존 모든 애니메이션 클래스 제거
+                const animationClasses = [
+                    'question-highlight', 'question-error-highlight', 'question-fade-in', 'question-copy',
+                    'sidebar-question-highlight', 'sidebar-question-error-highlight', 'sidebar-question-fade-in', 'sidebar-question-copy'
+                ];
+
+                animationClasses.forEach(className => {
+                    document.querySelectorAll(`.${className}`).forEach(el => {
+                        el.classList.remove(className);
+                    });
+                });
+
+                // 현재 문항에 하이라이트 추가
+                questionElement.classList.add('question-highlight');
+
+                // 사이드바에서도 하이라이트
+                const sidebarElement = document.getElementById(`sidebar-question-${questionId}`);
+                if (sidebarElement) {
+                    sidebarElement.classList.add('sidebar-question-highlight');
+                }
+
+                // 3초 후 하이라이트 제거
+                setTimeout(() => {
+                    questionElement.classList.remove('question-highlight');
+                    if (sidebarElement) {
+                        sidebarElement.classList.remove('sidebar-question-highlight');
+                    }
+                }, 3000);
+            }, 500); // 스크롤 애니메이션 완료 후 실행
+        }
+    }, []);
 
 
 
@@ -53,13 +77,13 @@ export const QuestionSidebar = React.memo(function QuestionSidebar({
                     index={index}
                     isActive={activeQuestionIndex === index}
                     isDeleting={question.id === deletingQuestionId}
-                    onQuestionClick={onQuestionClick}
-                    onCopyQuestion={onCopyQuestion}
-                    onDeleteQuestion={onDeleteQuestion}
+                    onQuestionClick={handleQuestionClick}
+                    onCopyQuestion={copyQuestion}
+                    onDeleteQuestion={deleteQuestion}
                 />
             ))}
         </div>
-    ), [questions, activeQuestionIndex, deletingQuestionId, onQuestionClick, onCopyQuestion, onDeleteQuestion]);
+    ), [questions, activeQuestionIndex, deletingQuestionId, handleQuestionClick, copyQuestion, deleteQuestion]);
 
     // 헤더 JSX
     const header = useMemo(() => (
@@ -73,7 +97,7 @@ export const QuestionSidebar = React.memo(function QuestionSidebar({
     const footer = useMemo(() => (
         <div className="p-4 border-t border-gray-200">
             <button
-                onClick={onAddQuestion}
+                onClick={addQuestion}
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 btn-hover-lift flex items-center justify-center gap-2"
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +106,7 @@ export const QuestionSidebar = React.memo(function QuestionSidebar({
                 문항 추가
             </button>
         </div>
-    ), [onAddQuestion]);
+    ), [addQuestion]);
 
     return (
         <div className="w-[270px] bg-white border-r rounded-md shadow-md border-gray-200 flex flex-col fixed top-[170px] left-[20px] bottom-[120px] z-30">
