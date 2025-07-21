@@ -16,6 +16,9 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
     const [etcValues, setEtcValues] = useState<Record<string, string>>({});
     const [isCompleted, setIsCompleted] = useState(false);
     const [showResponseModal, setShowResponseModal] = useState(false);
+    const [respondentId, setRespondentId] = useState<string>('');
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [emailError, setEmailError] = useState<string>('');
 
     // 조건을 확인하는 함수
     const checkCondition = React.useCallback((condition: TBranchCondition): boolean => {
@@ -295,6 +298,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
             survey_id: survey.id,
             survey_title: survey.title,
             response_time: new Date().toISOString(),
+            respondent_id: survey.email_required ? respondentId : undefined,
             answers: answers.map(answer => {
                 const question = survey.questions.find(q => q.id === answer.questionId);
                 const etcValue = etcValues[answer.questionId];
@@ -333,7 +337,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
             is_preview: true
         };
         return responseData;
-    }, [survey, answers, etcValues]);
+    }, [survey, answers, etcValues, respondentId]);
 
     const renderQuestion = React.useCallback((question: TQuestion) => {
         const currentAnswer = answers.find(a => a.questionId === question.id);
@@ -800,6 +804,84 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
         );
     }, [currentPanel, visibleQuestions.length, answers, handleAnswerChange, etcValues]);
 
+    // 이메일 유효성 검사 함수
+    const validateEmail = React.useCallback((email: string): string => {
+        if (!email.trim()) {
+            return '이메일 주소를 입력해주세요.';
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return '유효한 이메일 주소를 입력해주세요.';
+        }
+        return '';
+    }, []);
+
+    // 이메일 입력 변경 핸들러
+    const handleEmailChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const email = e.target.value;
+        setRespondentId(email);
+        setEmailError(validateEmail(email));
+    }, [validateEmail]);
+
+    // 이메일 입력 UI (설문 시작 전)
+    if (survey.email_required && !isEmailVerified) {
+        const isEmailValid = !emailError && respondentId.trim() !== '';
+        
+        return (
+            <div className="max-w-2xl mx-auto p-8">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-center mb-2">{survey.title}</h1>
+                    {survey.description && (
+                        <p className="text-gray-600 text-center">{survey.description}</p>
+                    )}
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-4">이메일 주소 입력</h2>
+                    <p className="text-gray-600 mb-4">
+                        설문을 시작하기 전에 이메일 주소를 입력해주세요.
+                    </p>
+                    
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            이메일 주소 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="email"
+                            value={respondentId}
+                            onChange={handleEmailChange}
+                            onBlur={() => setEmailError(validateEmail(respondentId))}
+                            placeholder="example@email.com"
+                            className={`w-full border px-3 py-2 rounded-lg focus:ring-2 focus:border-transparent ${
+                                emailError 
+                                    ? 'border-red-500 focus:ring-red-500' 
+                                    : 'border-gray-300 focus:ring-blue-500'
+                            }`}
+                            required
+                        />
+                        {emailError && (
+                            <p className="mt-1 text-sm text-red-600">{emailError}</p>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setIsEmailVerified(true)}
+                            disabled={!isEmailValid}
+                            className={`px-6 py-2 rounded-lg transition-colors ${
+                                isEmailValid
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                        >
+                            설문 시작하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (isCompleted) {
 
         return (
@@ -827,6 +909,9 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                             setIsCompleted(false);
                             setCurrentPanel(0);
                             setAnswers([]);
+                            setRespondentId('');
+                            setIsEmailVerified(false);
+                            setEmailError('');
                         }}
                         className="px-6 py-3 ml-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
