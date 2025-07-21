@@ -55,8 +55,8 @@ export const QuestionPanel = ({
     question: TQuestion;
     questionIndex: number;
     onUpdate: (question: TQuestion) => void;
-    onDelete: () => void;
-    onCopy: () => void;
+    onDelete: (questionId: string) => void;
+    onCopy: (questionId: string) => void;
     questions: TQuestion[];
     deletingQuestionId?: string | null;
 }) => {
@@ -307,13 +307,13 @@ export const QuestionPanel = ({
 
         const newConditions = question.show_conditions.filter((_, i) => i !== condIndex);
         const updatedQuestion = { ...question, show_conditions: newConditions };
-        console.log('handleShowConditionDelete', { updatedQuestion })
+        // console.log('handleShowConditionDelete', { updatedQuestion })
         onUpdate(updatedQuestion);
     }, [onUpdate, question]);
 
     // 다음 문항 연결 추가 핸들러
     const handleNextQuestionAdd = useCallback((nextQuestionId: string | null) => {
-        console.log('handleNextQuestionAdd', { nextQuestionId })
+        // console.log('handleNextQuestionAdd', { nextQuestionId })
         if (nextQuestionId === null) {
             // "다음 문항으로 진행하기" 선택 시 연결 제거
             handleChange({ next_question_id: undefined });
@@ -327,14 +327,14 @@ export const QuestionPanel = ({
     // 다음 문항 연결 제거 핸들러
     const handleNextQuestionDelete = useCallback(() => {
         const updatedQuestion = { ...question, next_question_id: undefined };
-        console.log('handleNextQuestionDelete', { updatedQuestion })
+        // console.log('handleNextQuestionDelete', { updatedQuestion })
         onUpdate(updatedQuestion);
     }, [onUpdate, question]);
 
     // 이미지 저장 핸들러
     const handleImageSave = useCallback((urls: string[]) => {
         if (!imageModal) return;
-        console.log('handleImageSave', { urls })
+        // console.log('handleImageSave', { urls })
 
         if (imageModal.type === 'question') {
             handleChange({ images: urls });
@@ -452,7 +452,7 @@ export const QuestionPanel = ({
 
             {/* 이미지 미리보기 */}
             <ImagePreview images={question.images} />
-            
+
             {/* 옵션 목록 (객관식/드롭다운) */}
             {["single_choice", "dropdown"].includes(question.question_type) && (
                 <RadioGroup value={localOptions?.[0]?.key || ''} onChange={() => { }} className="space-y-2 mb-2">
@@ -531,7 +531,7 @@ export const QuestionPanel = ({
                     ) : null}
                 </RadioGroup>
             )}
-            
+
             {question.question_type === "multiple_choice" && (
                 <div className="space-y-2 mb-2">
                     {localOptions?.map((opt, idx) => (
@@ -554,13 +554,13 @@ export const QuestionPanel = ({
                             </div>
                             <div className="flex items-center gap-1 min-w-[150px] justify-end">
                                 <button onClick={() => handleImageClick('option', idx)} className="p-1 text-gray-400 hover:text-blue-500" title="이미지 추가">📷</button>
-                                <button 
+                                <button
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         deleteOption(idx);
-                                    }} 
-                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center" 
+                                    }}
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center"
                                     title="삭제"
                                 >
                                     ✕
@@ -600,7 +600,7 @@ export const QuestionPanel = ({
                     ) : null}
                 </div>
             )}
-            
+
             {/* 복합질문 하위 항목 UI */}
             {["composite_single", "composite_multiple"].includes(question.question_type) && (
                 <div className="mb-2">
@@ -691,9 +691,9 @@ export const QuestionPanel = ({
                                             </button>
                                         )
                                     )}
-                                <button 
-                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center" 
-                                    title="삭제" 
+                                <button
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer min-w-[20px] min-h-[20px] flex items-center justify-center"
+                                    title="삭제"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
@@ -716,7 +716,7 @@ export const QuestionPanel = ({
                     </div>
                 </div>
             )}
-            
+
             {/* 주관식(단문/장문) 안내 */}
             {(question.question_type === "short_text" || question.question_type === "long_text") && (
                 <div className="text-gray-400 italic mb-2">응답자가 직접 답변을 입력합니다.</div>
@@ -732,7 +732,7 @@ export const QuestionPanel = ({
             {/* 문항 설정 섹션 */}
             <div className="space-y-4">
                 <div className="text-sm font-medium text-gray-700 mb-3">문항 설정</div>
-                
+
                 {/* 문항 토글 설정 */}
                 <div className="flex items-center gap-4">
                     <label className={`flex items-center gap-1 select-none ${question.question_type === "description" ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
@@ -761,14 +761,14 @@ export const QuestionPanel = ({
                         </Switch>
                     </label>
                 </div>
-                
+
                 {/* 가려진 문항 안내 */}
                 {question.is_hidden && (
                     <div className="text-red-500 italic mb-2 bg-red-50 p-2 rounded">
                         ⚠️ 이 문항은 가려진 상태입니다. 활성화 조건을 설정해야 응답자에게 표시됩니다.
                     </div>
                 )}
-                
+
                 {/* 문항 활성화 조건 섹션 */}
                 {question.is_hidden && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -818,7 +818,7 @@ export const QuestionPanel = ({
                         )}
                     </div>
                 )}
-                
+
                 {/* 다음 문항으로 이동 섹션 */}
                 <div className="space-y-2">
                     <div className="text-sm font-medium text-gray-700">응답 후 이동</div>
@@ -832,13 +832,13 @@ export const QuestionPanel = ({
                         </svg>
                     </button>
                 </div>
-                
+
                 {/* 문항 기본 설정 */}
                 <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                     <div className="flex gap-2">
-                        <button onClick={onCopy} className="p-2 text-gray-500 hover:text-blue-500" title="복사">복사</button>
+                        <button onClick={() => onCopy(question.id)} className="p-2 text-gray-500 hover:text-blue-500" title="복사">복사</button>
                         <button
-                            onClick={onDelete}
+                            onClick={() => onDelete(question.id)}
                             className="p-2 text-gray-500 hover:text-red-500"
                             title="삭제"
                             style={{ pointerEvents: 'auto' }}

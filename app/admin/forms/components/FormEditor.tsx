@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { TSurvey, TQuestion, TBranchCondition } from "@/app/components";
 import { toast, ToastContainer } from "react-toastify";
-import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel, JsonImportModal, JsonExportModal, SurveyBasicInfo } from ".";
+import { ImageUrlModal, BranchModal, ConditionModal, QuestionPanel, JsonImportModal, JsonExportModal, SurveyBasicInfo, QuestionSidebar } from ".";
 import {
     DndContext,
     closestCenter,
@@ -237,39 +237,38 @@ export function FormEditor({
     }, [form.questions.length]);
 
     // 문항 업데이트 함수를 useCallback으로 메모이제이션
-    const updateQuestion = useCallback((index: number, updatedQuestion: TQuestion) => {
-        console.log('updateQuestion', { index, updatedQuestion })
+    // const updateQuestion = useCallback((index: number, updatedQuestion: TQuestion) => {
+    //     console.log('updateQuestion', { index, updatedQuestion })
+    //     setForm(prev => {
+    //         return {
+    //             ...prev,
+    //             questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
+    //         };
+    //     });
+    // }, []);
+    const updateQuestion = useCallback((updatedQuestion: TQuestion) => {
         setForm(prev => {
             return {
                 ...prev,
-                questions: prev.questions.map((q, i) => i === index ? updatedQuestion : q)
+                questions: prev.questions.map((q) => q.id === updatedQuestion.id ? updatedQuestion : q)
             };
         });
     }, []);
 
     // 문항 삭제 함수를 useCallback으로 메모이제이션
-    const deleteQuestion = useCallback((index: number) => {
-        // 삭제할 문항의 ID 저장
-        const questionToDelete = form.questions[index];
-        if (!questionToDelete) return;
-
-        // 이미 삭제 중인 문항이 있으면 무시
-        if (deletingQuestionId) return;
-
-        // 삭제 중인 문항 ID 설정
-        setDeletingQuestionId(questionToDelete.id);
+    const deleteQuestion = useCallback((questionId: string) => {
 
         // 애니메이션 완료 후 실제 삭제
         setTimeout(() => {
-            console.log('deleteQuestion', { questionToDelete })
-            setForm(prev => ({
-                ...prev,
-                questions: prev.questions.filter(q => q.id !== questionToDelete.id)
-            }));
-            // 삭제 중인 문항 ID 초기화
-            setDeletingQuestionId(null);
+            setForm(prev => {
+                if (deletingQuestionId) prev;
+                return {
+                    ...prev,
+                    questions: prev.questions.filter(q => q.id !== questionId)
+                }
+            });
         }, 500); // 애니메이션 지속 시간과 동일
-    }, [setForm]);
+    }, [setForm, deletingQuestionId]);
 
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -454,12 +453,15 @@ export function FormEditor({
     }, [onSave, form]);
 
     // 문항 복사 (해당 문항 아래에 추가)
-    const copyQuestion = React.useCallback((index: number) => {
-        const originalQuestion = form.questions[index];
+    const copyQuestion = React.useCallback((questionId: string) => {
+        const originalQuestion = form.questions.find(q => q.id === questionId);
+        if (!originalQuestion) return;
+
         const copiedQuestion: TQuestion = { ...originalQuestion, id: uuidv4() };
 
-        console.log('copyQuestion', { index, copiedQuestion })
         setForm(prev => {
+
+            const index = prev.questions.findIndex(q => q.id === questionId);
             const newQuestions = [
                 ...prev.questions.slice(0, index + 1),
                 copiedQuestion,
@@ -525,7 +527,7 @@ export function FormEditor({
                 }, 500);
             }
         }, 100); // React 상태 업데이트 대기
-    }, [setForm, form.questions]);
+    }, [form.questions, clearAllAnimations]);
 
     const basicInfo = React.useMemo(() => {
         const { questions, ...rest } = form
@@ -581,141 +583,48 @@ export function FormEditor({
 
     return (
         <div className="flex h-[calc(100vh-168px)] bg-gray-50 relative">
-            {/* 좌측 사이드바 - 문항 목록 (상위 컨테이너 기준 고정) */}
-            <div className="w-[270px] bg-white border-r rounded-md shadow-md border-gray-200 flex flex-col fixed top-[170px] left-[20px] bottom-[120px] z-30">
-                <div className="p-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900">문항 목록</h2>
-                    <p className="text-sm text-gray-500 mt-1">총 {form.questions.length}개 문항</p>
-                </div>
+            {/* 좌측 사이드바 - 문항 목록 */}
+            <QuestionSidebar
+                questions={form.questions}
+                activeQuestionIndex={activeQuestionIndex}
+                deletingQuestionId={deletingQuestionId}
+                onQuestionClick={useCallback((questionId: string) => {
+                    // 문항 클릭 시 해당 문항으로 스크롤
+                    const questionElement = findQuestionElement(questionId);
+                    if (questionElement) {
+                        questionElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
 
-                <div className="flex-1 overflow-y-auto pb-8">
-                    {form.questions.length === 0 ? (
-                        <div className="p-8 text-center">
-                            <div className="text-gray-400 mb-2">
-                                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                            <p className="text-gray-500 text-sm">문항을 추가해주세요</p>
-                        </div>
-                    ) : (
-                        <div className="p-2 space-y-2">
-                            {form.questions.map((question, index) => (
-                                <div
-                                    key={`sidebar-${question.id}`}
-                                    id={`sidebar-question-${question.id}`}
-                                    className={`border rounded-md p-3 cursor-pointer transition-all duration-200 ${activeQuestionIndex === index
-                                        ? 'bg-blue-50 border-blue-300 shadow-md'
-                                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                        } ${question.id === deletingQuestionId ? 'sidebar-question-delete' : ''}`}
-                                    onClick={() => {
-                                        // 문항 클릭 시 해당 문항으로 스크롤
-                                        const questionElement = findQuestionElement(question.id);
-                                        if (questionElement) {
-                                            questionElement.scrollIntoView({
-                                                behavior: 'smooth',
-                                                block: 'start'
-                                            });
+                        // 스크롤 완료 후 하이라이트 효과
+                        setTimeout(() => {
+                            // 기존 모든 애니메이션 클래스 제거
+                            clearAllAnimations();
 
-                                            // 스크롤 완료 후 하이라이트 효과
-                                            setTimeout(() => {
-                                                // 기존 모든 애니메이션 클래스 제거
-                                                clearAllAnimations();
+                            // 현재 문항에 하이라이트 추가
+                            questionElement.classList.add('question-highlight');
 
-                                                // 현재 문항에 하이라이트 추가
-                                                questionElement.classList.add('question-highlight');
+                            // 사이드바에서도 하이라이트
+                            const sidebarElement = findSidebarElement(questionId);
+                            if (sidebarElement) {
+                                sidebarElement.classList.add('sidebar-question-highlight');
+                            }
 
-                                                // 사이드바에서도 하이라이트
-                                                const sidebarElement = findSidebarElement(question.id);
-                                                if (sidebarElement) {
-                                                    sidebarElement.classList.add('sidebar-question-highlight');
-                                                }
-
-                                                // 3초 후 하이라이트 제거
-                                                setTimeout(() => {
-                                                    questionElement.classList.remove('question-highlight');
-                                                    if (sidebarElement) {
-                                                        sidebarElement.classList.remove('sidebar-question-highlight');
-                                                    }
-                                                }, 3000);
-                                            }, 500); // 스크롤 애니메이션 완료 후 실행
-                                        }
-                                    }}
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                                    {index + 1}
-                                                </span>
-                                                <h3 className="text-sm font-medium text-gray-900 truncate">
-                                                    {question.title || '제목 없음'}
-                                                </h3>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                                                <span>
-                                                    {question.question_type === 'single_choice' ? '단일선택' :
-                                                        question.question_type === 'multiple_choice' ? '다중선택' :
-                                                            question.question_type === 'short_text' ? '단답형' :
-                                                                question.question_type === 'long_text' ? '서술형' :
-                                                                    question.question_type === 'dropdown' ? '드롭다운' :
-                                                                        question.question_type === 'composite_single' ? '복합 단일' :
-                                                                            question.question_type === 'composite_multiple' ? '복합 다중' :
-                                                                                question.question_type === 'description' ? '안내문' : question.question_type}
-                                                </span>
-                                                {question.required && (
-                                                    <span className="text-red-500">필수</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-1 ml-2">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    copyQuestion(index);
-                                                }}
-                                                className="text-gray-400 hover:text-gray-600 p-1 transition-all duration-200 hover:scale-110"
-                                                title="복사"
-                                            >
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    deleteQuestion(index);
-                                                }}
-                                                disabled={deletingQuestionId === question.id}
-                                                className={`p-1 transition-all duration-200 ${deletingQuestionId === question.id
-                                                    ? 'text-gray-300 cursor-not-allowed'
-                                                    : 'text-gray-400 hover:text-red-600 hover:scale-110'}`}
-                                                title="삭제"
-                                            >
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-4 border-t border-gray-200">
-                    <button
-                        onClick={addQuestion}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 btn-hover-lift flex items-center justify-center gap-2"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        문항 추가
-                    </button>
-                </div>
-            </div>
+                            // 3초 후 하이라이트 제거
+                            setTimeout(() => {
+                                questionElement.classList.remove('question-highlight');
+                                if (sidebarElement) {
+                                    sidebarElement.classList.remove('sidebar-question-highlight');
+                                }
+                            }, 3000);
+                        }, 500); // 스크롤 애니메이션 완료 후 실행
+                    }
+                }, [findQuestionElement, findSidebarElement, clearAllAnimations])}
+                onCopyQuestion={copyQuestion}
+                onDeleteQuestion={deleteQuestion}
+                onAddQuestion={addQuestion}
+            />
 
             {/* 우측 메인 영역 (사이드바 너비만큼 여백 추가, 고정 높이) */}
             <div className="flex-1 flex flex-col">
@@ -752,12 +661,9 @@ export function FormEditor({
                                                         question={question}
                                                         questionIndex={index}
                                                         questions={form.questions}
-                                                        onUpdate={(updatedQuestion) => {
-                                                            console.log('onUpdate', { updatedQuestion })
-                                                            updateQuestion(index, updatedQuestion)
-                                                        }}
-                                                        onDelete={() => deleteQuestion(index)}
-                                                        onCopy={() => copyQuestion(index)}
+                                                        onUpdate={updateQuestion}
+                                                        onDelete={deleteQuestion}
+                                                        onCopy={copyQuestion}
                                                         deletingQuestionId={deletingQuestionId}
                                                     />
                                                 )

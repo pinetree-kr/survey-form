@@ -6,3 +6,5 @@ export * from './Modals';
 export * from './JsonImportModal';
 export * from './JsonExportModal';
 export * from './SurveyBasicInfo';
+export * from './QuestionSidebar';
+export * from './QuestionSidebarItem';
