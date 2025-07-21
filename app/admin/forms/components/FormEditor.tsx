@@ -417,38 +417,24 @@ export function FormEditor({
                 })
             };
 
-            const savedSurvey = await onSave(processedForm, form.id);
-
-            // 성공 토스트 표시 (클릭 가능하도록 설정)
-            const toastId = toast.success(
-                <div>
-                    {form.id ? "설문이 성공적으로 수정되었습니다." : "설문이 성공적으로 생성되었습니다."}
-                    <br />
-                    <span className="text-xs text-blue-600 cursor-pointer hover:underline">
-                        클릭하여 목록으로 이동
-                    </span>
-                </div>,
-                {
-                    onClick: () => {
-                        // 클릭 시 항상 목록으로 이동
-                        window.location.href = '/admin/forms';
-                    },
-                    onClose: () => {
-                        // 자동으로 닫힐 때는 수정 페이지로 이동
+            toast.promise(onSave(processedForm, form.id), {
+                pending: '설문 저장 중...',
+                success: {
+                    autoClose: 1000,
+                    closeOnClick: true,
+                    render: ({ data }: { data: TSurvey }) => {
+                        // console.log('savedSurvey', data.id)
                         if (form.id) {
-                            // 기존 설문 수정인 경우 현재 페이지 새로고침
                             window.location.reload();
                         } else {
-                            // 새로 생성된 경우 해당 설문의 수정 페이지로 이동
-                            window.location.href = `/admin/forms/${savedSurvey.id}/edit`;
+                            window.location.href = `/admin/forms/${data.id}/edit`;
                         }
-                    },
-                    style: { cursor: 'pointer' },
-                    autoClose: 5000,
-                    draggable: true,
-                    pauseOnHover: true,
-                }
-            );
+                        // window.location.href = `/admin/forms/${savedSurvey.id}/edit`;
+                        return '설문이 성공적으로 저장되었습니다.'
+                    }
+                },
+                error: '설문 저장 중 오류가 발생했습니다.'
+            })
         } catch (error) {
             toast.error(error instanceof Error ? error.message : (form.id ? "설문 수정에 실패했습니다." : "설문 생성에 실패했습니다."), {
                 autoClose: 5000,

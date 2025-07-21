@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { toast, ToastContainer } from 'react-toastify'
 
 interface Creator {
   id: string
@@ -37,15 +38,16 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
   const handleDelete = async () => {
     if (!deleteModal.survey) return
 
-    try {
-      await deleteSurvey(deleteModal.survey.id)
-      alert('설문이 성공적으로 삭제되었습니다.')
-      setDeleteModal({ isOpen: false, survey: null })
-      window.location.reload()
-    } catch (error) {
-      alert('설문 삭제 중 오류가 발생했습니다.')
-      console.error('삭제 오류:', error)
-    }
+    toast.promise(deleteSurvey(deleteModal.survey.id), {
+      pending: '설문 삭제 중...',
+      success: {
+        render: () => {
+          window.location.reload()
+          return '설문이 성공적으로 삭제되었습니다.'
+        }
+      },
+      error: '설문 삭제 중 오류가 발생했습니다.'
+    })
   }
 
   const formatDate = (dateString: string) => {
@@ -229,6 +231,7 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
           </div>
         </div>
       )}
+      <ToastContainer />
     </div>
   )
 } 
