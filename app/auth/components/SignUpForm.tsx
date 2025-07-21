@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 export default function SignUpForm({
     action
@@ -122,7 +123,19 @@ export default function SignUpForm({
                     </a>
                 </div>
             </form>
-            <ToastContainer />
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={true}
+                closeOnClick={true}
+                rtl={false}
+                pauseOnFocusLoss={false}
+                draggable={false}
+                pauseOnHover={true}
+                theme="light"
+                limit={3}
+            />
         </div>
     )
 } 

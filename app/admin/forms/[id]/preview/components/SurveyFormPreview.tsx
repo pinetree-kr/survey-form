@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { TSurvey, TQuestion, TBranchCondition } from "@/app/components";
 import { ResponseJsonModal } from './ResponseJsonModal';
 
+
 type Answer = {
     questionId: string;
     value: string | string[] | Record<string, string>;
@@ -297,14 +298,13 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
             answers: answers.map(answer => {
                 const question = survey.questions.find(q => q.id === answer.questionId);
                 const etcValue = etcValues[answer.questionId];
-
                 // etcValues가 존재하는 경우 처리
                 let finalValue: any = answer.value;
                 if (etcValue && etcValue.trim() !== '') {
                     if (Array.isArray(answer.value) || question?.question_type === 'multiple_choice') {
                         // 배열이거나 multiple_choice인 경우 기타 값을 추가
                         if (Array.isArray(answer.value)) {
-                            finalValue = [...answer.value, etcValue];
+                            finalValue = answer.value.map(v => v === 'etc' ? etcValue : v);
                         } else {
                             finalValue = [answer.value, etcValue];
                         }
@@ -613,21 +613,106 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                     )}
 
                     {question.question_type === 'dropdown' && question.options && (
-                        <select
-                            value={currentAnswer?.value as string || ''}
-                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${hasError
-                                ? 'border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
-                                }`}
-                        >
-                            <option value="">선택하세요</option>
-                            {question.options.map((option, index) => (
-                                <option key={index} value={option.key}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const dropdownId = `dropdown-${question.id}`;
+                                    const isOpen = document.getElementById(dropdownId)?.classList.contains('hidden');
+                                    // 모든 드롭다운 닫기
+                                    document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+                                        dropdown.classList.add('hidden');
+                                    });
+                                    // 현재 드롭다운 토글
+                                    if (isOpen) {
+                                        document.getElementById(dropdownId)?.classList.remove('hidden');
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    // 포커스가 드롭다운 내부로 이동하는 경우를 위해 지연
+                                    setTimeout(() => {
+                                        if (!e.currentTarget?.contains(document.activeElement)) {
+                                            document.getElementById(`dropdown-${question.id}`)?.classList.add('hidden');
+                                        }
+                                    }, 100);
+                                }}
+                                className={`relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left border focus:outline-none focus:ring-2 ${hasError
+                                    ? 'border-red-500 focus:ring-red-500'
+                                    : 'border-gray-300 focus:ring-blue-500'
+                                    }`}
+                            >
+                                <span className={`block truncate ${!currentAnswer?.value ? 'text-gray-500' : 'text-gray-900'}`}>
+                                    {currentAnswer?.value
+                                        ? question.options?.find(opt => opt.key === currentAnswer.value)?.label || '선택됨'
+                                        : '선택하세요'
+                                    }
+                                </span>
+                                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                    <svg
+                                        className="h-5 w-5 text-gray-400 transition-transform duration-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </span>
+                            </button>
+
+                            <div
+                                id={`dropdown-${question.id}`}
+                                className="custom-dropdown absolute z-10 mt-1 w-full hidden bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleAnswerChange(question.id, '');
+                                        document.getElementById(`dropdown-${question.id}`)?.classList.add('hidden');
+                                    }}
+                                    className={`relative cursor-default select-none py-2 pl-3 pr-9 w-full text-left hover:bg-blue-600 hover:text-white ${!currentAnswer?.value ? 'bg-blue-600 text-white' : 'text-gray-900'
+                                        }`}
+                                >
+                                    <span className={`block truncate ${!currentAnswer?.value ? 'font-medium' : 'font-normal'}`}>
+                                        선택하세요
+                                    </span>
+                                    {!currentAnswer?.value && (
+                                        <span className="absolute inset-y-0 right-0 flex items-center pr-4">
+                                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                                            </svg>
+                                        </span>
+                                    )}
+                                </button>
+
+                                {question.options.map((option, index) => (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => {
+                                            handleAnswerChange(question.id, option.key);
+                                            document.getElementById(`dropdown-${question.id}`)?.classList.add('hidden');
+                                        }}
+                                        className={`relative cursor-default select-none py-2 pl-3 pr-9 w-full text-left hover:bg-blue-600 hover:text-white ${currentAnswer?.value === option.key ? 'bg-blue-600 text-white' : 'text-gray-900'
+                                            }`}
+                                    >
+                                        <span className={`block truncate ${currentAnswer?.value === option.key ? 'font-medium' : 'font-normal'}`}>
+                                            {option.label}
+                                        </span>
+                                        {currentAnswer?.value === option.key && (
+                                            <span className="absolute inset-y-0 right-0 flex items-center pr-4">
+                                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                                                </svg>
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     )}
 
                     {question.question_type === 'composite_single' && question.composite_items && (
@@ -717,7 +802,6 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
 
     if (isCompleted) {
 
-        console.log({ showResponseModal })
         return (
             <div className="max-w-2xl mx-auto p-8 text-center">
                 <div className="mb-6">

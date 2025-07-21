@@ -12,10 +12,14 @@ export default function QuestionListView({
 }) {
 
 
+    const getQuestionById = (questionId: string) => {
+        return questions.find(q => q.id === questionId)
+    }
+
     // 문항 번호를 찾는 헬퍼 함수
-    const getQuestionNumber = (questionId: string) => {
+    const getQuestionNumberById = (questionId: string) => {
         const index = questions.findIndex(q => q.id === questionId)
-        return index !== -1 ? index + 1 : '?'
+        return index !== -1 ? index + 1 : 0
     }
 
     return (
@@ -52,7 +56,7 @@ export default function QuestionListView({
                                 {question.next_question_id && (
                                     <div className="mb-4 flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
                                         <span className="text-sm font-medium">응답 후 → </span>
-                                        <span className="text-sm">Q{getQuestionNumber(question.next_question_id)}</span>
+                                        <span className="text-sm">Q{getQuestionNumberById(question.next_question_id)}</span>
                                     </div>
                                 )}
 
@@ -70,7 +74,7 @@ export default function QuestionListView({
                                                 <div key={idx} className="text-sm text-red-600">
                                                     <span className="inline-flex items-center">
                                                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                                                            {formatCondition(condition, questions, getQuestionNumber)}
+                                                            {formatCondition(condition, getQuestionById(condition.question_id), getQuestionNumberById(condition.question_id))}
                                                         </span>
                                                         {idx < (question.show_conditions?.length || 0) - 1 && (
                                                             <span className="ml-2 text-red-500 font-medium">혹은</span>
@@ -96,7 +100,7 @@ export default function QuestionListView({
                                                 <span className="text-gray-700">{option.label}</span>
                                                 {option.next_question_id && (
                                                     <span className="ml-auto text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
-                                                        선택시 → Q{getQuestionNumber(option.next_question_id)}
+                                                        선택시 → Q{getQuestionNumberById(option.next_question_id)}
                                                     </span>
                                                 )}
                                             </label>
@@ -166,7 +170,7 @@ export default function QuestionListView({
                                                 itemIndex={itemIndex}
                                                 questionId={question.id}
                                                 questionType={question.question_type as 'composite_single' | 'composite_multiple'}
-                                                getQuestionNumber={getQuestionNumber}
+                                                getQuestionNumber={getQuestionNumberById}
                                             />
                                         ))}
                                     </div>

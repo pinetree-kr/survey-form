@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import { TSurvey } from "@/app/components";
 import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { JsonImportModal, JsonExportModal } from ".";
 import { useFormBasicInfo, useFormActions, useFormEditor, useFormUI } from "./FormEditorContext";
+import { useRouter } from "next/navigation";
 
 interface FormEditorFooterProps {
     onSave: (formData: TSurvey, surveyId?: string) => Promise<any>;
@@ -13,6 +15,7 @@ interface FormEditorFooterProps {
 export const FormEditorFooter = React.memo(function FormEditorFooter({
     onSave
 }: FormEditorFooterProps) {
+    const router = useRouter();
     const basicInfo = useFormBasicInfo();
     const { updateFormBasicInfo, updateQuestions } = useFormActions();
     const { getFullForm, setIsSaving, clearAllAnimations } = useFormEditor();
@@ -33,10 +36,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
         });
         updateQuestions(surveyData.questions)
 
-        toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.', {
-            autoClose: 3000,
-            closeOnClick: true,
-        });
+        toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
     }, [updateFormBasicInfo, updateQuestions]);
 
     // 저장 핸들러
@@ -175,23 +175,29 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
             return;
         }
 
-        try {
-            setIsSaving(true);
-            await onSave(fullForm, basicInfo.id);
+        setIsSaving(true);
+        toast.promise(onSave(fullForm, basicInfo.id), {
+            pending: '설문 저장 중...',
+            success: {
+                render: ({ data }: { data: TSurvey }) => {
+                    setIsSaving(false);
+                    if (basicInfo.id) {
+                        router.refresh()
+                    } else {
+                        router.replace(`/admin/forms/${data.id}`)
+                    }
+                    return '설문이 성공적으로 저장되었습니다.'
+                }
+            },
+            error: {
+                render: (error: any) => {
+                    setIsSaving(false);
+                    console.error('설문 저장 중 오류 발생:', error);
+                    return '설문 저장 중 오류가 발생했습니다. 다시 시도해주세요.';
+                }
+            }
+        });
 
-            toast.success(basicInfo.id ? '설문이 성공적으로 수정되었습니다.' : '설문이 성공적으로 저장되었습니다.', {
-                autoClose: 3000,
-                closeOnClick: true,
-            });
-        } catch (error) {
-            console.error('설문 저장 중 오류 발생:', error);
-            toast.error('설문 저장 중 오류가 발생했습니다. 다시 시도해주세요.', {
-                autoClose: 5000,
-                closeOnClick: true,
-            });
-        } finally {
-            setIsSaving(false);
-        }
     }, [onSave, getFullForm, setIsSaving, clearAllAnimations, basicInfo.id]);
 
     return (
@@ -266,8 +272,16 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
 
             <ToastContainer
                 position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={true}
+                closeOnClick={true}
+                rtl={false}
+                pauseOnFocusLoss={false}
+                draggable={false}
+                pauseOnHover={true}
                 theme="light"
-                toastClassName="toast-enter"
+                limit={3}
             />
         </>
     );

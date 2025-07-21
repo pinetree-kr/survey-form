@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 interface Creator {
   id: string
@@ -231,7 +232,19 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
           </div>
         </div>
       )}
-      <ToastContainer />
+                  <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={true}
+                closeOnClick={true}
+                rtl={false}
+                pauseOnFocusLoss={false}
+                draggable={false}
+                pauseOnHover={true}
+                theme="light"
+                limit={3}
+            />
     </div>
   )
 } 

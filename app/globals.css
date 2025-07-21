@@ -458,6 +458,47 @@ button[title*="제거"]:hover {
   border-radius: 4px;
 }
 
+/* ===== Toast 알림 스타일 ===== */
+.Toastify__toast {
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* .Toastify__toast--success {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.Toastify__toast--error {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+.Toastify__toast--warning {
+  background-color: #f59e0b !important;
+  color: white !important;
+}
+
+.Toastify__toast--info {
+  background-color: #3b82f6 !important;
+  color: white !important;
+} */
+
+.Toastify__close-button {
+  color: white !important;
+  opacity: 0.7 !important;
+  cursor: pointer !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+}
+
+.Toastify__progress-bar {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
 @keyframes toast-slide-in {
   0% {
     transform: translateX(100%);

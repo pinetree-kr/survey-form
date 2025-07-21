@@ -120,15 +120,16 @@ export function SystemSettingsPage({ initialSettings }: SystemSettingsPageProps)
       
       <ToastContainer
         position="top-right"
-        autoClose={5000}
+        autoClose={3000}
         hideProgressBar={false}
-        newestOnTop={false}
+        newestOnTop={true}
         closeOnClick={true}
         rtl={false}
         pauseOnFocusLoss={false}
-        draggable={true}
+        draggable={false}
         pauseOnHover={true}
         theme="light"
+        limit={3}
       />
     </div>
   )
