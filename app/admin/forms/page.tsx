@@ -1,6 +1,5 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { createClient } from '@/lib/supabase-ssr'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import SurveyList from './components/SurveyList'
 
