@@ -4,10 +4,6 @@ import { redirect } from 'next/navigation'
 import { SystemSettingsPage } from './components/SystemSettingsPage'
 import { SystemSetting } from '@/app/types/system-settings'
 
-interface SettingsPageProps {
-  params: Promise<{}>
-}
-
 // Server Actions
 async function getSettings() {
   "use server"
@@ -55,9 +51,9 @@ async function checkAdminPermission() {
   return true
 }
 
-export default async function SettingsPage({ params }: SettingsPageProps) {
+export default async function SettingsPage() {
   const isAdmin = await checkAdminPermission()
-  
+
   if (!isAdmin) {
     redirect('/admin?error=access_denied')
   }
@@ -86,7 +82,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
             시스템 전반의 설정을 관리합니다.
           </p>
         </div>
-        
+
         <SystemSettingsPage initialSettings={settings} />
       </div>
     </div>

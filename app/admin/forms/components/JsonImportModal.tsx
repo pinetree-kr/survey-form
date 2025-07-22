@@ -17,14 +17,14 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
   const handleImport = () => {
     try {
       setError(null);
-      
+
       if (!jsonInput.trim()) {
         setError('JSON 데이터를 입력해주세요.');
         return;
       }
 
       const parsedData = JSON.parse(jsonInput);
-      
+
       // 기본적인 유효성 검사
       if (!parsedData.title) {
         setError('설문 제목이 필요합니다.');
@@ -47,17 +47,14 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
       // questions 처리: show_conditions는 is_hidden이 true일 때만 가져오기
       const processedQuestions = parsedData.questions.map((question: any) => {
         const processedQuestion = { ...question };
-        
+
         // is_hidden이 true가 아닌 경우 show_conditions 제거
         if (!processedQuestion.is_hidden) {
           delete processedQuestion.show_conditions;
         }
-        
+
         return processedQuestion;
       });
-
-      console.log('JsonImportModal - Original questions:', parsedData.questions);
-      console.log('JsonImportModal - Processed questions:', processedQuestions);
 
       // 응답자 식별 설정 유효성 검사
       const allowAnonymous = parsedData.allow_anonymous ?? true;
@@ -212,19 +209,19 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
                   <li>• <strong>is_active</strong>: 설문 활성화 여부 (기본값: true)</li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-medium">응답자 식별 설정</h4>
                 <ul className="space-y-1 ml-4">
                   <li>• <strong>allow_anonymous</strong>: 익명 응답 허용 (기본값: true)</li>
                   <li>• <strong>allow_url_param</strong>: URL 파라미터로 응답자 ID 받기 (기본값: false)</li>
                   <li>• <strong>email_required</strong>: 이메일 입력 필수 (기본값: false)</li>
-                  <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: "id")</li>
+                  <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: &#34;id&#34;)</li>
                   <li>• <strong>allow_email_response_view</strong>: 이메일로 응답 조회 허용 (기본값: false)</li>
                   <li>• <strong>allow_duplicate_responses</strong>: 중복 응답 허용 (기본값: true)</li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-medium">설문 시간 설정</h4>
                 <ul className="space-y-1 ml-4">
@@ -239,7 +236,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
                   <li>• <strong>questions</strong>: 문항 배열 (필수)</li>
                   <li>• 각 문항은 <strong>id</strong>, <strong>title</strong>, <strong>question_type</strong>을 포함해야 합니다</li>
                   <li>• <strong>id</strong>: 각 문항의 고유 ID (필수, 비어있으면 자동 생성)</li>
-                  <li>• <strong>question_type</strong>은 "single_choice", "multiple_choice", "text", "dropdown" 등</li>
+                  <li>• <strong>question_type</strong>은 &#34;single_choice&#34;, &#34;multiple_choice&#34;, &#34;text&#34;, &#34;dropdown&#34; 등</li>
                 </ul>
               </div>
 

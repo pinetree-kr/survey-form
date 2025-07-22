@@ -4,6 +4,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 import { createClient } from '@/lib/supabase-ssr'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function AuthLoginPage() {
 
@@ -40,12 +41,12 @@ export default async function AuthLoginPage() {
         </div>
         <LoginForm action={handleLogin} />
         <div className="text-center mt-4">
-          <a
+          <Link
             href="/auth/sign-up"
             className="text-sm text-indigo-600 hover:text-indigo-500"
           >
             계정이 없으신가요? 회원가입하기
-          </a>
+          </Link>
         </div>
       </div>
     </div>

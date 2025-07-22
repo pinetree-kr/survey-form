@@ -104,7 +104,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
         if (currentPanel >= filtered.length) {
             setCurrentPanel(Math.max(0, filtered.length - 1));
         }
-    }, [answers, survey.questions]);
+    }, [survey.questions, checkShowCondition, currentPanel]);
 
     useEffect(() => {
         setCurrentQuestion(visibleQuestions[currentPanel]);
@@ -472,25 +472,14 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                                             placeholder="기타 답변을 입력하세요"
                                             value={etcValues[question.id] || ''}
                                             onFocus={() => {
-                                                console.log('단일선택 기타 input 포커스:', {
-                                                    questionId: question.id,
-                                                    currentValue: etcValues[question.id],
-                                                    allEtcValues: etcValues
-                                                });
                                             }}
                                             onChange={(e) => {
                                                 const newValue = e.target.value;
-                                                console.log('기타 값 변경:', {
-                                                    questionId: question.id,
-                                                    newValue: newValue,
-                                                    currentEtcValues: etcValues
-                                                });
                                                 setEtcValues(prev => {
                                                     const updated = {
                                                         ...prev,
                                                         [question.id]: newValue
                                                     };
-                                                    console.log('업데이트된 etcValues:', updated);
                                                     return updated;
                                                 });
                                             }}
@@ -590,17 +579,11 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
 
                                             onChange={(e) => {
                                                 const newValue = e.target.value;
-                                                console.log('다중선택 기타 값 변경:', {
-                                                    questionId: question.id,
-                                                    newValue: newValue,
-                                                    currentEtcValues: etcValues
-                                                });
                                                 setEtcValues(prev => {
                                                     const updated = {
                                                         ...prev,
                                                         [question.id]: newValue
                                                     };
-                                                    console.log('업데이트된 etcValues (다중선택):', updated);
                                                     return updated;
                                                 });
                                             }}
@@ -802,7 +785,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                 </div>
             </div>
         );
-    }, [currentPanel, visibleQuestions.length, answers, handleAnswerChange, etcValues]);
+    }, [currentPanel, visibleQuestions.length, answers, handleAnswerChange, etcValues, isCurrentQuestionValid]);
 
     // 이메일 유효성 검사 함수
     const validateEmail = React.useCallback((email: string): string => {
@@ -826,7 +809,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
     // 이메일 입력 UI (설문 시작 전)
     if (survey.email_required && !isEmailVerified) {
         const isEmailValid = !emailError && respondentId.trim() !== '';
-        
+
         return (
             <div className="max-w-2xl mx-auto p-8">
                 <div className="mb-8">
@@ -841,7 +824,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                     <p className="text-gray-600 mb-4">
                         설문을 시작하기 전에 이메일 주소를 입력해주세요.
                     </p>
-                    
+
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             이메일 주소 <span className="text-red-500">*</span>
@@ -852,11 +835,10 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                             onChange={handleEmailChange}
                             onBlur={() => setEmailError(validateEmail(respondentId))}
                             placeholder="example@email.com"
-                            className={`w-full border px-3 py-2 rounded-lg focus:ring-2 focus:border-transparent ${
-                                emailError 
-                                    ? 'border-red-500 focus:ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500'
-                            }`}
+                            className={`w-full border px-3 py-2 rounded-lg focus:ring-2 focus:border-transparent ${emailError
+                                ? 'border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:ring-blue-500'
+                                }`}
                             required
                         />
                         {emailError && (
@@ -868,11 +850,10 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                         <button
                             onClick={() => setIsEmailVerified(true)}
                             disabled={!isEmailValid}
-                            className={`px-6 py-2 rounded-lg transition-colors ${
-                                isEmailValid
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
+                            className={`px-6 py-2 rounded-lg transition-colors ${isEmailValid
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
                         >
                             설문 시작하기
                         </button>

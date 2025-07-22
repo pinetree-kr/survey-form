@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import CreateUserModal from './CreateUserModal'
 import { Profile, UserRole } from '@/app/types'
+import Link from 'next/link'
 
 export default function UserTable({
   users,
@@ -223,20 +224,20 @@ export default function UserTable({
                       본인
                     </span>
                   ) : null}
-                  <a
+                  <Link
                     href={`/admin/users/${user.id}`}
                     className="text-blue-600 hover:text-blue-900 hover:underline"
                   >
                     {user.username}
-                  </a>
+                  </Link>
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
-                  <a
+                  <Link
                     href={`/admin/users/${user.id}`}
                     className="text-blue-600 hover:text-blue-900 hover:underline"
                   >
                     {user.display_name || user.username}
-                  </a>
+                  </Link>
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 w-[150px]">
                   {editingRoles[user.id] !== undefined ? (
@@ -384,7 +385,7 @@ export default function UserTable({
             </div>
             <div className="mb-6">
               <p className="text-sm text-gray-500">
-                정말로 사용자 <span className="font-semibold text-gray-900">"{deleteModal.user.username}"</span>을(를) 삭제하시겠습니까?
+                정말로 사용자 <span className="font-semibold text-gray-900">{`"${deleteModal.user.username}"`}</span>을(를) 삭제하시겠습니까?
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 이 작업은 되돌릴 수 없습니다.

@@ -209,7 +209,7 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
             </div>
             <div className="mb-6">
               <p className="text-sm text-gray-500">
-                정말로 설문 <span className="font-semibold text-gray-900">"{deleteModal.survey.title}"</span>을(를) 삭제하시겠습니까?
+                정말로 설문 <span className="font-semibold text-gray-900">{`"${deleteModal.survey.title}"`}</span>을(를) 삭제하시겠습니까?
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 이 작업은 되돌릴 수 없습니다.
@@ -232,19 +232,19 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
           </div>
         </div>
       )}
-                  <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={true}
-                closeOnClick={true}
-                rtl={false}
-                pauseOnFocusLoss={false}
-                draggable={false}
-                pauseOnHover={true}
-                theme="light"
-                limit={3}
-            />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick={true}
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable={false}
+        pauseOnHover={true}
+        theme="light"
+        limit={3}
+      />
     </div>
   )
 } 

@@ -8,7 +8,7 @@ import { TSurvey } from '@/app/components'
 // Server Action
 async function handleCreate(formData: TSurvey) {
   "use server"
-  console.log({ formData })
+
 
   const { env } = await getCloudflareContext({ async: true })
   const supabase = await createClient(env)

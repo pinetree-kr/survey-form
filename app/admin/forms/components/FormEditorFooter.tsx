@@ -35,11 +35,8 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
         // ID는 제거하고 나머지 모든 정보를 완전히 덮어씌움
         const { id, questions, ...basicInfo } = surveyData;
-        
-        console.log('JSON Import - Basic Info:', basicInfo);
-        console.log('JSON Import - Questions:', questions);
-        
-        // 기본 정보 완전히 덮어씌우기
+
+                // 기본 정보 완전히 덮어씌우기
         updateFormBasicInfo({
             id: '', // ID는 빈 문자열로 설정
             ...basicInfo,
@@ -47,7 +44,6 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
         
         // 문항 정보 완전히 덮어씌우기 - 강제로 새로운 배열 생성
         const newQuestions = questions ? [...questions] : [];
-        console.log('JSON Import - Setting new questions:', newQuestions);
         updateQuestions(newQuestions);
 
         toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
@@ -212,7 +208,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
             }
         });
 
-    }, [onSave, getFullForm, setIsSaving, clearAllAnimations, surveyId]);
+    }, [onSave, getFullForm, setIsSaving, clearAllAnimations, surveyId, router]);
 
     return (
         <>

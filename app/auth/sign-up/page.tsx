@@ -14,7 +14,7 @@ export default async function AuthSignUpPage() {
             email,
             password,
         })
-        console.log({ data, error })
+    
         if (error) {
             return { error: { message: error.message } }
         }

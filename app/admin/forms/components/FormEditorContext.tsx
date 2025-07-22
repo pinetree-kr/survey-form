@@ -184,14 +184,8 @@ export function FormEditorProvider({
     }, []);
 
     const updateQuestions = useCallback((newQuestions: TQuestion[]) => {
-        console.log('FormEditorContext - updateQuestions called with:', newQuestions);
         setQuestions(newQuestions);
     }, []);
-
-    // questions 상태 변경 감지
-    React.useEffect(() => {
-        console.log('FormEditorContext - questions state updated:', questions);
-    }, [questions]);
 
     const findQuestionByIndex = useCallback((index: number) => {
         return questions[index]

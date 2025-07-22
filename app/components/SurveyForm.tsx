@@ -104,11 +104,11 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
         if (currentPanel >= filtered.length) {
             setCurrentPanel(Math.max(0, filtered.length - 1));
         }
-    }, [answers, survey.questions]);
+    }, [survey.questions, checkShowCondition, currentPanel]);
 
     useEffect(() => {
         setCurrentQuestion(visibleQuestions[currentPanel]);
-    }, [visibleQuestions, currentPanel]);
+    }, [visibleQuestions, currentPanel, setCurrentQuestion]);
 
     const handleAnswerChange = React.useCallback((questionId: string, value: string | string[] | Record<string, string>) => {
         setAnswers(prev => {
@@ -215,7 +215,7 @@ export default function SurveyForm({ survey }: { survey: TSurvey }) {
                 setCurrentPanel(nextPanel);
             }
         }
-    }, [currentQuestion, visibleQuestions, answers, getNextPanel, survey.email_required]);
+    }, [currentQuestion, visibleQuestions, answers, getNextPanel, currentPanel]);
 
     const handlePrevious = React.useCallback(() => {
         if (currentPanel > 0) {

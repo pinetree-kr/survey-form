@@ -120,7 +120,6 @@ export const QuestionPanel = React.memo(({
     // 디바운스 상태 업데이트 (키보드 입력일 때만)
     useEffect(() => {
         if (isUserInput) {
-            console.log('setIsTitleDebouncing - title updated:', localTitle, debouncedTitle);
             setIsTitleDebouncing(localTitle !== debouncedTitle);
         } else {
             setIsTitleDebouncing(false);
@@ -138,42 +137,36 @@ export const QuestionPanel = React.memo(({
     // 디바운스된 값이 변경되면 부모에게 업데이트 (키보드 입력일 때만)
     useEffect(() => {
         if (isUserInput && debouncedTitle !== question.title) {
-            console.log('Updating title from debounced value:', debouncedTitle);
             updateQuestion({ ...question, title: debouncedTitle });
         }
-    }, [debouncedTitle, question.title, updateQuestion, question.id, isUserInput]);
+    }, [debouncedTitle, question, updateQuestion, isUserInput]);
 
     useEffect(() => {
         if (isUserInput && !areOptionsEqual(debouncedOptions, question.options)) {
-            console.log('Updating options from debounced value:', debouncedOptions);
             updateQuestion({ ...question, options: debouncedOptions });
         }
-    }, [debouncedOptions, question.options, updateQuestion, question.id, isUserInput]);
+    }, [debouncedOptions, question, updateQuestion, isUserInput]);
 
     useEffect(() => {
         if (isUserInput && debouncedRequired !== question.required) {
-            console.log('Updating required from debounced value:', debouncedRequired);
             updateQuestion({ ...question, required: debouncedRequired });
         }
-    }, [debouncedRequired, question.required, updateQuestion, question.id, isUserInput]);
+    }, [debouncedRequired, question, updateQuestion, isUserInput]);
 
     useEffect(() => {
         if (isUserInput && debouncedIsHidden !== question.is_hidden) {
-            console.log('Updating is_hidden from debounced value:', debouncedIsHidden);
             updateQuestion({ ...question, is_hidden: debouncedIsHidden });
         }
-    }, [debouncedIsHidden, question.is_hidden, updateQuestion, question.id, isUserInput]);
+    }, [debouncedIsHidden, question, updateQuestion, isUserInput]);
 
     useEffect(() => {
         if (isUserInput && debouncedHasEtc !== question.hasEtc) {
-            console.log('Updating hasEtc from debounced value:', debouncedHasEtc);
             updateQuestion({ ...question, hasEtc: debouncedHasEtc });
         }
-    }, [debouncedHasEtc, question.hasEtc, updateQuestion, question.id, isUserInput]);
+    }, [debouncedHasEtc, question, updateQuestion, isUserInput]);
 
     useEffect(() => {
         if (isUserInput && debouncedQuestionType !== question.question_type) {
-            console.log('Updating question_type from debounced value:', debouncedQuestionType);
             const patch: Partial<TQuestion> = { question_type: debouncedQuestionType };
             if (["single_choice", "multiple_choice", "dropdown"].includes(debouncedQuestionType)) {
                 patch.options = localOptions && localOptions.length > 0 ? localOptions : [{ label: '', key: '' }];
@@ -191,41 +184,35 @@ export const QuestionPanel = React.memo(({
             }
             updateQuestion({ ...question, ...patch });
         }
-    }, [debouncedQuestionType, question.question_type, updateQuestion, question.id, isUserInput, localOptions, question.composite_items]);
+    }, [debouncedQuestionType, question, updateQuestion, isUserInput, localOptions]);
 
     // question이 외부에서 변경되면 로컬 상태 동기화 (외부 데이터 로딩)
     useEffect(() => {
-        console.log('QuestionPanel - title updated from external:', question.title);
         setLocalTitle(question.title);
         setIsUserInput(false); // 외부 데이터 로딩임을 표시
     }, [question.title]);
 
     useEffect(() => {
-        console.log('QuestionPanel - options updated from external:', question.options);
         setLocalOptions(question.options || []);
         setIsUserInput(false); // 외부 데이터 로딩임을 표시
     }, [question.options]);
 
     useEffect(() => {
-        console.log('QuestionPanel - required updated from external:', question.required);
         setLocalRequired(question.required);
         setIsUserInput(false);
     }, [question.required]);
 
     useEffect(() => {
-        console.log('QuestionPanel - is_hidden updated from external:', question.is_hidden);
         setLocalIsHidden(question.is_hidden);
         setIsUserInput(false);
     }, [question.is_hidden]);
 
     useEffect(() => {
-        console.log('QuestionPanel - hasEtc updated from external:', question.hasEtc);
         setLocalHasEtc(question.hasEtc);
         setIsUserInput(false);
     }, [question.hasEtc]);
 
     useEffect(() => {
-        console.log('QuestionPanel - question_type updated from external:', question.question_type);
         setLocalQuestionType(question.question_type);
         setIsUserInput(false);
     }, [question.question_type]);
@@ -239,9 +226,8 @@ export const QuestionPanel = React.memo(({
 
     // 핵심 업데이트 함수만 useCallback 사용
     const handleChange = useCallback((patch: Partial<TQuestion>) => {
-        console.log('handleChange', { patch })
         updateQuestion({ ...question, ...patch });
-    }, [question.id, updateQuestion]); // question 전체 대신 id만 의존성으로 사용
+    }, [question, updateQuestion]);
 
     // 단순한 이벤트 핸들러들은 useCallback 불필요
     const addOption = () => {
@@ -279,7 +265,7 @@ export const QuestionPanel = React.memo(({
         setIsUserInput(true); // 클릭 입력임을 표시
         const newHiddenState = !localIsHidden;
         setLocalIsHidden(newHiddenState);
-        
+
         // show_conditions는 즉시 업데이트 (조건부 로직이므로)
         if (!newHiddenState) {
             // 가리기를 비활성화하면 활성화 조건도 제거
@@ -296,7 +282,7 @@ export const QuestionPanel = React.memo(({
     const handleTypeChange = useCallback((qt: TQuestionType) => {
         setIsUserInput(true); // 클릭 입력임을 표시
         setLocalQuestionType(qt);
-        
+
         // question_type 변경 시 관련 속성들도 즉시 업데이트
         if (["single_choice", "multiple_choice", "dropdown"].includes(qt)) {
             setLocalOptions(localOptions && localOptions.length > 0 ? localOptions : [{ label: '', key: '' }]);
@@ -323,6 +309,14 @@ export const QuestionPanel = React.memo(({
         return questionNumber !== -1 ? questionNumber + 1 : '?';
     }, [questionNumber]);
 
+    const handleShowConditionDelete = useCallback((condIndex: number) => {
+        if (!question.show_conditions) return;
+
+        const newConditions = question.show_conditions.filter((_, i) => i !== condIndex);
+        const updatedQuestion = { ...question, show_conditions: newConditions };
+        updateQuestion(updatedQuestion);
+    }, [updateQuestion, question]);
+
     // 조건부 표시 정보는 useMemo로 최적화
     const showConditionsInfo = useMemo(() => {
         if (!question.show_conditions || question.show_conditions?.length === 0) return null;
@@ -348,11 +342,10 @@ export const QuestionPanel = React.memo(({
                 </div>
             )
         });
-    }, [question.show_conditions, findQuestionById, findQuestionIndexById]);
+    }, [question, findQuestionById, findQuestionIndexById, handleShowConditionDelete]);
 
     // 브랜치 추가 함수 추가 (handleChange 함수 다음에 추가)
     const handleBranchAdd = useCallback((optIdx: number, nextQuestionId: string | null) => {
-        console.log('QuestionPanel handleBranchAdd', { optIdx, nextQuestionId });
 
         if (nextQuestionId === null) {
             // "다음 문항으로 진행하기" 선택 시 연결 제거
@@ -396,7 +389,6 @@ export const QuestionPanel = React.memo(({
 
     // 브랜치 삭제 함수 추가
     const handleBranchDelete = useCallback((optIdx: number) => {
-        console.log('QuestionPanel handleBranchDelete', { optIdx });
 
         if (question.question_type === 'composite_single') {
             // composite_single 문항의 경우 composite_items 수정
@@ -419,25 +411,15 @@ export const QuestionPanel = React.memo(({
 
     // 조건부 표시 추가 핸들러
     const handleShowConditionAdd = useCallback((condition: TBranchCondition) => {
-        console.log('handleShowConditionAdd', { condition })
         const existingConditions = question.show_conditions || [];
         const newConditions = [...existingConditions, condition];
         handleChange({ show_conditions: newConditions });
         setConditionModal(false);
     }, [handleChange, question.show_conditions]);
 
-    const handleShowConditionDelete = useCallback((condIndex: number) => {
-        if (!question.show_conditions) return;
-
-        const newConditions = question.show_conditions.filter((_, i) => i !== condIndex);
-        const updatedQuestion = { ...question, show_conditions: newConditions };
-        // console.log('handleShowConditionDelete', { updatedQuestion })
-        updateQuestion(updatedQuestion);
-    }, [updateQuestion, question]);
 
     // 다음 문항 연결 추가 핸들러
     const handleNextQuestionAdd = useCallback((nextQuestionId: string | null) => {
-        // console.log('handleNextQuestionAdd', { nextQuestionId })
         if (nextQuestionId === null) {
             // "다음 문항으로 진행하기" 선택 시 연결 제거
             handleChange({ next_question_id: undefined });
@@ -451,14 +433,13 @@ export const QuestionPanel = React.memo(({
     // 다음 문항 연결 제거 핸들러
     const handleNextQuestionDelete = useCallback(() => {
         const updatedQuestion = { ...question, next_question_id: undefined };
-        // console.log('handleNextQuestionDelete', { updatedQuestion })
+
         updateQuestion(updatedQuestion);
     }, [updateQuestion, question]);
 
     // 이미지 저장 핸들러
     const handleImageSave = useCallback((urls: string[]) => {
         if (!imageModal) return;
-        // console.log('handleImageSave', { urls })
 
         if (imageModal.type === 'question') {
             handleChange({ images: urls });
@@ -741,7 +722,6 @@ export const QuestionPanel = React.memo(({
                                 onChange={v => {
                                     const newItems = [...(question.composite_items || [])];
                                     newItems[idx] = { ...item, label: v.trim(), key: v.trim() };
-                                    console.log({ newItems })
                                     handleChange({ composite_items: newItems });
                                 }}
                                 options={question.composite_items?.map(i => i.label).filter(l => l && l !== item.label) || []}
@@ -925,7 +905,7 @@ export const QuestionPanel = React.memo(({
                                     </svg>
                                     <div className="text-sm">
                                         <p className="font-medium mb-1">활성화 조건이 없습니다</p>
-                                        <p className="text-amber-600">아래의 "추가" 버튼을 클릭하여 조건을 설정해주세요</p>
+                                        <p className="text-amber-600">아래의 &#34;추가&#34; 버튼을 클릭하여 조건을 설정해주세요</p>
                                         <p className="text-amber-500 text-xs mt-1">※ 여러 조건을 설정하면 OR 조건으로 작동합니다</p>
                                     </div>
                                 </div>
@@ -1008,3 +988,5 @@ export const QuestionPanel = React.memo(({
         </div>
     );
 }, areQuestionPropsEqual);
+
+QuestionPanel.displayName = 'QuestionPanel';

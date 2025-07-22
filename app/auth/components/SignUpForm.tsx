@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -115,12 +116,12 @@ export default function SignUpForm({
                 </div>
 
                 <div className="text-center">
-                    <a
+                    <Link
                         href="/auth/sign-in"
                         className="text-sm text-indigo-600 hover:text-indigo-500"
                     >
                         이미 계정이 있으신가요? 로그인하기
-                    </a>
+                    </Link>
                 </div>
             </form>
             <ToastContainer

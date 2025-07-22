@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Profile, UserRole } from '@/app/types'
+import Link from 'next/link'
 
 interface UserDetailFormProps {
   profile: Profile
@@ -150,12 +151,12 @@ export default function UserDetailForm({ profile, updateProfile, isOwnProfile }:
 
       {/* 버튼 */}
       <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-        <a
+        <Link
           href="/admin/users"
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
         >
           취소
-        </a>
+        </Link>
         <button
           type="submit"
           disabled={isLoading}
