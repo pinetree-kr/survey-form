@@ -20,7 +20,25 @@ async function getSurvey(surveyId: string) {
 
   const { data, error } = await supabase
     .from('surveys')
-    .select('*')
+    .select(`
+      id,
+      title,
+      description,
+      questions,
+      is_active,
+      allow_anonymous,
+      allow_url_param,
+      email_required,
+      url_param_name,
+      allow_email_response_view,
+      allow_duplicate_responses,
+      opens_at,
+      closes_at,
+      created_by,
+      updated_by,
+      created_at,
+      updated_at
+    `)
     .eq('id', surveyId)
     .single()
 
@@ -75,6 +93,8 @@ async function handleUpdate(formData: TSurvey, surveyId?: string) {
       url_param_name: formData.url_param_name || 'id',
       allow_email_response_view: formData.allow_email_response_view || false,
       allow_duplicate_responses: formData.allow_duplicate_responses || true,
+      opens_at: formData.opens_at || null,
+      closes_at: formData.closes_at || null,
       updated_by: user.id,
       updated_at: new Date().toISOString()
     })

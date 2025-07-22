@@ -229,6 +229,24 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  시작 시간
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                  {survey.opens_at ? new Date(survey.opens_at).toLocaleString('ko-KR', { timeZone: 'UTC' }) : '설정 없음'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  종료 시간
+                </label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                  {survey.closes_at ? new Date(survey.closes_at).toLocaleString('ko-KR', { timeZone: 'UTC' }) : '설정 없음'}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   상태
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">

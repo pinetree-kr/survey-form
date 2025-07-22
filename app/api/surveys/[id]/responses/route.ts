@@ -14,7 +14,7 @@ export async function POST(
         // 설문 존재 여부 및 설정 확인
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, allow_anonymous, is_active, allow_url_param, email_required, url_param_name, allow_duplicate_responses')
+            .select('id, allow_anonymous, is_active, allow_url_param, email_required, url_param_name, allow_duplicate_responses, opens_at, closes_at')
             .eq('id', surveyId)
             .single();
 
@@ -24,6 +24,15 @@ export async function POST(
 
         if (!survey.is_active) {
             return NextResponse.json({ error: '비활성화된 설문입니다.' }, { status: 400 });
+        }
+
+        // 설문 시간 체크
+        const now = new Date();
+        if (survey.opens_at && new Date(survey.opens_at) > now) {
+            return NextResponse.json({ error: '설문이 아직 시작되지 않았습니다.' }, { status: 400 });
+        }
+        if (survey.closes_at && new Date(survey.closes_at) < now) {
+            return NextResponse.json({ error: '설문이 종료되었습니다.' }, { status: 400 });
         }
 
         // 현재 사용자 인증 확인
@@ -39,9 +48,10 @@ export async function POST(
         // 요청 본문 파싱
         const body = await request.json() as { 
             answers?: Record<string, any>;
-            respondent_id?: string;
+            respondent?: string;
+            email?: string;
         };
-        const { answers, respondent_id } = body;
+        const { answers, respondent, email } = body;
 
         if (!answers) {
             return NextResponse.json({ error: '응답 데이터가 필요합니다.' }, { status: 400 });
@@ -53,45 +63,67 @@ export async function POST(
                          'unknown';
         const userAgent = request.headers.get('user-agent') || 'unknown';
 
-        // 응답자 ID 결정
-        let finalRespondentId: string | null = null;
-        let finalIsAnonymous = false;
+        // URL 파라미터에서 응답자 ID 가져오기
+        const { searchParams } = new URL(request.url);
+        const urlParamName = survey.url_param_name || 'id';
+        const urlRespondentId = searchParams.get(urlParamName);
 
-        // 이메일 입력이 필수인 경우
-        if (survey.email_required) {
-            if (!respondent_id) {
-                return NextResponse.json({ error: '이메일 주소가 필요합니다.' }, { status: 400 });
-            }
-            // 간단한 이메일 형식 검증
+        // 이메일이 제공된 경우 형식 검증
+        if (email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(respondent_id)) {
+            if (!emailRegex.test(email)) {
                 return NextResponse.json({ error: '유효한 이메일 주소를 입력해주세요.' }, { status: 400 });
             }
-            finalRespondentId = respondent_id;
+        }
+
+        // 응답자 ID 결정 로직
+        let finalRespondent: string | null = null;
+        let finalEmail: string | null = null;
+        let finalIsAnonymous = false;
+
+        // 1) URL 파라미터와 이메일을 둘 다 입력받은 경우
+        if (urlRespondentId && email) {
+            finalRespondent = urlRespondentId;
+            finalEmail = email;
             finalIsAnonymous = false;
         }
-        // URL 파라미터가 허용된 경우
-        else if (survey.allow_url_param && respondent_id) {
-            finalRespondentId = respondent_id;
+        // 2) URL 파라미터만 입력받은 경우
+        else if (urlRespondentId) {
+            finalRespondent = urlRespondentId;
             finalIsAnonymous = false;
         }
-        // 익명 응답이 허용된 경우
-        else if (survey.allow_anonymous) {
-            finalRespondentId = null;
+        // 3) 익명 허용인 경우 (URL 파라미터와 이메일이 모두 없는 경우)
+        else if (survey.allow_anonymous && !urlRespondentId && !respondent && !email) {
+            finalRespondent = null;
             finalIsAnonymous = true;
         }
-        // 어떤 방법도 허용되지 않은 경우
+        // 4) 이메일만 입력받은 경우
+        else if (email) {
+            finalRespondent = email;
+            finalEmail = email;
+            finalIsAnonymous = false;
+        }
+        // 5) 다른 식별자(respondent)를 입력한 경우
+        else if (respondent) {
+            finalRespondent = respondent;
+            finalIsAnonymous = false;
+        }
+        // 6) 이메일이 필수인 경우
+        else if (survey.email_required) {
+            return NextResponse.json({ error: '이메일 주소가 필요합니다.' }, { status: 400 });
+        }
+        // 7) 어떤 방법도 허용되지 않은 경우
         else {
             return NextResponse.json({ error: '응답 방법이 설정되지 않았습니다.' }, { status: 400 });
         }
 
         // 중복 응답 확인
-        if (!survey.allow_duplicate_responses && finalRespondentId) {
+        if (!survey.allow_duplicate_responses && (finalRespondent || finalEmail)) {
             const { data: existingResponse, error: checkError } = await supabase
                 .from('survey_responses')
                 .select('id')
                 .eq('survey_id', surveyId)
-                .eq('respondent_id', finalRespondentId)
+                .or(`respondent.eq.${finalRespondent},email.eq.${finalEmail}`)
                 .single();
 
             if (existingResponse) {
@@ -102,7 +134,8 @@ export async function POST(
         // 응답 데이터 생성
         const responseData = {
             survey_id: surveyId,
-            respondent_id: finalRespondentId,
+            respondent: finalRespondent,
+            email: finalEmail,
             is_anonymous: finalIsAnonymous,
             answers: answers,
             ip_address: ipAddress,

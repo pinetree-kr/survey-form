@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { JsonImportModal, JsonExportModal } from ".";
 import { useFormBasicInfo, useFormActions, useFormEditor, useFormUI } from "./FormEditorContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 interface FormEditorFooterProps {
     onSave: (formData: TSurvey, surveyId?: string) => Promise<any>;
@@ -16,10 +16,14 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
     onSave
 }: FormEditorFooterProps) {
     const router = useRouter();
+    const params = useParams();
     const basicInfo = useFormBasicInfo();
     const { updateFormBasicInfo, updateQuestions } = useFormActions();
     const { getFullForm, setIsSaving, clearAllAnimations } = useFormEditor();
     const { isSaving } = useFormUI();
+
+    // URL params에서 survey ID 가져오기
+    const surveyId = params?.id as string;
 
     // JSON 가져오기 모달 상태
     const [showJsonImportModal, setShowJsonImportModal] = useState(false);
@@ -29,12 +33,22 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
 
     // JSON 가져오기 핸들러
     const handleJsonImport = React.useCallback((surveyData: TSurvey) => {
-        delete surveyData.id;
+        // ID는 제거하고 나머지 모든 정보를 완전히 덮어씌움
+        const { id, questions, ...basicInfo } = surveyData;
+        
+        console.log('JSON Import - Basic Info:', basicInfo);
+        console.log('JSON Import - Questions:', questions);
+        
+        // 기본 정보 완전히 덮어씌우기
         updateFormBasicInfo({
-            id: surveyData.id || undefined,
-            ...surveyData,
+            id: '', // ID는 빈 문자열로 설정
+            ...basicInfo,
         });
-        updateQuestions(surveyData.questions)
+        
+        // 문항 정보 완전히 덮어씌우기 - 강제로 새로운 배열 생성
+        const newQuestions = questions ? [...questions] : [];
+        console.log('JSON Import - Setting new questions:', newQuestions);
+        updateQuestions(newQuestions);
 
         toast.success('JSON에서 설문이 성공적으로 가져와졌습니다.');
     }, [updateFormBasicInfo, updateQuestions]);
@@ -176,12 +190,12 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
         }
 
         setIsSaving(true);
-        toast.promise(onSave(fullForm, basicInfo.id), {
+        toast.promise(onSave(fullForm, surveyId), {
             pending: '설문 저장 중...',
             success: {
                 render: ({ data }: { data: TSurvey }) => {
                     setIsSaving(false);
-                    if (basicInfo.id) {
+                    if (surveyId) {
                         router.refresh()
                     } else {
                         router.replace(`/admin/forms/${data.id}`)
@@ -198,7 +212,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
             }
         });
 
-    }, [onSave, getFullForm, setIsSaving, clearAllAnimations, basicInfo.id]);
+    }, [onSave, getFullForm, setIsSaving, clearAllAnimations, surveyId]);
 
     return (
         <>
@@ -250,7 +264,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
                                 )}
-                                {isSaving ? '저장 중...' : (basicInfo.id ? '설문 수정' : '설문 저장')}
+                                {isSaving ? '저장 중...' : (surveyId ? '설문 수정' : '설문 저장')}
                             </button>
                         </div>
                     </div>

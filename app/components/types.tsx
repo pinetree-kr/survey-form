@@ -87,6 +87,8 @@ export type TSurvey = {
     url_param_name?: string;
     allow_email_response_view?: boolean;
     allow_duplicate_responses?: boolean;
+    opens_at?: string | null;
+    closes_at?: string | null;
     questions: TQuestion[];
     created_at?: string;
     updated_at?: string;

@@ -43,7 +43,23 @@ const areOptionsEqual = (options1: TOption[] | undefined, options2: TOption[] | 
     });
 };
 
-export const QuestionPanel = ({
+// QuestionPanel 메모이제이션 비교 함수
+const areQuestionPropsEqual = (prevProps: any, nextProps: any) => {
+    return (
+        prevProps.questionIndex === nextProps.questionIndex &&
+        prevProps.question.id === nextProps.question.id &&
+        prevProps.question.title === nextProps.question.title &&
+        JSON.stringify(prevProps.question.options) === JSON.stringify(nextProps.question.options) &&
+        prevProps.question.question_type === nextProps.question.question_type &&
+        prevProps.question.required === nextProps.question.required &&
+        prevProps.question.is_hidden === nextProps.question.is_hidden &&
+        JSON.stringify(prevProps.question.show_conditions) === JSON.stringify(nextProps.question.show_conditions) &&
+        prevProps.question.hasEtc === nextProps.question.hasEtc &&
+        prevProps.question.next_question_id === nextProps.question.next_question_id
+    );
+};
+
+export const QuestionPanel = React.memo(({
     question,
     questionIndex
 }: {
@@ -79,10 +95,21 @@ export const QuestionPanel = ({
     // 로컬 상태로 즉시 반응하는 UI
     const [localTitle, setLocalTitle] = useState(question.title);
     const [localOptions, setLocalOptions] = useState(question.options || []);
+    const [localRequired, setLocalRequired] = useState(question.required);
+    const [localIsHidden, setLocalIsHidden] = useState(question.is_hidden);
+    const [localHasEtc, setLocalHasEtc] = useState(question.hasEtc);
+    const [localQuestionType, setLocalQuestionType] = useState(question.question_type);
 
-    // 디바운스된 값들
-    const debouncedTitle = useDebounce(localTitle, 300);
-    const debouncedOptions = useDebounce(localOptions, 300);
+    // 입력 소스 추적 (키보드 입력 vs 외부 데이터)
+    const [isUserInput, setIsUserInput] = useState(false);
+
+    // 디바운스된 값들 (키보드 입력에만 적용)
+    const debouncedTitle = useDebounce(isUserInput ? localTitle : question.title, 300);
+    const debouncedOptions = useDebounce(isUserInput ? localOptions : question.options || [], 300);
+    const debouncedRequired = useDebounce(isUserInput ? localRequired : question.required, 300);
+    const debouncedIsHidden = useDebounce(isUserInput ? localIsHidden : question.is_hidden, 300);
+    const debouncedHasEtc = useDebounce(isUserInput ? localHasEtc : question.hasEtc, 300);
+    const debouncedQuestionType = useDebounce(isUserInput ? localQuestionType : question.question_type, 300);
 
     // 디바운스 상태 추적
     const [isTitleDebouncing, setIsTitleDebouncing] = useState(false);
@@ -90,33 +117,118 @@ export const QuestionPanel = ({
 
     const { findQuestionIndexById, findQuestionById } = useFormEditor();
 
-    // 디바운스 상태 업데이트
+    // 디바운스 상태 업데이트 (키보드 입력일 때만)
     useEffect(() => {
-        setIsTitleDebouncing(localTitle !== debouncedTitle);
-    }, [localTitle, debouncedTitle]);
+        if (isUserInput) {
+            console.log('setIsTitleDebouncing - title updated:', localTitle, debouncedTitle);
+            setIsTitleDebouncing(localTitle !== debouncedTitle);
+        } else {
+            setIsTitleDebouncing(false);
+        }
+    }, [localTitle, debouncedTitle, isUserInput]);
 
     useEffect(() => {
-        setIsOptionsDebouncing(JSON.stringify(localOptions) !== JSON.stringify(debouncedOptions));
-    }, [localOptions, debouncedOptions]);
+        if (isUserInput) {
+            setIsOptionsDebouncing(JSON.stringify(localOptions) !== JSON.stringify(debouncedOptions));
+        } else {
+            setIsOptionsDebouncing(false);
+        }
+    }, [localOptions, debouncedOptions, isUserInput]);
 
-    // 디바운스된 값이 변경되면 부모에게 업데이트
+    // 디바운스된 값이 변경되면 부모에게 업데이트 (키보드 입력일 때만)
     useEffect(() => {
-        if (debouncedTitle !== question.title) {
+        if (isUserInput && debouncedTitle !== question.title) {
+            console.log('Updating title from debounced value:', debouncedTitle);
             updateQuestion({ ...question, title: debouncedTitle });
         }
-    }, [debouncedTitle, question.title, updateQuestion, question.id]); // question 전체 대신 id만 의존성으로 사용
+    }, [debouncedTitle, question.title, updateQuestion, question.id, isUserInput]);
 
     useEffect(() => {
-        if (!areOptionsEqual(debouncedOptions, question.options)) {
-            console.log('useEffect1', { debouncedOptions, question })
+        if (isUserInput && !areOptionsEqual(debouncedOptions, question.options)) {
+            console.log('Updating options from debounced value:', debouncedOptions);
             updateQuestion({ ...question, options: debouncedOptions });
         }
-    }, [debouncedOptions, updateQuestion, question.id]); // question.options 제거
+    }, [debouncedOptions, question.options, updateQuestion, question.id, isUserInput]);
 
-    // question이 외부에서 변경되면 로컬 상태 동기화
     useEffect(() => {
+        if (isUserInput && debouncedRequired !== question.required) {
+            console.log('Updating required from debounced value:', debouncedRequired);
+            updateQuestion({ ...question, required: debouncedRequired });
+        }
+    }, [debouncedRequired, question.required, updateQuestion, question.id, isUserInput]);
+
+    useEffect(() => {
+        if (isUserInput && debouncedIsHidden !== question.is_hidden) {
+            console.log('Updating is_hidden from debounced value:', debouncedIsHidden);
+            updateQuestion({ ...question, is_hidden: debouncedIsHidden });
+        }
+    }, [debouncedIsHidden, question.is_hidden, updateQuestion, question.id, isUserInput]);
+
+    useEffect(() => {
+        if (isUserInput && debouncedHasEtc !== question.hasEtc) {
+            console.log('Updating hasEtc from debounced value:', debouncedHasEtc);
+            updateQuestion({ ...question, hasEtc: debouncedHasEtc });
+        }
+    }, [debouncedHasEtc, question.hasEtc, updateQuestion, question.id, isUserInput]);
+
+    useEffect(() => {
+        if (isUserInput && debouncedQuestionType !== question.question_type) {
+            console.log('Updating question_type from debounced value:', debouncedQuestionType);
+            const patch: Partial<TQuestion> = { question_type: debouncedQuestionType };
+            if (["single_choice", "multiple_choice", "dropdown"].includes(debouncedQuestionType)) {
+                patch.options = localOptions && localOptions.length > 0 ? localOptions : [{ label: '', key: '' }];
+                patch.composite_items = undefined;
+            } else if (["composite_single", "composite_multiple"].includes(debouncedQuestionType)) {
+                patch.composite_items = question.composite_items && question.composite_items.length > 0 ? question.composite_items : [{ label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
+                patch.options = undefined;
+            } else if (debouncedQuestionType === "description") {
+                patch.options = undefined;
+                patch.composite_items = undefined;
+                patch.required = false;
+            } else {
+                patch.options = undefined;
+                patch.composite_items = undefined;
+            }
+            updateQuestion({ ...question, ...patch });
+        }
+    }, [debouncedQuestionType, question.question_type, updateQuestion, question.id, isUserInput, localOptions, question.composite_items]);
+
+    // question이 외부에서 변경되면 로컬 상태 동기화 (외부 데이터 로딩)
+    useEffect(() => {
+        console.log('QuestionPanel - title updated from external:', question.title);
         setLocalTitle(question.title);
+        setIsUserInput(false); // 외부 데이터 로딩임을 표시
     }, [question.title]);
+
+    useEffect(() => {
+        console.log('QuestionPanel - options updated from external:', question.options);
+        setLocalOptions(question.options || []);
+        setIsUserInput(false); // 외부 데이터 로딩임을 표시
+    }, [question.options]);
+
+    useEffect(() => {
+        console.log('QuestionPanel - required updated from external:', question.required);
+        setLocalRequired(question.required);
+        setIsUserInput(false);
+    }, [question.required]);
+
+    useEffect(() => {
+        console.log('QuestionPanel - is_hidden updated from external:', question.is_hidden);
+        setLocalIsHidden(question.is_hidden);
+        setIsUserInput(false);
+    }, [question.is_hidden]);
+
+    useEffect(() => {
+        console.log('QuestionPanel - hasEtc updated from external:', question.hasEtc);
+        setLocalHasEtc(question.hasEtc);
+        setIsUserInput(false);
+    }, [question.hasEtc]);
+
+    useEffect(() => {
+        console.log('QuestionPanel - question_type updated from external:', question.question_type);
+        setLocalQuestionType(question.question_type);
+        setIsUserInput(false);
+    }, [question.question_type]);
 
     // 스타일은 useMemo로 최적화 (계산이 필요함)
     const style = useMemo(() => ({
@@ -133,16 +245,19 @@ export const QuestionPanel = ({
 
     // 단순한 이벤트 핸들러들은 useCallback 불필요
     const addOption = () => {
+        setIsUserInput(true); // 키보드 입력임을 표시
         const newOptions = [...localOptions, { label: "", key: "" }];
         setLocalOptions(newOptions);
     };
 
     const deleteOption = (idx: number) => {
+        setIsUserInput(true); // 키보드 입력임을 표시
         const newOptions = localOptions.filter((_, i) => i !== idx);
         setLocalOptions(newOptions);
     };
 
     const updateOption = (idx: number, value: string) => {
+        setIsUserInput(true); // 키보드 입력임을 표시
         const newOptions = localOptions.map((opt, i) =>
             i === idx ? { ...opt, label: value, key: value } : opt
         );
@@ -151,47 +266,44 @@ export const QuestionPanel = ({
     };
 
     const addEtcOption = () => {
-        handleChange({ hasEtc: true });
+        setIsUserInput(true); // 클릭 입력임을 표시
+        setLocalHasEtc(true);
     };
 
     const toggleRequired = () => {
-        handleChange({ required: !question.required });
+        setIsUserInput(true); // 클릭 입력임을 표시
+        setLocalRequired(!localRequired);
     };
 
     const toggleHidden = () => {
-        const newHiddenState = !question.is_hidden;
+        setIsUserInput(true); // 클릭 입력임을 표시
+        const newHiddenState = !localIsHidden;
+        setLocalIsHidden(newHiddenState);
+        
+        // show_conditions는 즉시 업데이트 (조건부 로직이므로)
         if (!newHiddenState) {
             // 가리기를 비활성화하면 활성화 조건도 제거
-            handleChange({ is_hidden: false, show_conditions: undefined });
-        } else {
-            // 가리기를 활성화
-            handleChange({ is_hidden: true });
+            updateQuestion({ ...question, show_conditions: undefined });
         }
     };
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setIsUserInput(true); // 키보드 입력임을 표시
         setLocalTitle(e.target.value);
     };
 
     // 복잡한 로직이 있는 함수만 useCallback 사용
     const handleTypeChange = useCallback((qt: TQuestionType) => {
-        const patch: Partial<TQuestion> = { question_type: qt };
+        setIsUserInput(true); // 클릭 입력임을 표시
+        setLocalQuestionType(qt);
+        
+        // question_type 변경 시 관련 속성들도 즉시 업데이트
         if (["single_choice", "multiple_choice", "dropdown"].includes(qt)) {
-            patch.options = localOptions && localOptions.length > 0 ? localOptions : [{ label: '', key: '' }];
-            patch.composite_items = undefined;
-        } else if (["composite_single", "composite_multiple"].includes(qt)) {
-            patch.composite_items = question.composite_items && question.composite_items.length > 0 ? question.composite_items : [{ label: '', input_type: 'text' as TCompositeItem["input_type"], key: '', unit: '' }];
-            patch.options = undefined;
+            setLocalOptions(localOptions && localOptions.length > 0 ? localOptions : [{ label: '', key: '' }]);
         } else if (qt === "description") {
-            patch.options = undefined;
-            patch.composite_items = undefined;
-            patch.required = false;
-        } else {
-            patch.options = undefined;
-            patch.composite_items = undefined;
+            setLocalRequired(false);
         }
-        handleChange(patch);
-    }, [handleChange, localOptions, question.composite_items]);
+    }, [localOptions]);
 
     // 계산이 필요한 값들만 useMemo 사용
     // const questionNumber = useMemo(() => {
@@ -747,42 +859,42 @@ export const QuestionPanel = ({
 
                 {/* 문항 토글 설정 */}
                 <div className="flex items-center gap-4">
-                    <label className={`flex items-center gap-1 select-none ${question.question_type === "description" ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                    <label className={`flex items-center gap-1 select-none ${localQuestionType === "description" ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                         <span className="text-sm">필수</span>
                         <Switch
-                            checked={!!question.required}
+                            checked={!!localRequired}
                             onChange={toggleRequired}
-                            disabled={question.question_type === "description"}
-                            className={`${question.required ? 'bg-blue-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${question.question_type === "description" ? "opacity-50" : ""}`}
+                            disabled={localQuestionType === "description"}
+                            className={`${localRequired ? 'bg-blue-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${localQuestionType === "description" ? "opacity-50" : ""}`}
                         >
                             <span
-                                className={`${question.required ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform`}
+                                className={`${localRequired ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform`}
                             />
                         </Switch>
                     </label>
                     <label className="flex items-center gap-1 select-none cursor-pointer" title="문항을 가려서 조건부로만 표시">
                         <span className="text-sm">가리기</span>
                         <Switch
-                            checked={!!question.is_hidden}
+                            checked={!!localIsHidden}
                             onChange={toggleHidden}
-                            className={`${question.is_hidden ? 'bg-red-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                            className={`${localIsHidden ? 'bg-red-500' : 'bg-gray-300'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
                         >
                             <span
-                                className={`${question.is_hidden ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform`}
+                                className={`${localIsHidden ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform`}
                             />
                         </Switch>
                     </label>
                 </div>
 
                 {/* 가려진 문항 안내 */}
-                {question.is_hidden && (
+                {localIsHidden && (
                     <div className="text-red-500 italic mb-2 bg-red-50 p-2 rounded">
                         ⚠️ 이 문항은 가려진 상태입니다. 활성화 조건을 설정해야 응답자에게 표시됩니다.
                     </div>
                 )}
 
                 {/* 문항 활성화 조건 섹션 */}
-                {question.is_hidden && (
+                {localIsHidden && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-3">
                             <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -895,6 +1007,4 @@ export const QuestionPanel = ({
             />
         </div>
     );
-};
-
-QuestionPanel.displayName = 'QuestionPanel';
+}, areQuestionPropsEqual);

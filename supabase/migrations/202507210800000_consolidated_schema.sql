@@ -98,14 +98,19 @@ CREATE TABLE IF NOT EXISTS public.surveys (
     email_required boolean NOT NULL DEFAULT false,
     url_param_name text DEFAULT 'id',
     allow_email_response_view boolean NOT NULL DEFAULT false,
-    allow_duplicate_responses boolean NOT NULL DEFAULT true
+    allow_duplicate_responses boolean NOT NULL DEFAULT true,
+    
+    -- Survey timing settings
+    opens_at timestamp with time zone,
+    closes_at timestamp with time zone
 );
 
 -- Survey responses table
 CREATE TABLE IF NOT EXISTS public.survey_responses (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     survey_id uuid NOT NULL REFERENCES public.surveys(id) ON DELETE CASCADE,
-    respondent_id text,
+    respondent text,
+    email text,
     answers jsonb NOT NULL DEFAULT '{}'::jsonb,
     started_at timestamp with time zone DEFAULT now() NOT NULL,
     completed_at timestamp with time zone,
@@ -135,11 +140,12 @@ CREATE INDEX idx_surveys_updated_by ON public.surveys(updated_by);
 
 -- Survey responses indexes
 CREATE INDEX idx_survey_responses_survey_id ON public.survey_responses(survey_id);
-CREATE INDEX idx_survey_responses_respondent_id ON public.survey_responses(respondent_id);
+CREATE INDEX idx_survey_responses_respondent ON public.survey_responses(respondent);
+CREATE INDEX idx_survey_responses_email ON public.survey_responses(email);
 CREATE INDEX idx_survey_responses_completed_at ON public.survey_responses(completed_at);
 CREATE INDEX idx_survey_responses_is_anonymous ON public.survey_responses(is_anonymous);
-CREATE INDEX idx_survey_responses_survey_respondent ON public.survey_responses(survey_id, respondent_id) WHERE respondent_id IS NOT NULL;
-CREATE INDEX idx_survey_responses_respondent_id_email ON public.survey_responses(respondent_id) WHERE respondent_id LIKE '%@%';
+CREATE INDEX idx_survey_responses_survey_respondent ON public.survey_responses(survey_id, respondent) WHERE respondent IS NOT NULL;
+CREATE INDEX idx_survey_responses_respondent_email ON public.survey_responses(respondent) WHERE respondent LIKE '%@%';
 
 -- Survey statistics indexes
 CREATE INDEX idx_survey_statistics_survey_id ON public.survey_statistics(survey_id);
@@ -156,8 +162,8 @@ CHECK (
 ALTER TABLE public.survey_responses 
 ADD CONSTRAINT check_anonymous_consistency 
 CHECK (
-    (respondent_id IS NULL AND is_anonymous = true) OR 
-    (respondent_id IS NOT NULL AND is_anonymous = false)
+    (respondent IS NULL AND is_anonymous = true) OR 
+    (respondent IS NOT NULL AND is_anonymous = false)
 );
 
 -- Survey RLS policies
@@ -190,8 +196,8 @@ CREATE POLICY "Allow public to create survey responses" ON public.survey_respons
 
 CREATE POLICY "Allow respondents to view their responses" ON public.survey_responses
     FOR SELECT USING (
-        (respondent_id = auth.uid()::text AND is_anonymous = false) OR 
-        (respondent_id IS NULL AND is_anonymous = true)
+        (respondent = auth.uid()::text AND is_anonymous = false) OR 
+        (respondent IS NULL AND is_anonymous = true)
     );
 
 CREATE POLICY "Allow survey creators to view all responses" ON public.survey_responses
@@ -216,7 +222,7 @@ CREATE POLICY "Allow email response view" ON public.survey_responses
             SELECT 1 FROM public.surveys 
             WHERE id = survey_responses.survey_id 
             AND allow_email_response_view = true
-            AND survey_responses.respondent_id LIKE '%@%'
+            AND survey_responses.email IS NOT NULL
         )
     );
 
@@ -294,20 +300,25 @@ $$ LANGUAGE plpgsql;
 -- Duplicate response check function
 CREATE OR REPLACE FUNCTION check_duplicate_response(
     p_survey_id uuid,
-    p_respondent_id text
+    p_respondent text,
+    p_email text DEFAULT NULL
 )
 RETURNS boolean AS $$
 BEGIN
-    -- 익명 응답이거나 respondent_id가 NULL인 경우 중복 확인 불필요
-    IF p_respondent_id IS NULL THEN
+    -- 익명 응답이거나 respondent가 NULL인 경우 중복 확인 불필요
+    IF p_respondent IS NULL THEN
         RETURN false;
     END IF;
     
     -- 해당 설문에서 동일한 응답자가 이미 응답했는지 확인
+    -- respondent 또는 email로 중복 확인
     RETURN EXISTS (
         SELECT 1 FROM public.survey_responses 
         WHERE survey_id = p_survey_id 
-        AND respondent_id = p_respondent_id
+        AND (
+            respondent = p_respondent OR 
+            (p_email IS NOT NULL AND email = p_email)
+        )
     );
 END;
 $$ LANGUAGE plpgsql;
@@ -409,11 +420,14 @@ ON CONFLICT (key) DO NOTHING;
 -- 7. COMMENTS
 -- =====================================================
 
-COMMENT ON COLUMN public.survey_responses.respondent_id IS '응답자 식별자 (이메일, UUID, 또는 기타 텍스트)';
+COMMENT ON COLUMN public.survey_responses.respondent IS '응답자 식별자 (URL 파라미터 값 또는 기타 텍스트)';
+COMMENT ON COLUMN public.survey_responses.email IS '응답자 이메일 주소 (이메일 입력 시나리오에서 사용)';
 COMMENT ON COLUMN public.surveys.allow_anonymous IS '익명 응답 허용 여부';
 COMMENT ON COLUMN public.surveys.allow_url_param IS 'URL 파라미터로 응답자 ID 받기 허용 여부';
 COMMENT ON COLUMN public.surveys.email_required IS '이메일 입력 필수 여부';
 COMMENT ON COLUMN public.surveys.url_param_name IS 'URL 파라미터 이름 (기본값: id)';
 COMMENT ON COLUMN public.surveys.allow_email_response_view IS '이메일로 응답 조회 허용 여부';
 COMMENT ON COLUMN public.surveys.allow_duplicate_responses IS '동일한 응답자의 중복 응답 허용 여부';
-COMMENT ON FUNCTION check_duplicate_response IS '중복 응답 확인 함수'; 
+COMMENT ON COLUMN public.surveys.opens_at IS '설문 시작 시간 (UTC)';
+COMMENT ON COLUMN public.surveys.closes_at IS '설문 종료 시간 (UTC)';
+COMMENT ON FUNCTION check_duplicate_response IS '중복 응답 확인 함수 (respondent 또는 email로 확인)'; 

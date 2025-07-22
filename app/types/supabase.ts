@@ -84,6 +84,8 @@ export interface Database {
                     url_param_name: string
                     allow_email_response_view: boolean
                     allow_duplicate_responses: boolean
+                    opens_at: string | null
+                    closes_at: string | null
                     created_by: string
                     updated_by: string | null
                     created_at: string
@@ -101,6 +103,8 @@ export interface Database {
                     url_param_name?: string
                     allow_email_response_view?: boolean
                     allow_duplicate_responses?: boolean
+                    opens_at?: string | null
+                    closes_at?: string | null
                     created_by: string
                     updated_by?: string | null
                     created_at?: string
@@ -118,6 +122,8 @@ export interface Database {
                     url_param_name?: string
                     allow_email_response_view?: boolean
                     allow_duplicate_responses?: boolean
+                    opens_at?: string | null
+                    closes_at?: string | null
                     created_by?: string
                     updated_by?: string | null
                     created_at?: string
@@ -128,7 +134,8 @@ export interface Database {
                 Row: {
                     id: string
                     survey_id: string
-                    respondent_id: string | null
+                    respondent: string | null
+                    email: string | null
                     is_anonymous: boolean
                     answers: Json
                     started_at: string
@@ -139,7 +146,8 @@ export interface Database {
                 Insert: {
                     id?: string
                     survey_id: string
-                    respondent_id?: string | null
+                    respondent?: string | null
+                    email?: string | null
                     is_anonymous?: boolean
                     answers?: Json
                     started_at?: string
@@ -150,7 +158,8 @@ export interface Database {
                 Update: {
                     id?: string
                     survey_id?: string
-                    respondent_id?: string | null
+                    respondent?: string | null
+                    email?: string | null
                     is_anonymous?: boolean
                     answers?: Json
                     started_at?: string

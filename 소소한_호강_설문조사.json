@@ -1,14 +1,16 @@
 {
-  "id": "be349a40-0489-436e-adac-14475e8deaca",
+  "id": "ddbfb5f3-d954-4420-bcf1-8ee007d90f8b",
   "title": "소소한 호강 설문조사",
   "description": "소소한 호강 프로그램 참여자 대상 설문조사입니다.",
   "is_active": true,
   "allow_anonymous": true,
   "allow_url_param": true,
   "email_required": true,
-  "url_param_name": "id",
+  "url_param_name": "rid",
   "allow_email_response_view": true,
   "allow_duplicate_responses": true,
+  "opens_at": null,
+  "closes_at": null,
   "questions": [
     {
       "id": "9f33c5cc-34f3-47a8-9f8d-13ef90e48742",
@@ -874,7 +876,7 @@
       "id": "b8bb9bf1-638a-4a25-8a75-2225ece39eee",
       "title": "소소한 호강 체험과 대한민국 문화도시 충주 사업 관련하여 건의사항이나 느낀 점이 있다면 자유롭게 적어주세요.",
       "options": [],
-      "required": true,
+      "required": false,
       "description": "",
       "question_type": "long_text"
     }

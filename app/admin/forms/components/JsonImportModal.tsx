@@ -56,6 +56,9 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         return processedQuestion;
       });
 
+      console.log('JsonImportModal - Original questions:', parsedData.questions);
+      console.log('JsonImportModal - Processed questions:', processedQuestions);
+
       // 응답자 식별 설정 유효성 검사
       const allowAnonymous = parsedData.allow_anonymous ?? true;
       const allowUrlParam = parsedData.allow_url_param ?? false;
@@ -85,6 +88,8 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         url_param_name: parsedData.url_param_name || 'id',
         allow_email_response_view: parsedData.allow_email_response_view ?? false,
         allow_duplicate_responses: parsedData.allow_duplicate_responses ?? true,
+        opens_at: parsedData.opens_at || null,
+        closes_at: parsedData.closes_at || null,
         questions: processedQuestions
       };
 
@@ -169,6 +174,8 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
   "url_param_name": "id",
   "allow_email_response_view": false,
   "allow_duplicate_responses": true,
+  "opens_at": "2024-01-01T00:00:00.000Z",
+  "closes_at": "2024-12-31T23:59:59.000Z",
   "questions": [
     {
       "id": "question-1",
@@ -215,6 +222,14 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
                   <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: "id")</li>
                   <li>• <strong>allow_email_response_view</strong>: 이메일로 응답 조회 허용 (기본값: false)</li>
                   <li>• <strong>allow_duplicate_responses</strong>: 중복 응답 허용 (기본값: true)</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-medium">설문 시간 설정</h4>
+                <ul className="space-y-1 ml-4">
+                  <li>• <strong>opens_at</strong>: 설문 시작 시간 (UTC, ISO 8601 형식)</li>
+                  <li>• <strong>closes_at</strong>: 설문 종료 시간 (UTC, ISO 8601 형식)</li>
                 </ul>
               </div>
 

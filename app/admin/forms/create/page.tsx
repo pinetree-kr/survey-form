@@ -37,6 +37,8 @@ async function handleCreate(formData: TSurvey) {
       url_param_name: formData.url_param_name || 'id',
       allow_email_response_view: formData.allow_email_response_view ?? false,
       allow_duplicate_responses: formData.allow_duplicate_responses ?? true,
+      opens_at: formData.opens_at || null,
+      closes_at: formData.closes_at || null,
       created_by: user.id,
       // created_at: new Date().toISOString(),
       // updated_at: new Date().toISOString()

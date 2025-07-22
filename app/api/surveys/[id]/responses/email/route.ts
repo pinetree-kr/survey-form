@@ -45,7 +45,7 @@ export async function GET(
             .from('survey_responses')
             .select('*')
             .eq('survey_id', surveyId)
-            .eq('respondent_id', email)
+            .or(`email.eq.${email},respondent.eq.${email}`)
             .order('created_at', { ascending: false });
 
         if (responsesError) {

@@ -107,6 +107,19 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         handleImmediateUpdate({ allow_duplicate_responses: !localSurvey.allow_duplicate_responses });
     }, [localSurvey.allow_duplicate_responses, handleImmediateUpdate]);
 
+    // 시간 설정 핸들러들
+    const handleOpensAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const dateTime = value ? new Date(value).toISOString() : null;
+        handleImmediateUpdate({ opens_at: dateTime });
+    }, [handleImmediateUpdate]);
+
+    const handleClosesAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const dateTime = value ? new Date(value).toISOString() : null;
+        handleImmediateUpdate({ closes_at: dateTime });
+    }, [handleImmediateUpdate]);
+
     // 메모이제이션된 JSX 부분들
     const titleInput = useMemo(() => (
         <input
@@ -140,6 +153,51 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         />
     ), [localSurvey.url_param_name, handleUrlParamNameChange]);
 
+    // 시간 입력 필드들
+    const opensAtInput = useMemo(() => {
+        let value = '';
+        if (localSurvey.opens_at) {
+            try {
+                const date = new Date(localSurvey.opens_at);
+                if (!isNaN(date.getTime())) {
+                    value = date.toISOString().slice(0, 16);
+                }
+            } catch (error) {
+                console.error('Invalid opens_at date:', localSurvey.opens_at);
+            }
+        }
+        return (
+            <input
+                type="datetime-local"
+                value={value}
+                onChange={handleOpensAtChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+        );
+    }, [localSurvey.opens_at, handleOpensAtChange]);
+
+    const closesAtInput = useMemo(() => {
+        let value = '';
+        if (localSurvey.closes_at) {
+            try {
+                const date = new Date(localSurvey.closes_at);
+                if (!isNaN(date.getTime())) {
+                    value = date.toISOString().slice(0, 16);
+                }
+            } catch (error) {
+                console.error('Invalid closes_at date:', localSurvey.closes_at);
+            }
+        }
+        return (
+            <input
+                type="datetime-local"
+                value={value}
+                onChange={handleClosesAtChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+        );
+    }, [localSurvey.closes_at, handleClosesAtChange]);
+
     return (
         <div className="bg-white p-6 rounded-md shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-4">설문 기본 정보</h2>
@@ -165,7 +223,32 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                 </label>
                 {descriptionTextarea}
             </div>
-            <div className="mt-4">
+            {/* 설문 시간 설정 */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">설문 시간 설정</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            시작 시간 (UTC)
+                        </label>
+                        {opensAtInput}
+                        <p className="text-xs text-gray-500 mt-1">
+                            설문이 시작되는 시간을 설정합니다. 비워두면 즉시 시작됩니다.
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            종료 시간 (UTC)
+                        </label>
+                        {closesAtInput}
+                        <p className="text-xs text-gray-500 mt-1">
+                            설문이 종료되는 시간을 설정합니다. 비워두면 무기한 진행됩니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
