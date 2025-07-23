@@ -1,32 +1,10 @@
 import { LoginForm } from '../components'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
-// import { createSupabaseClient } from '@/lib/supabase-cloudflare'
-
-import { createClient } from '@/lib/supabase-ssr'
-import { redirect } from 'next/navigation'
+import { handleLogin, verifyAccessToken } from '../actions'
 import Link from 'next/link'
 
+
 export default async function AuthLoginPage() {
-
-  const handleLogin = async (email: string, password: string) => {
-    'use server'
-
-    const { env } = await getCloudflareContext({ async: true })
-
-    // const supabase = createSupabaseClient(env)
-    const supabase = await createClient(env)
-
-    const { data: { session }, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      return { error: error }
-    }
-
-    redirect('/admin')
-  }
+  await verifyAccessToken("/admin")
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

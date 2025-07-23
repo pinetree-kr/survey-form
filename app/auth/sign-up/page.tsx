@@ -1,27 +1,8 @@
 import { SignUpForm } from '../components'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { createClient } from '@/lib/supabase-ssr'
+import { verifyAccessToken, handleSignUp } from '../actions'
 
 export default async function AuthSignUpPage() {
-
-    const handleSignUp = async (email: string, password: string) => {
-        'use server'
-
-        const { env } = await getCloudflareContext({ async: true })
-        const supabase = await createClient(env)
-
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-        })
-    
-        if (error) {
-            return { error: { message: error.message } }
-        }
-
-        // 회원가입 성공 시 성공 메시지와 함께 응답
-        return { success: true, message: '회원가입이 완료되었습니다. 이메일을 확인해주세요.' }
-    }
+    await verifyAccessToken("/admin")
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

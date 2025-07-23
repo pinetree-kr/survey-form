@@ -4,34 +4,17 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { SurveyWithCreator } from '@/app/types'
 
-interface Creator {
-  id: string
-  username: string
-  display_name?: string
-}
-
-interface Survey {
-  id: string
-  title: string
-  description?: string
-  is_active: boolean
-  created_by: string
-  updated_by?: string | null
-  created_at: string
-  updated_at: string
-  creator?: Creator
-  updater?: Creator
-}
 
 interface SurveyListProps {
-  surveys: Survey[]
+  surveys: SurveyWithCreator[]
   deleteSurvey: (id: string) => Promise<boolean>
   userRole: string
 }
 
 export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyListProps) {
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; survey: Survey | null }>({
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; survey: SurveyWithCreator | null }>({
     isOpen: false,
     survey: null
   })
@@ -56,14 +39,14 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
     return date.toLocaleDateString('ko-KR')
   }
 
-  const getCreatorName = (survey: Survey) => {
+  const getCreatorName = (survey: SurveyWithCreator) => {
     if (survey.creator) {
       return survey.creator.display_name || survey.creator.username
     }
     return '알 수 없음'
   }
 
-  const getUpdaterName = (survey: Survey) => {
+  const getUpdaterName = (survey: SurveyWithCreator) => {
     if (survey.updater) {
       return survey.updater.display_name || survey.updater.username
     }

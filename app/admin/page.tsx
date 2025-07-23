@@ -4,12 +4,12 @@ import { createClient } from '@/lib/supabase-ssr'
 import SeedButton from './components/SeedButton'
 
 interface AdminDashboardPageProps {
-  searchParams: Promise<{ error?: string }>
+    searchParams: Promise<{ error?: string }>
 }
 
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
-  const params = await searchParams
-  const hasAccessError = params.error === 'access_denied'
+    const params = await searchParams
+    const hasAccessError = params.error === 'access_denied'
     const { env } = await getCloudflareContext({ async: true });
     const supabase = await createClient(env)
 
@@ -50,7 +50,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     </div>
                 </div>
             )}
-            
+
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">관리자 대시보드</h1>
                 <p className="mt-1 text-sm text-gray-500">
