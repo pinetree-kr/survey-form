@@ -38,7 +38,7 @@ export const handleLogin = async (email: string, password: string) => {
         return { error: error }
     }
 
-    return redirect('/admin')
+    return redirect('/dashboard')
 }
 
 

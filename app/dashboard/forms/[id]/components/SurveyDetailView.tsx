@@ -369,7 +369,7 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
           <div className="flex justify-between items-center">
             <div className="flex space-x-3">
               <Link
-                href="/admin/forms"
+                href="/dashboard/forms"
                 className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
               >
                 목록으로
@@ -377,13 +377,13 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
             </div>
             <div className="flex space-x-3">
               <Link
-                href={`/admin/forms/${survey.id}/preview`}
+                href={`/dashboard/forms/${survey.id}/preview`}
                 className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Preview
               </Link>
               <Link
-                href={`/admin/forms/${survey.id}/edit`}
+                href={`/dashboard/forms/${survey.id}/edit`}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 수정

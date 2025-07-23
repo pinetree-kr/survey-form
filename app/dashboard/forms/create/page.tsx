@@ -66,7 +66,7 @@ export default async function CreateSurveyPage() {
             </p>
           </div>
           <Link
-            href="/admin/forms"
+                            href="/dashboard/forms"
             className="text-gray-600 hover:text-gray-900 text-sm font-medium"
           >
             ← 설문 목록으로

@@ -45,7 +45,7 @@ const checkAdminRole = async () => {
     .single()
 
   if (error || !profile || profile.role !== 'admin') {
-    redirect('/admin')
+    redirect('/dashboard')
   }
 
   return profile
@@ -144,7 +144,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                 </p>
               </div>
               <Link
-                href="/admin/users"
+                href="/dashboard/users"
                 className="text-sm text-blue-600 hover:text-blue-800"
               >
                 ← 사용자 목록으로

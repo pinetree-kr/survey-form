@@ -37,19 +37,19 @@ export default async function AdminLayout({
                     <div className="flex justify-between h-16">
                         <div className="flex items-center">
                             <h1 className="text-xl font-semibold text-gray-900">
-                                <Link href="/admin">
-                                    관리자 대시보드
+                                <Link href="/dashboard">
+                                    대시보드
                                 </Link>
                             </h1>
                         </div>
                         <div className="flex items-center">
                             <Link
-                                href="/admin/profile"
+                                href="/dashboard/profile"
                                 className="text-sm text-blue-600 hover:text-blue-800 mr-4"
                             >
                                 {user?.email}
                             </Link>
-                            <form action="/admin/logout" method="post">
+                            <form action="/dashboard/logout" method="post">
                                 <button
                                     type="submit"
                                     className="text-sm text-red-600 hover:text-red-800"

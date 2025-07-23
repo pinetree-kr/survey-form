@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 
 export default async function AuthLoginPage() {
-  await verifyAccessToken("/admin")
+      await verifyAccessToken("/dashboard")
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

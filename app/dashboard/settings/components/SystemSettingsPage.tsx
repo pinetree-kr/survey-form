@@ -20,7 +20,7 @@ export function SystemSettingsPage({ initialSettings }: SystemSettingsPageProps)
     setIsSaving(true)
     
     try {
-      const response = await fetch('/api/admin/settings', {
+              const response = await fetch('/api/dashboard/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

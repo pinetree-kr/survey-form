@@ -85,7 +85,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     </div>
                     <div className="bg-gray-50 px-5 py-3">
                         <div className="text-sm">
-                            <Link href="/admin/forms" className="font-medium text-indigo-700 hover:text-indigo-900">
+                            <Link href="/dashboard/forms" className="font-medium text-indigo-700 hover:text-indigo-900">
                                 폼 관리하기 →
                             </Link>
                         </div>
@@ -118,7 +118,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                     </div>
                     <div className="bg-gray-50 px-5 py-3">
                         <div className="text-sm">
-                            <Link href="/admin/responses" className="font-medium text-green-700 hover:text-green-900">
+                            <Link href="/dashboard/responses" className="font-medium text-green-700 hover:text-green-900">
                                 응답 보기 →
                             </Link>
                         </div>
@@ -153,7 +153,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                         </div>
                         <div className="bg-gray-50 px-5 py-3">
                             <div className="text-sm">
-                                <Link href="/admin/settings" className="font-medium text-blue-700 hover:text-blue-900">
+                                <Link href="/dashboard/settings" className="font-medium text-blue-700 hover:text-blue-900">
                                     설정 보기 →
                                 </Link>
                             </div>
@@ -189,7 +189,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                             </div>
                             <div className="bg-gray-50 px-5 py-3">
                                 <div className="text-sm">
-                                    <Link href="/admin/users" className="font-medium text-purple-700 hover:text-purple-900">
+                                    <Link href="/dashboard/users" className="font-medium text-purple-700 hover:text-purple-900">
                                         사용자 관리하기 →
                                     </Link>
                                 </div>

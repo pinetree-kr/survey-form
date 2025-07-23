@@ -55,7 +55,7 @@ export default async function SettingsPage() {
   const isAdmin = await checkAdminPermission()
 
   if (!isAdmin) {
-    redirect('/admin?error=access_denied')
+          redirect('/dashboard?error=access_denied')
   }
 
   const settings = await getSettings()

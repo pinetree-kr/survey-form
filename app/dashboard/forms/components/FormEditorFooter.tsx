@@ -194,7 +194,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
                     if (surveyId) {
                         router.refresh()
                     } else {
-                        router.replace(`/admin/forms/${data.id}`)
+                        router.replace(`/dashboard/forms/${data.id}`)
                     }
                     return '설문이 성공적으로 저장되었습니다.'
                 }
@@ -241,7 +241,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
                         <div className="flex space-x-3">
                             <button
                                 type="button"
-                                onClick={() => window.location.href = '/admin/forms'}
+                                onClick={() => window.location.href = '/dashboard/forms'}
                                 className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-all duration-200 btn-hover-lift"
                             >
                                 취소

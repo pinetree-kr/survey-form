@@ -152,7 +152,7 @@ export default function UserDetailForm({ profile, updateProfile, isOwnProfile }:
       {/* 버튼 */}
       <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
         <Link
-          href="/admin/users"
+                          href="/dashboard/users"
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
         >
           취소

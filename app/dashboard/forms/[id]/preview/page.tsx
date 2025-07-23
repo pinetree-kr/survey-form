@@ -52,13 +52,13 @@ export default async function SurveyPreviewPage({ params }: SurveyPreviewPagePro
             </div>
             <div className="flex space-x-3">
               <Link
-                href={`/admin/forms/${survey.id}`}
+                href={`/dashboard/forms/${survey.id}`}
                 className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors text-sm"
               >
                 상세보기로
               </Link>
               <Link
-                href={`/admin/forms/${survey.id}/edit`}
+                href={`/dashboard/forms/${survey.id}/edit`}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
               >
                 편집하기

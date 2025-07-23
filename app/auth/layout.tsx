@@ -1,10 +1,3 @@
-// import { createSupabaseClient } from '@/lib/supabase-cloudflare'
-
-import { createClient } from '@/lib/supabase-ssr'
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-
 export default async function AuthLayout({
     children,
 }: {

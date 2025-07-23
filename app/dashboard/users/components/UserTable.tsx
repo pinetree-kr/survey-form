@@ -225,7 +225,7 @@ export default function UserTable({
                     </span>
                   ) : null}
                   <Link
-                    href={`/admin/users/${user.id}`}
+                    href={`/dashboard/users/${user.id}`}
                     className="text-blue-600 hover:text-blue-900 hover:underline"
                   >
                     {user.username}
@@ -233,7 +233,7 @@ export default function UserTable({
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
                   <Link
-                    href={`/admin/users/${user.id}`}
+                    href={`/dashboard/users/${user.id}`}
                     className="text-blue-600 hover:text-blue-900 hover:underline"
                   >
                     {user.display_name || user.username}

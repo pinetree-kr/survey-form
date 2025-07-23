@@ -40,7 +40,7 @@ async function checkAdminRole() {
     .single()
   
   if (error || !profile || profile.role !== 'admin') {
-    redirect('/admin')
+    redirect('/dashboard')
   }
   
   return profile

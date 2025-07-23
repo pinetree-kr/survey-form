@@ -66,7 +66,7 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
         <h3 className="text-lg font-medium text-gray-900 mb-2">설문이 없습니다</h3>
         <p className="text-gray-500 mb-4">첫 번째 설문을 생성해보세요.</p>
         <Link
-          href="/admin/forms/create"
+                          href="/dashboard/forms/create"
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
         >
           설문 생성하기
@@ -114,7 +114,7 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
                   <div>
                     <div className="text-sm font-medium text-gray-900">
                       <Link
-                        href={`/admin/forms/${survey.id}`}
+                        href={`/dashboard/forms/${survey.id}`}
                         className="text-blue-600 hover:text-blue-900 hover:underline"
                       >
                         {survey.title}
@@ -157,7 +157,7 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <Link
-                      href={`/admin/forms/${survey.id}/edit`}
+                      href={`/dashboard/forms/${survey.id}/edit`}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       수정
