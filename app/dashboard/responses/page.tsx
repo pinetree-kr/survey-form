@@ -17,7 +17,7 @@ export default async function ResponsesPage() {
       questions,
       is_active,
       allow_anonymous,
-      allow_url_param,
+      url_param_required,
       email_required,
       url_param_name,
       allow_email_response_view,

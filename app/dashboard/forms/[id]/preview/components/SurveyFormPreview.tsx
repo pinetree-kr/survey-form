@@ -16,6 +16,7 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
 
     // 미리보기 모드 완료 핸들러
     const handlePreviewComplete = () => {
+        console.log('handlePreviewComplete');
         setShowResponseModal(true);
     };
 

@@ -18,19 +18,19 @@ export default function SurveyForm({ survey, initialRespondentId }: SurveyFormPr
     // 실제 설문 제출 로직
     const handleSubmit = async (answers: Answer[], _etcValues: Record<string, string>, respondentId?: string) => {
         // 응답자 ID 결정
-        let finalRespondentId: string | undefined;
+        let finalRespondent: string | undefined;
         
         // 이메일 입력이 필수인 경우
-        if (survey.email_required) {
-            finalRespondentId = respondentId;
+        if (survey.email_required && respondentId) {
+            finalRespondent = respondentId;
         }
-        // URL 파라미터가 허용된 경우
-        else if (survey.allow_url_param && initialRespondentId) {
-            finalRespondentId = initialRespondentId;
+        // URL 파라미터가 필수인 경우
+        else if (survey.url_param_required && initialRespondentId) {
+            finalRespondent = initialRespondentId;
         }
         // 익명 응답이 허용된 경우
         else if (survey.allow_anonymous) {
-            finalRespondentId = undefined;
+            finalRespondent = undefined;
         }
 
         // API로 응답 전송
@@ -44,14 +44,11 @@ export default function SurveyForm({ survey, initialRespondentId }: SurveyFormPr
                     acc[answer.questionId] = answer.value;
                     return acc;
                 }, {} as Record<string, any>),
-                respondent_id: finalRespondentId
+                respondent: finalRespondent
             }),
         });
 
-        if (response.ok) {
-            // 성공 시 완료 페이지로 이동하거나 성공 메시지 표시
-            alert('설문이 성공적으로 제출되었습니다!');
-        } else {
+        if (!response.ok) {
             const errorData = await response.json() as { error?: string };
             throw new Error(errorData.error || '알 수 없는 오류가 발생했습니다.');
         }

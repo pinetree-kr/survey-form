@@ -64,14 +64,23 @@ export function FormEditorProvider({
         "description": initialData?.description || "",
         "is_active": initialData?.is_active ?? true,
         "allow_anonymous": initialData?.allow_anonymous ?? true,
-        "allow_url_param": initialData?.allow_url_param ?? false,
+        "url_param_required": initialData?.url_param_required ?? false,
         "email_required": initialData?.email_required ?? false,
         "url_param_name": initialData?.url_param_name ?? 'rid',
-        "allow_email_response_view": initialData?.allow_email_response_view ?? false,
+        "allow_response_view": initialData?.allow_response_view ?? false,
+        "allow_response_modification": initialData?.allow_response_modification ?? false,
         "allow_duplicate_responses": initialData?.allow_duplicate_responses ?? true,
         "opens_at": initialData?.opens_at || null,
-        "closes_at": initialData?.closes_at || null,
+        "closes_at": initialData?.closes_at || "",
     });
+
+    // 클라이언트에서만 기본 마감 시간 설정 (hydration 오류 방지)
+    React.useEffect(() => {
+        if (!initialData?.closes_at && formBasicInfo.closes_at === "") {
+            const defaultCloseDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            setFormBasicInfo(prev => ({ ...prev, closes_at: defaultCloseDate }));
+        }
+    }, [initialData?.closes_at, formBasicInfo.closes_at]);
 
     // UI State
     const [activeQuestionIndex, setActiveQuestionIndex] = React.useState<number | null>(null);

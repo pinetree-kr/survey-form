@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       ],
       is_active: true,
       allow_anonymous: true,
-      allow_url_param: false,
+      url_param_required: false,
       email_required: false,
       url_param_name: 'rid',
       allow_email_response_view: false,

@@ -88,24 +88,88 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
     }, [localSurvey.is_active, handleImmediateUpdate]);
 
     const handleAllowAnonymousToggle = useCallback(() => {
-        handleImmediateUpdate({ allow_anonymous: !localSurvey.allow_anonymous });
-    }, [localSurvey.allow_anonymous, handleImmediateUpdate]);
+        const newAllowAnonymous = !localSurvey.allow_anonymous;
+        
+        // 익명 허용을 끄면서 중복 응답이 허용되지 않는 경우, 이메일 필수 또는 URL 파라미터 중 하나는 켜져야 함
+        if (!newAllowAnonymous && !localSurvey.allow_duplicate_responses) {
+            if (!localSurvey.email_required && !localSurvey.url_param_required) {
+                // 이메일 필수를 자동으로 켜기
+                handleImmediateUpdate({ 
+                    allow_anonymous: newAllowAnonymous,
+                    email_required: true 
+                });
+                return;
+            }
+        }
+        
+        handleImmediateUpdate({ allow_anonymous: newAllowAnonymous });
+    }, [localSurvey.allow_anonymous, localSurvey.allow_duplicate_responses, localSurvey.email_required, localSurvey.url_param_required, handleImmediateUpdate]);
 
     const handleEmailRequiredToggle = useCallback(() => {
-        handleImmediateUpdate({ email_required: !localSurvey.email_required });
-    }, [localSurvey.email_required, handleImmediateUpdate]);
+        const newEmailRequired = !localSurvey.email_required;
+        
+        // 이메일 필수를 끄려고 할 때, 중복 응답이 허용되지 않고 URL 파라미터도 꺼져 있으면 끌 수 없음
+        if (!newEmailRequired && !localSurvey.allow_duplicate_responses && !localSurvey.url_param_required) {
+            // URL 파라미터를 자동으로 켜기
+            handleImmediateUpdate({ 
+                email_required: newEmailRequired,
+                url_param_required: true
+            });
+            return;
+        }
+        
+        handleImmediateUpdate({ email_required: newEmailRequired });
+    }, [localSurvey.email_required, localSurvey.allow_duplicate_responses, localSurvey.url_param_required, handleImmediateUpdate]);
 
-    const handleAllowEmailResponseViewToggle = useCallback(() => {
-        handleImmediateUpdate({ allow_email_response_view: !localSurvey.allow_email_response_view });
-    }, [localSurvey.allow_email_response_view, handleImmediateUpdate]);
+    const handleAllowResponseViewToggle = useCallback(() => {
+        handleImmediateUpdate({ allow_response_view: !localSurvey.allow_response_view });
+    }, [localSurvey.allow_response_view, handleImmediateUpdate]);
 
-    const handleAllowUrlParamToggle = useCallback(() => {
-        handleImmediateUpdate({ allow_url_param: !localSurvey.allow_url_param });
-    }, [localSurvey.allow_url_param, handleImmediateUpdate]);
+    const handleAllowResponseModificationToggle = useCallback(() => {
+        handleImmediateUpdate({ allow_response_modification: !localSurvey.allow_response_modification });
+    }, [localSurvey.allow_response_modification, handleImmediateUpdate]);
+
+    const handleUrlParamRequiredToggle = useCallback(() => {
+        const newUrlParamRequired = !localSurvey.url_param_required;
+        
+        // URL 파라미터를 끄려고 할 때, 중복 응답이 허용되지 않고 이메일 필수도 꺼져 있으면 끌 수 없음
+        if (!newUrlParamRequired && !localSurvey.allow_duplicate_responses && !localSurvey.email_required) {
+            // 이메일 필수를 자동으로 켜기
+            handleImmediateUpdate({ 
+                url_param_required: newUrlParamRequired,
+                email_required: true
+            });
+            return;
+        }
+        
+        handleImmediateUpdate({ url_param_required: newUrlParamRequired });
+    }, [localSurvey.url_param_required, localSurvey.allow_duplicate_responses, localSurvey.email_required, handleImmediateUpdate]);
 
     const handleAllowDuplicateResponsesToggle = useCallback(() => {
-        handleImmediateUpdate({ allow_duplicate_responses: !localSurvey.allow_duplicate_responses });
-    }, [localSurvey.allow_duplicate_responses, handleImmediateUpdate]);
+        const newAllowDuplicate = !localSurvey.allow_duplicate_responses;
+        
+        // 중복 응답을 허용하지 않는 경우
+        if (!newAllowDuplicate) {
+            const updates: Partial<Omit<TSurvey, 'questions'>> = { 
+                allow_duplicate_responses: newAllowDuplicate 
+            };
+            
+            // 익명 허용이 켜져 있으면 끄기
+            if (localSurvey.allow_anonymous) {
+                updates.allow_anonymous = false;
+            }
+            
+            // 이메일 필수와 URL 파라미터가 모두 꺼져 있으면 이메일 필수를 켜기
+            if (!localSurvey.email_required && !localSurvey.url_param_required) {
+                updates.email_required = true;
+            }
+            
+            handleImmediateUpdate(updates);
+            return;
+        }
+        
+        handleImmediateUpdate({ allow_duplicate_responses: newAllowDuplicate });
+    }, [localSurvey.allow_duplicate_responses, localSurvey.allow_anonymous, localSurvey.email_required, localSurvey.url_param_required, handleImmediateUpdate]);
 
     // 시간 설정 핸들러들
     const handleOpensAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,8 +180,10 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
 
     const handleClosesAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        const dateTime = value ? new Date(value).toISOString() : null;
-        handleImmediateUpdate({ closes_at: dateTime });
+        if (value) {
+            const dateTime = new Date(value).toISOString();
+            handleImmediateUpdate({ closes_at: dateTime });
+        }
     }, [handleImmediateUpdate]);
 
     // 메모이제이션된 JSX 부분들
@@ -194,6 +260,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                 value={value}
                 onChange={handleClosesAtChange}
                 className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
             />
         );
     }, [localSurvey.closes_at, handleClosesAtChange]);
@@ -238,11 +305,11 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            종료 시간 (UTC)
+                            종료 시간 (UTC) <span className="text-red-500">*</span>
                         </label>
                         {closesAtInput}
                         <p className="text-xs text-gray-500 mt-1">
-                            설문이 종료되는 시간을 설정합니다. 비워두면 무기한 진행됩니다.
+                            설문이 종료되는 시간을 설정합니다. 응답 수정 기능을 위해 필수입니다.
                         </p>
                     </div>
                 </div>
@@ -278,19 +345,30 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                 <div className="space-y-4">
                     {/* 익명 응답 허용 */}
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 익명 응답 허용
                             </label>
                             <p className="text-xs text-gray-500">
                                 응답자를 식별하지 않고 완전히 익명으로 저장합니다
                             </p>
+                            {!localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous && (
+                                <p className="text-xs text-amber-600 mt-1 font-medium">
+                                    ⚠️ 중복 응답이 허용되지 않으면 익명 응답을 사용할 수 없습니다
+                                </p>
+                            )}
                         </div>
                         <button
                             type="button"
                             onClick={handleAllowAnonymousToggle}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.allow_anonymous ? 'bg-blue-600' : 'bg-gray-200'
-                                }`}
+                            disabled={!localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                                !localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous
+                                    ? 'bg-gray-300 cursor-not-allowed'
+                                    : localSurvey.allow_anonymous 
+                                        ? 'bg-blue-600' 
+                                        : 'bg-gray-200'
+                            }`}
                         >
                             <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.allow_anonymous ? 'translate-x-6' : 'translate-x-1'
@@ -301,13 +379,18 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
 
                     {/* 이메일 입력 필수 */}
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 이메일 입력 필수
                             </label>
                             <p className="text-xs text-gray-500">
                                 설문 완료 시 이메일을 입력받아 응답자를 식별합니다
                             </p>
+                            {!localSurvey.allow_duplicate_responses && localSurvey.email_required && !localSurvey.url_param_required && (
+                                <p className="text-xs text-red-600 mt-1 font-medium">
+                                    ⚠️ 중복 응답이 허용되지 않을 때는 이메일 필수 또는 URL 파라미터 필수 중 하나는 필요합니다
+                                </p>
+                            )}
                         </div>
                         <button
                             type="button"
@@ -322,56 +405,37 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                         </button>
                     </div>
 
-                    {/* 이메일로 응답 조회 허용 */}
-                    {localSurvey.email_required && (
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    이메일로 응답 조회 허용
-                                </label>
-                                <p className="text-xs text-gray-500">
-                                    응답자가 이메일로 자신의 응답을 조회할 수 있도록 합니다
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleAllowEmailResponseViewToggle}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.allow_email_response_view ? 'bg-blue-600' : 'bg-gray-200'
-                                    }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.allow_email_response_view ? 'translate-x-6' : 'translate-x-1'
-                                        }`}
-                                />
-                            </button>
-                        </div>
-                    )}
 
-                    {/* URL 파라미터 허용 */}
+                    {/* URL 파라미터 필수 */}
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                URL 파라미터 허용
+                                URL 파라미터 필수
                             </label>
                             <p className="text-xs text-gray-500">
                                 URL의 쿼리 파라미터로 응답자 ID를 받습니다
                             </p>
+                            {!localSurvey.allow_duplicate_responses && !localSurvey.email_required && localSurvey.url_param_required && (
+                                <p className="text-xs text-red-600 mt-1 font-medium">
+                                    ⚠️ 중복 응답이 허용되지 않을 때는 이메일 필수 또는 URL 파라미터 필수 중 하나는 필요합니다
+                                </p>
+                            )}
                         </div>
                         <button
                             type="button"
-                            onClick={handleAllowUrlParamToggle}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.allow_url_param ? 'bg-blue-600' : 'bg-gray-200'
+                            onClick={handleUrlParamRequiredToggle}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.url_param_required ? 'bg-blue-600' : 'bg-gray-200'
                                 }`}
                         >
                             <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.allow_url_param ? 'translate-x-6' : 'translate-x-1'
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.url_param_required ? 'translate-x-6' : 'translate-x-1'
                                     }`}
                             />
                         </button>
                     </div>
 
                     {/* URL 파라미터 이름 설정 */}
-                    {localSurvey.allow_url_param && (
+                    {localSurvey.url_param_required && (
                         <div className="ml-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 URL 파라미터 이름
@@ -385,13 +449,18 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
 
                     {/* 중복 응답 허용 */}
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 중복 응답 허용
                             </label>
                             <p className="text-xs text-gray-500">
                                 동일한 응답자가 여러 번 응답할 수 있도록 허용합니다
                             </p>
+                            {!localSurvey.allow_duplicate_responses && (
+                                <p className="text-xs text-blue-600 mt-1 font-medium">
+                                    ℹ️ 중복 응답을 허용하지 않으면 응답자 식별이 필요합니다
+                                </p>
+                            )}
                         </div>
                         <button
                             type="button"
@@ -404,6 +473,129 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                                     }`}
                             />
                         </button>
+                    </div>
+
+                    {/* 식별자로 응답 확인 */}
+                    {(localSurvey.email_required || localSurvey.url_param_required) && (
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    식별자로 응답 확인
+                                </label>
+                                <p className="text-xs text-gray-500">
+                                    응답자가 자신의 식별자로 응답을 조회할 수 있도록 합니다
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleAllowResponseViewToggle}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.allow_response_view ? 'bg-blue-600' : 'bg-gray-200'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.allow_response_view ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 응답 수정 허용 */}
+                    {(localSurvey.email_required || localSurvey.url_param_required) && !localSurvey.allow_duplicate_responses && (
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    응답 수정 허용
+                                </label>
+                                <p className="text-xs text-gray-500">
+                                    설문 마감 전까지 응답자가 자신의 응답을 수정할 수 있도록 합니다
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleAllowResponseModificationToggle}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.allow_response_modification ? 'bg-blue-600' : 'bg-gray-200'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.allow_response_modification ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 허용된 응답자 목록 (화이트리스트) */}
+                    <div className="border-t border-gray-200 pt-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    허용된 응답자 목록 (화이트리스트)
+                                </label>
+                                <p className="text-xs text-gray-500">
+                                    목록에 있는 응답자만 설문에 참여할 수 있습니다
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const isEnabled = localSurvey.allowed_list !== null;
+                                    handleImmediateUpdate({ 
+                                        allowed_list: isEnabled ? null : [] 
+                                    });
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                                    localSurvey.allowed_list !== null ? 'bg-blue-600' : 'bg-gray-200'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        localSurvey.allowed_list !== null ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        {/* 화이트리스트가 활성화된 경우 관리 UI */}
+                        {localSurvey.allowed_list !== null && (
+                            <div className="ml-6 space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        허용된 응답자 추가
+                                    </label>
+                                    <textarea
+                                        rows={4}
+                                        placeholder="응답자 ID를 한 줄씩 입력하세요&#10;예:&#10;user@example.com&#10;user123&#10;another@email.com"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                        onChange={(e) => {
+                                            const identifiers = e.target.value
+                                                .split('\n')
+                                                .map(line => line.trim())
+                                                .filter(line => line.length > 0);
+                                            handleImmediateUpdate({ allowed_list: identifiers });
+                                        }}
+                                        value={localSurvey.allowed_list?.join('\n') || ''}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        이메일 주소, 사용자 ID 등을 한 줄씩 입력하세요
+                                    </p>
+                                </div>
+
+                                {/* 현재 등록된 응답자 수 표시 */}
+                                {localSurvey.allowed_list && localSurvey.allowed_list.length > 0 && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                        <div className="flex items-center">
+                                            <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <span className="text-blue-800 text-sm font-medium">
+                                                {localSurvey.allowed_list.length}명의 응답자가 등록되었습니다
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

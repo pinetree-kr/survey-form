@@ -14,7 +14,7 @@ export async function POST(
         // 설문 존재 여부 및 설정 확인
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, allow_anonymous, is_active, allow_url_param, email_required, url_param_name, allow_duplicate_responses, opens_at, closes_at')
+            .select('id, allow_anonymous, is_active, url_param_required, email_required, url_param_name, allow_duplicate_responses, allow_response_view, allow_response_modification, opens_at, closes_at, allowed_list')
             .eq('id', surveyId)
             .single();
 
@@ -37,16 +37,16 @@ export async function POST(
 
         // 현재 사용자 인증 확인
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
+
         // 익명 응답인지 확인
         const isAnonymous = !user || authError;
-        
+
         if (isAnonymous && !survey.allow_anonymous) {
             return NextResponse.json({ error: '이 설문은 익명 응답을 허용하지 않습니다.' }, { status: 403 });
         }
 
         // 요청 본문 파싱
-        const body = await request.json() as { 
+        const body = await request.json() as {
             answers?: Record<string, any>;
             respondent?: string;
             email?: string;
@@ -58,15 +58,12 @@ export async function POST(
         }
 
         // IP 주소와 User-Agent 추출
-        const ipAddress = request.headers.get('x-forwarded-for') || 
-                         request.headers.get('x-real-ip') || 
-                         'unknown';
+        const ipAddress = request.headers.get('x-forwarded-for') ||
+            request.headers.get('x-real-ip') ||
+            'unknown';
         const userAgent = request.headers.get('user-agent') || 'unknown';
 
-        // URL 파라미터에서 응답자 ID 가져오기
-        const { searchParams } = new URL(request.url);
-        const urlParamName = survey.url_param_name || 'rid';
-        const urlRespondentId = searchParams.get(urlParamName);
+
 
         // 이메일이 제공된 경우 형식 검증
         if (email) {
@@ -81,40 +78,38 @@ export async function POST(
         let finalEmail: string | null = null;
         let finalIsAnonymous = false;
 
-        // 1) URL 파라미터와 이메일을 둘 다 입력받은 경우
-        if (urlRespondentId && email) {
-            finalRespondent = urlRespondentId;
-            finalEmail = email;
+        // 1) respondent가 제공된 경우 (URL 파라미터 또는 이메일)
+        if (respondent) {
+            finalRespondent = respondent;
+            // 이메일 형식인지 확인하여 finalEmail 설정
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(respondent)) {
+                finalEmail = respondent;
+            }
             finalIsAnonymous = false;
         }
-        // 2) URL 파라미터만 입력받은 경우
-        else if (urlRespondentId) {
-            finalRespondent = urlRespondentId;
-            finalIsAnonymous = false;
-        }
-        // 3) 익명 허용인 경우 (URL 파라미터와 이메일이 모두 없는 경우)
-        else if (survey.allow_anonymous && !urlRespondentId && !respondent && !email) {
-            finalRespondent = null;
-            finalIsAnonymous = true;
-        }
-        // 4) 이메일만 입력받은 경우
+        // 2) 별도 이메일이 제공된 경우
         else if (email) {
             finalRespondent = email;
             finalEmail = email;
             finalIsAnonymous = false;
         }
-        // 5) 다른 식별자(respondent)를 입력한 경우
-        else if (respondent) {
-            finalRespondent = respondent;
-            finalIsAnonymous = false;
+        // 3) 익명 허용인 경우
+        else if (survey.allow_anonymous) {
+            finalRespondent = null;
+            finalIsAnonymous = true;
         }
-        // 6) 이메일이 필수인 경우
-        else if (survey.email_required) {
-            return NextResponse.json({ error: '이메일 주소가 필요합니다.' }, { status: 400 });
-        }
-        // 7) 어떤 방법도 허용되지 않은 경우
+        // 4) 어떤 방법도 허용되지 않은 경우
         else {
-            return NextResponse.json({ error: '응답 방법이 설정되지 않았습니다.' }, { status: 400 });
+            return NextResponse.json({ error: '응답자 식별이 필요합니다.' }, { status: 400 });
+        }
+
+        // 화이트리스트 확인
+        if (survey.allowed_list && Array.isArray(survey.allowed_list)) {
+            const identifier = finalRespondent || finalEmail;
+            if (identifier && !survey.allowed_list.includes(identifier)) {
+                return NextResponse.json({ error: '허용되지 않은 응답자입니다.' }, { status: 403 });
+            }
         }
 
         // 중복 응답 확인
@@ -156,8 +151,8 @@ export async function POST(
             return NextResponse.json({ error: '응답 저장에 실패했습니다.' }, { status: 500 });
         }
 
-        return NextResponse.json({ 
-            success: true, 
+        return NextResponse.json({
+            success: true,
             response_id: response.id,
             is_anonymous: isAnonymous
         });

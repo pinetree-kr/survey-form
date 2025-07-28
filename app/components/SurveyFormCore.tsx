@@ -19,9 +19,9 @@ interface SurveyFormCoreProps {
     submitButtonText?: string;
 }
 
-export default function SurveyFormCore({ 
-    survey, 
-    initialRespondentId, 
+export default function SurveyFormCore({
+    survey,
+    initialRespondentId,
     isPreview = false,
     onSubmit,
     onComplete,
@@ -33,11 +33,88 @@ export default function SurveyFormCore({
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [etcValues, setEtcValues] = useState<Record<string, string>>({});
     const [isCompleted, setIsCompleted] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string>('');
     const [respondentId, setRespondentId] = useState<string>(initialRespondentId || '');
     const [isEmailVerified, setIsEmailVerified] = useState<boolean>(!!initialRespondentId);
     const [emailError, setEmailError] = useState<string>('');
+    const [isDuplicateResponse, setIsDuplicateResponse] = useState(false);
+    const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+    const [existingResponse, setExistingResponse] = useState<any>(null);
+    const [showResponseReview, setShowResponseReview] = useState(false);
+
+    // 중복 응답 확인 함수
+    const checkDuplicateResponse = React.useCallback(async (respondentIdToCheck: string) => {
+        if (isPreview || !survey.id || survey.allow_duplicate_responses) {
+            return false;
+        }
+
+        try {
+            setIsCheckingDuplicate(true);
+            const response = await fetch(`/api/surveys/${survey.id}/responses/check`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    respondent: respondentIdToCheck,
+                    email: survey.email_required ? respondentIdToCheck : undefined
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json() as { 
+                    isDuplicate: boolean; 
+                    existingResponse?: any;
+                    isNotAllowed?: boolean;
+                    message?: string;
+                };
+                
+                // 화이트리스트에 없는 경우 중복으로 처리 (접근 차단)
+                if (data.isNotAllowed) {
+                    return true; // 중복으로 처리하여 접근 차단
+                }
+                
+                // 기존 응답이 있으면 저장
+                if (data.isDuplicate && data.existingResponse) {
+                    setExistingResponse(data.existingResponse);
+                }
+                
+                return data.isDuplicate || false;
+            }
+            return false;
+        } catch (error) {
+            console.error('중복 확인 오류:', error);
+            return false;
+        } finally {
+            setIsCheckingDuplicate(false);
+        }
+    }, [survey.id, survey.allow_duplicate_responses, survey.email_required, isPreview]);
+
+
+    // URL 파라미터나 initialRespondentId가 있는 경우 초기 중복 체크
+    useEffect(() => {
+        const checkInitialDuplicate = async () => {
+            // 미리보기 모드이거나 중복 허용인 경우 체크하지 않음
+            if (isPreview || survey.allow_duplicate_responses) {
+                return;
+            }
+
+            // initialRespondentId가 있고, 익명이 허용되지 않는 경우 중복 체크
+            if (initialRespondentId && initialRespondentId.trim() && !survey.allow_anonymous) {
+                const isDuplicate = await checkDuplicateResponse(initialRespondentId);
+                setIsDuplicateResponse(isDuplicate);
+
+                // 중복인 경우 respondentId 설정 (중복 화면에서 표시하기 위해)
+                if (isDuplicate) {
+                    setRespondentId(initialRespondentId);
+                }
+            }
+        };
+
+        checkInitialDuplicate();
+    }, [initialRespondentId, survey.allow_duplicate_responses, survey.allow_anonymous, isPreview, checkDuplicateResponse]);
 
     // 조건을 확인하는 함수
     const checkCondition = React.useCallback((condition: TBranchCondition): boolean => {
@@ -301,6 +378,28 @@ export default function SurveyFormCore({
 
             try {
                 await onSubmit(answers, etcValues, respondentId || undefined);
+
+                if (isPreview) {
+                    // 미리보기 모드에서는 onComplete 호출 (모달 표시를 위해)
+                    if (onComplete) {
+                        onComplete();
+                    }
+                } else {
+                    // 실제 제출 모드에서는 제출 완료 화면 표시
+                    setIsSubmitted(true);
+                    // 중복 허용이 되지 않는 설문의 경우 현재 응답을 existingResponse에 저장
+                    if (!survey.allow_duplicate_responses) {
+                        setExistingResponse({
+                            answers: answers.reduce((acc, answer) => {
+                                acc[answer.questionId] = answer.value;
+                                return acc;
+                            }, {} as Record<string, any>),
+                            completed_at: new Date().toISOString(),
+                            respondent: respondentId || null,
+                            email: survey.email_required ? respondentId : null
+                        });
+                    }
+                }
             } catch (error) {
                 setSubmitError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
             } finally {
@@ -309,7 +408,7 @@ export default function SurveyFormCore({
         } else if (onComplete) {
             onComplete();
         }
-    }, [answers, etcValues, respondentId, onSubmit, onComplete]);
+    }, [answers, etcValues, respondentId, onSubmit, onComplete, isPreview, survey.allow_duplicate_responses, survey.email_required]);
 
     // 이메일 유효성 검사 함수
     const validateEmail = React.useCallback((email: string): string => {
@@ -328,15 +427,36 @@ export default function SurveyFormCore({
         const email = e.target.value;
         setRespondentId(email);
         setEmailError(validateEmail(email));
+        setIsDuplicateResponse(false); // 이메일 변경 시 중복 상태 초기화
+        setExistingResponse(null); // 기존 응답도 초기화
     }, [validateEmail]);
+
+    // 이메일 검증 및 중복 확인
+    const handleEmailVerification = React.useCallback(async () => {
+        const emailValidationError = validateEmail(respondentId);
+        setEmailError(emailValidationError);
+
+        if (!emailValidationError && respondentId.trim()) {
+            const isDuplicate = await checkDuplicateResponse(respondentId);
+            setIsDuplicateResponse(isDuplicate);
+
+            if (!isDuplicate) {
+                setIsEmailVerified(true);
+            }
+        }
+    }, [respondentId, validateEmail, checkDuplicateResponse]);
 
     // 리셋 함수
     const handleReset = React.useCallback(() => {
         setIsCompleted(false);
+        setIsSubmitted(false);
         setCurrentPanel(0);
         setAnswers([]);
         setEtcValues({});
         setSubmitError('');
+        setIsDuplicateResponse(false);
+        setExistingResponse(null);
+        setShowResponseReview(false);
         if (!isPreview) {
             setRespondentId(initialRespondentId || '');
             setIsEmailVerified(!!initialRespondentId);
@@ -344,10 +464,121 @@ export default function SurveyFormCore({
         }
     }, [isPreview, initialRespondentId]);
 
+    // 중복 응답 화면
+    if (isDuplicateResponse) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-yellow-50 px-4">
+                <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-8">
+                    <div className="text-center mb-8">
+                        <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 19c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-3">이미 응답하셨습니다</h2>
+                        <p className="text-gray-600 leading-relaxed">
+                            해당 식별자로 이미 설문에 응답하셨습니다.<br />
+                            중복 응답은 허용되지 않습니다.
+                        </p>
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-8">
+                        <div className="flex items-center justify-center mb-3">
+                            <svg className="w-6 h-6 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-yellow-800 font-semibold">응답자: {respondentId}</span>
+                        </div>
+                        {existingResponse && (
+                            <div className="mt-4">
+                                <p className="text-yellow-700 text-sm mb-3">
+                                    응답 일시: {new Date(existingResponse.completed_at).toLocaleString('ko-KR')}
+                                </p>
+                            </div>
+                        )}
+                        <p className="text-yellow-700 text-sm">
+                            다른 식별자로 다시 시도하시거나 관리자에게 문의해 주세요.
+                        </p>
+                    </div>
+
+                    {/* 기존 응답 내용 표시 */}
+                    {existingResponse && existingResponse.answers && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-8">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                이전 응답 내역
+                            </h3>
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                                {Object.entries(existingResponse.answers).map(([questionId, answer], index) => {
+                                    const question = survey.questions.find(q => q.id === questionId);
+                                    if (!question) return null;
+
+                                    return (
+                                        <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
+                                            <h4 className="font-medium text-gray-900 mb-2">{question.title}</h4>
+                                            <div className="text-gray-700">
+                                                {(() => {
+                                                    // 답변 타입에 따른 표시 로직
+                                                    if (Array.isArray(answer)) {
+                                                        return answer.map((item, idx) => (
+                                                            <span key={idx} className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm mr-2 mb-1">
+                                                                {question.options?.find(opt => opt.key === item)?.label || item}
+                                                            </span>
+                                                        ));
+                                                    } else if (typeof answer === 'object' && answer !== null) {
+                                                        return (
+                                                            <div className="space-y-1">
+                                                                {Object.entries(answer as Record<string, string>).map(([key, value]) => (
+                                                                    <div key={key} className="flex justify-between text-sm">
+                                                                        <span className="text-gray-600">{key}:</span>
+                                                                        <span className="font-medium">{value}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        const displayValue = question.options?.find(opt => opt.key === answer)?.label || String(answer);
+                                                        return <span className="text-gray-900">{displayValue}</span>;
+                                                    }
+                                                })()}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="text-center">
+                        <button
+                            onClick={() => {
+                                setIsDuplicateResponse(false);
+                                setExistingResponse(null);
+                                if (survey.email_required) {
+                                    setIsEmailVerified(false);
+                                    setRespondentId('');
+                                    setEmailError('');
+                                } else {
+                                    // URL 파라미터 경우는 페이지를 떠나도록 유도
+                                    window.history.back();
+                                }
+                            }}
+                            className="w-full px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all duration-200"
+                        >
+                            {survey.email_required ? '다른 이메일로 다시 시도' : '이전 페이지로 돌아가기'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // 이메일 입력 UI (설문 시작 전)
     if (survey.email_required && !isEmailVerified) {
         const isEmailValid = !emailError && respondentId.trim() !== '';
-        
+
         return (
             <div className="max-w-2xl mx-auto p-8">
                 <div className="mb-8">
@@ -362,7 +593,7 @@ export default function SurveyFormCore({
                     <p className="text-gray-600 mb-4">
                         설문을 시작하기 전에 이메일 주소를 입력해주세요.
                     </p>
-                    
+
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             이메일 주소 <span className="text-red-500">*</span>
@@ -373,12 +604,12 @@ export default function SurveyFormCore({
                             onChange={handleEmailChange}
                             onBlur={() => setEmailError(validateEmail(respondentId))}
                             placeholder="example@email.com"
-                            className={`w-full border px-3 py-2 rounded-lg focus:ring-2 focus:border-transparent ${
-                                emailError 
-                                    ? 'border-red-500 focus:ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500'
-                            }`}
+                            className={`w-full border px-3 py-2 rounded-lg focus:ring-2 focus:border-transparent ${emailError
+                                ? 'border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:ring-blue-500'
+                                }`}
                             required
+                            disabled={isCheckingDuplicate}
                         />
                         {emailError && (
                             <p className="mt-1 text-sm text-red-600">{emailError}</p>
@@ -387,15 +618,21 @@ export default function SurveyFormCore({
 
                     <div className="flex justify-end">
                         <button
-                            onClick={() => setIsEmailVerified(true)}
-                            disabled={!isEmailValid}
-                            className={`px-6 py-2 rounded-lg transition-colors ${
-                                isEmailValid
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
+                            onClick={handleEmailVerification}
+                            disabled={!isEmailValid || isCheckingDuplicate}
+                            className={`px-6 py-2 rounded-lg transition-colors ${isEmailValid && !isCheckingDuplicate
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
                         >
-                            설문 시작하기
+                            {isCheckingDuplicate ? (
+                                <div className="flex items-center">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    확인 중...
+                                </div>
+                            ) : (
+                                '설문 시작하기'
+                            )}
                         </button>
                     </div>
                 </div>
@@ -403,45 +640,177 @@ export default function SurveyFormCore({
         );
     }
 
+    // 설문 제출 완료 화면
+    if (isSubmitted) {
+        // 응답 내용 확인 화면
+        if (showResponseReview && existingResponse && existingResponse.answers) {
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                    <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl p-10">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-4">제출된 응답 내역</h1>
+                            <p className="text-gray-600">
+                                {new Date(existingResponse.completed_at).toLocaleString('ko-KR')}에 제출된 응답입니다.
+                            </p>
+                        </div>
+
+                        <div className="space-y-6 max-h-96 overflow-y-auto mb-8">
+                            {Object.entries(existingResponse.answers).map(([questionId, answer], index) => {
+                                const question = survey.questions.find(q => q.id === questionId);
+                                if (!question) return null;
+
+                                return (
+                                    <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                                        <h3 className="font-semibold text-gray-900 mb-3">{question.title}</h3>
+                                        <div className="text-gray-700">
+                                            {(() => {
+                                                if (Array.isArray(answer)) {
+                                                    return answer.map((item, idx) => (
+                                                        <span key={idx} className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm mr-2 mb-2">
+                                                            {question.options?.find(opt => opt.key === item)?.label || item}
+                                                        </span>
+                                                    ));
+                                                } else if (typeof answer === 'object' && answer !== null) {
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            {Object.entries(answer as Record<string, string>).map(([key, value]) => (
+                                                                <div key={key} className="flex justify-between items-center bg-white p-3 rounded border">
+                                                                    <span className="text-gray-600 font-medium">{key}:</span>
+                                                                    <span className="text-gray-900">{value}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    const displayValue = question.options?.find(opt => opt.key === answer)?.label || String(answer);
+                                                    return <div className="bg-white p-3 rounded border text-gray-900">{displayValue}</div>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="text-center">
+                            <button
+                                onClick={() => setShowResponseReview(false)}
+                                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                                돌아가기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 제출 완료 메인 화면
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 px-4">
+                <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-10 text-center">
+                    <div className="mb-10">
+                        <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
+                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h1 className="text-4xl font-bold text-gray-900 mb-4">제출 완료!</h1>
+                        <p className="text-gray-600 text-lg leading-relaxed">
+                            설문에 참여해 주셔서 감사합니다.<br />
+                            소중한 의견이 잘 전달되었습니다.
+                        </p>
+                    </div>
+
+                    <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-8">
+                        <div className="flex items-center justify-center mb-3">
+                            <svg className="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-green-800 font-semibold">응답이 성공적으로 저장되었습니다</span>
+                        </div>
+                        <p className="text-green-700 text-sm">
+                            제출하신 응답은 안전하게 보관되며, 추후 분석에 활용됩니다.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        {/* 중복 허용이 되지 않는 설문의 경우 응답 확인 버튼만 표시 */}
+                        {!survey.allow_duplicate_responses ? (
+                            <button
+                                onClick={() => setShowResponseReview(true)}
+                                className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                제출한 응답 확인하기
+                            </button>
+                        ) : (
+                            /* 중복 허용이 되는 설문의 경우 새로운 응답 작성 버튼 표시 */
+                            <button
+                                onClick={handleReset}
+                                className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                새로운 응답 작성하기
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 설문 완료 확인 화면 (제출 전)
     if (isCompleted) {
         return (
-            <div className="max-w-2xl mx-auto p-8 text-center">
-                <div className="mb-6">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+                    <div className="mb-8">
+                        <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-3">{completionTitle}</h2>
+                        <p className="text-gray-600 leading-relaxed">{completionMessage}</p>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{completionTitle}</h2>
-                    <p className="text-gray-600">{completionMessage}</p>
-                </div>
 
-                {submitError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                        <p className="text-red-700 text-sm">{submitError}</p>
-                    </div>
-                )}
+                    {submitError && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-700 text-sm">{submitError}</p>
+                        </div>
+                    )}
 
-                <div className="space-y-4">
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        className={`px-6 py-3 rounded-lg transition-colors ${
-                            isSubmitting
+                    <div className="space-y-3">
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className={`w-full px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${isSubmitting
                                 ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                                : 'bg-green-600 text-white hover:bg-green-700'
-                        }`}
-                    >
-                        {isSubmitting ? '처리 중...' : submitButtonText}
-                    </button>
+                                : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transform hover:scale-105 shadow-lg hover:shadow-xl'
+                                }`}
+                        >
+                            {isSubmitting ? (
+                                <div className="flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                    처리 중...
+                                </div>
+                            ) : (
+                                submitButtonText
+                            )}
+                        </button>
 
-                    <button
-                        onClick={handleReset}
-                        disabled={isSubmitting}
-                        className="px-6 py-3 ml-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                        다시 시작하기
-                    </button>
+                        <button
+                            onClick={handleReset}
+                            disabled={isSubmitting}
+                            className="w-full px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-medium text-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            처음부터 다시하기
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -702,7 +1071,7 @@ export default function SurveyFormCore({
                                 className="relative w-full cursor-default rounded-md bg-white py-2 pl-3 pr-10 text-left border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <span className="block truncate">
-                                    {answers.find(a => a.questionId === currentQuestion.id)?.value 
+                                    {answers.find(a => a.questionId === currentQuestion.id)?.value
                                         ? currentQuestion.options?.find(opt => opt.key === answers.find(a => a.questionId === currentQuestion.id)?.value)?.label || '선택됨'
                                         : '선택하세요'
                                     }
@@ -722,7 +1091,7 @@ export default function SurveyFormCore({
                                     </svg>
                                 </span>
                             </button>
-                            
+
                             <div
                                 id={`dropdown-${currentQuestion.id}`}
                                 className="custom-dropdown absolute z-10 mt-1 w-full hidden bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
@@ -737,7 +1106,7 @@ export default function SurveyFormCore({
                                 >
                                     <span className="block truncate">선택하세요</span>
                                 </button>
-                                
+
                                 {currentQuestion.options.map((option, index) => (
                                     <button
                                         key={index}

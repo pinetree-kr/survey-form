@@ -82,11 +82,13 @@ export type TSurvey = {
     description?: string;
     is_active?: boolean;
     allow_anonymous?: boolean;
-    allow_url_param?: boolean;
+    url_param_required?: boolean;
     email_required?: boolean;
     url_param_name?: string;
-    allow_email_response_view?: boolean;
+    allow_response_view?: boolean;
+    allow_response_modification?: boolean;
     allow_duplicate_responses?: boolean;
+    allowed_list?: string[] | null; // 허용된 응답자 목록 (null이면 화이트리스트 미사용)
     opens_at?: string | null;
     closes_at?: string | null;
     questions: TQuestion[];

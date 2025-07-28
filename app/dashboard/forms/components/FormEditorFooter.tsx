@@ -190,18 +190,24 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
             pending: '설문 저장 중...',
             success: {
                 render: ({ data }: { data: TSurvey }) => {
-                    setIsSaving(false);
-                    if (surveyId) {
-                        router.refresh()
-                    } else {
-                        router.replace(`/dashboard/forms/${data.id}`)
-                    }
+                    // 상태 업데이트를 비동기로 처리
+                    setTimeout(() => {
+                        setIsSaving(false);
+                        if (surveyId) {
+                            router.refresh()
+                        } else {
+                            router.replace(`/dashboard/forms/${data.id}`)
+                        }
+                    }, 0);
                     return '설문이 성공적으로 저장되었습니다.'
                 }
             },
             error: {
                 render: (error: any) => {
-                    setIsSaving(false);
+                    // 상태 업데이트를 비동기로 처리
+                    setTimeout(() => {
+                        setIsSaving(false);
+                    }, 0);
                     console.error('설문 저장 중 오류 발생:', error);
                     return '설문 저장 중 오류가 발생했습니다. 다시 시도해주세요.';
                 }

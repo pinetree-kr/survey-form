@@ -39,7 +39,7 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
     let surveyUrl = `${baseUrl}/forms/${survey.id}`
     
     // URL 파라미터가 설정되어 있다면 해당 파라미터를 포함한 URL 생성
-    if (survey.allow_url_param && survey.url_param_name) {
+    if (survey.url_param_required && survey.url_param_name) {
       surveyUrl += `?${survey.url_param_name}=`
     }
     
@@ -112,7 +112,7 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                     {(() => {
                       const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
                       let url = `${baseUrl}/forms/${survey.id}`
-                      if (survey.allow_url_param && survey.url_param_name) {
+                      if (survey.url_param_required && survey.url_param_name) {
                         url += `?${survey.url_param_name}=`
                       }
                       return url
@@ -144,7 +144,7 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                   </button>
                 </div>
                 
-                {survey.allow_url_param && (
+                {survey.url_param_required && (
                   <div className="mt-2">
                     <p className="text-xs text-gray-500 mb-1">URL 파라미터 사용 예시:</p>
                     <div className="flex items-center space-x-2">
@@ -316,11 +316,11 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                   이메일 응답 조회 허용
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.allow_email_response_view
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.allow_response_view
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-800'
                     }`}>
-                    {survey.allow_email_response_view ? '허용' : '불가'}
+                    {survey.allow_response_view ? '허용' : '불가'}
                   </span>
                 </div>
               </div>
@@ -331,11 +331,11 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                   URL 파라미터 허용
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.allow_url_param
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.url_param_required
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-800'
                     }`}>
-                    {survey.allow_url_param ? '허용' : '불가'}
+                    {survey.url_param_required ? '허용' : '불가'}
                   </span>
                 </div>
               </div>

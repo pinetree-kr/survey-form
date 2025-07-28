@@ -34,7 +34,7 @@ export interface Survey {
     questions: Json
     is_active: boolean
     allow_anonymous: boolean
-    allow_url_param: boolean
+    url_param_required: boolean
     email_required: boolean
     url_param_name: string
     allow_email_response_view: boolean
