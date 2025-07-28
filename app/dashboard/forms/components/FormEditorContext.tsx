@@ -66,7 +66,7 @@ export function FormEditorProvider({
         "allow_anonymous": initialData?.allow_anonymous ?? true,
         "allow_url_param": initialData?.allow_url_param ?? false,
         "email_required": initialData?.email_required ?? false,
-        "url_param_name": initialData?.url_param_name ?? 'id',
+        "url_param_name": initialData?.url_param_name ?? 'rid',
         "allow_email_response_view": initialData?.allow_email_response_view ?? false,
         "allow_duplicate_responses": initialData?.allow_duplicate_responses ?? true,
         "opens_at": initialData?.opens_at || null,

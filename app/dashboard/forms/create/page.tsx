@@ -34,7 +34,7 @@ async function handleCreate(formData: TSurvey) {
       allow_anonymous: formData.allow_anonymous ?? true,
       allow_url_param: formData.allow_url_param ?? false,
       email_required: formData.email_required ?? false,
-      url_param_name: formData.url_param_name || 'id',
+      url_param_name: formData.url_param_name || 'rid',
       allow_email_response_view: formData.allow_email_response_view ?? false,
       allow_duplicate_responses: formData.allow_duplicate_responses ?? true,
       opens_at: formData.opens_at || null,

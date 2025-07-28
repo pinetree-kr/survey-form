@@ -1,7 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { createClient } from '@/lib/supabase-ssr'
 import { notFound } from 'next/navigation'
-import { SurveyForm } from './components/SurveyForm'
+import { SurveyForm } from '@/app/components'
 import { TSurvey } from '@/app/components'
 
 // 설문 데이터 가져오기
@@ -45,7 +45,7 @@ export default async function FormViewPage({
     }
 
     // URL 파라미터에서 respondent_id 추출
-    const urlParamName = survey.url_param_name || 'id';
+    const urlParamName = survey.url_param_name || 'rid';
     const urlRespondentId = resolvedSearchParams[urlParamName];
     const finalRespondentId = Array.isArray(urlRespondentId) ? urlRespondentId[0] : urlRespondentId;
 

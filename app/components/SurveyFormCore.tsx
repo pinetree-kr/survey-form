@@ -1,19 +1,34 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { TSurvey, TQuestion, TBranchCondition } from "@/app/components";
+import { TSurvey, TQuestion, TBranchCondition } from "./types";
 
 type Answer = {
     questionId: string;
     value: string | string[] | Record<string, string>;
 };
 
-interface SurveyFormProps {
+interface SurveyFormCoreProps {
     survey: TSurvey;
     initialRespondentId?: string;
+    isPreview?: boolean;
+    onSubmit?: (answers: Answer[], etcValues: Record<string, string>, respondentId?: string) => void | Promise<void>;
+    onComplete?: () => void;
+    completionTitle?: string;
+    completionMessage?: string;
+    submitButtonText?: string;
 }
 
-export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
+export default function SurveyFormCore({ 
+    survey, 
+    initialRespondentId, 
+    isPreview = false,
+    onSubmit,
+    onComplete,
+    completionTitle = "설문이 완료되었습니다!",
+    completionMessage = "설문을 제출하시겠습니까?",
+    submitButtonText = "설문 제출하기"
+}: SurveyFormCoreProps) {
     const [currentPanel, setCurrentPanel] = useState(0);
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [etcValues, setEtcValues] = useState<Record<string, string>>({});
@@ -278,57 +293,23 @@ export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
         }
     }, [currentPanel]);
 
-    // 설문 제출 함수
+    // 설문 제출/완료 함수
     const handleSubmit = React.useCallback(async () => {
-        setIsSubmitting(true);
-        setSubmitError('');
+        if (onSubmit) {
+            setIsSubmitting(true);
+            setSubmitError('');
 
-        try {
-            // 응답자 ID 결정
-            let finalRespondentId: string | undefined;
-            
-            // 이메일 입력이 필수인 경우
-            if (survey.email_required) {
-                finalRespondentId = respondentId;
+            try {
+                await onSubmit(answers, etcValues, respondentId || undefined);
+            } catch (error) {
+                setSubmitError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+            } finally {
+                setIsSubmitting(false);
             }
-            // URL 파라미터가 허용된 경우
-            else if (survey.allow_url_param && initialRespondentId) {
-                finalRespondentId = initialRespondentId;
-            }
-            // 익명 응답이 허용된 경우
-            else if (survey.allow_anonymous) {
-                finalRespondentId = undefined;
-            }
-
-            // API로 응답 전송
-            const response = await fetch(`/api/surveys/${survey.id}/responses`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    answers: answers.reduce((acc, answer) => {
-                        acc[answer.questionId] = answer.value;
-                        return acc;
-                    }, {} as Record<string, any>),
-                    respondent_id: finalRespondentId
-                }),
-            });
-
-            if (response.ok) {
-                // 성공 시 완료 페이지로 이동하거나 성공 메시지 표시
-                alert('설문이 성공적으로 제출되었습니다!');
-                // 여기서 성공 페이지로 리다이렉트하거나 상태를 변경할 수 있습니다
-            } else {
-                const errorData = await response.json() as { error?: string };
-                setSubmitError(errorData.error || '알 수 없는 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            setSubmitError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
-        } finally {
-            setIsSubmitting(false);
+        } else if (onComplete) {
+            onComplete();
         }
-    }, [survey, answers, respondentId, initialRespondentId]);
+    }, [answers, etcValues, respondentId, onSubmit, onComplete]);
 
     // 이메일 유효성 검사 함수
     const validateEmail = React.useCallback((email: string): string => {
@@ -348,6 +329,20 @@ export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
         setRespondentId(email);
         setEmailError(validateEmail(email));
     }, [validateEmail]);
+
+    // 리셋 함수
+    const handleReset = React.useCallback(() => {
+        setIsCompleted(false);
+        setCurrentPanel(0);
+        setAnswers([]);
+        setEtcValues({});
+        setSubmitError('');
+        if (!isPreview) {
+            setRespondentId(initialRespondentId || '');
+            setIsEmailVerified(!!initialRespondentId);
+            setEmailError('');
+        }
+    }, [isPreview, initialRespondentId]);
 
     // 이메일 입력 UI (설문 시작 전)
     if (survey.email_required && !isEmailVerified) {
@@ -417,8 +412,8 @@ export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">설문이 완료되었습니다!</h2>
-                    <p className="text-gray-600">설문을 제출하시겠습니까?</p>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{completionTitle}</h2>
+                    <p className="text-gray-600">{completionMessage}</p>
                 </div>
 
                 {submitError && (
@@ -437,16 +432,11 @@ export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
                                 : 'bg-green-600 text-white hover:bg-green-700'
                         }`}
                     >
-                        {isSubmitting ? '제출 중...' : '설문 제출하기'}
+                        {isSubmitting ? '처리 중...' : submitButtonText}
                     </button>
 
                     <button
-                        onClick={() => {
-                            setIsCompleted(false);
-                            setCurrentPanel(0);
-                            setAnswers([]);
-                            setSubmitError('');
-                        }}
+                        onClick={handleReset}
                         disabled={isSubmitting}
                         className="px-6 py-3 ml-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
@@ -822,14 +812,6 @@ export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
                             ))}
                         </div>
                     )}
-
-                    {currentQuestion.question_type === 'description' && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                            <p className="text-blue-800 text-sm">
-                                {currentQuestion.description || '안내 문구가 없습니다.'}
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -858,4 +840,4 @@ export function SurveyForm({ survey, initialRespondentId }: SurveyFormProps) {
             </div>
         </div>
     );
-} 
+}

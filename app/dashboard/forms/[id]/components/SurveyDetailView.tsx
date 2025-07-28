@@ -5,6 +5,7 @@ import { TSurvey } from '@/app/components'
 import QuestionListView from './QuestionListView'
 import { useState, useEffect } from 'react'
 import { fetchSurvey } from '../actions'
+import { EyeIcon } from '@heroicons/react/24/outline'
 
 interface SurveyDetailViewProps {
   surveyId: string
@@ -148,11 +149,11 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                     <p className="text-xs text-gray-500 mb-1">URL 파라미터 사용 예시:</p>
                     <div className="flex items-center space-x-2">
                       <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-mono text-xs">
-                        {`${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?${survey.url_param_name || 'id'}=`}
+                        {`${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?${survey.url_param_name || 'rid'}=`}
                       </div>
                       <button
                         onClick={() => {
-                          const paramUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?${survey.url_param_name || 'id'}=`
+                          const paramUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?${survey.url_param_name || 'rid'}=`
                           navigator.clipboard.writeText(paramUrl)
                           setCopySuccess(true)
                           setTimeout(() => setCopySuccess(false), 2000)
@@ -343,7 +344,7 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                   URL 파라미터 이름
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                  {survey.url_param_name || 'id'}
+                  {survey.url_param_name || 'rid'}
                 </div>
               </div>
             </div>
@@ -378,8 +379,9 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
             <div className="flex space-x-3">
               <Link
                 href={`/dashboard/forms/${survey.id}/preview`}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
               >
+                <EyeIcon className="w-4 h-4" />
                 Preview
               </Link>
               <Link

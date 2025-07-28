@@ -65,7 +65,7 @@ export async function POST(
 
         // URL 파라미터에서 응답자 ID 가져오기
         const { searchParams } = new URL(request.url);
-        const urlParamName = survey.url_param_name || 'id';
+        const urlParamName = survey.url_param_name || 'rid';
         const urlRespondentId = searchParams.get(urlParamName);
 
         // 이메일이 제공된 경우 형식 검증

@@ -28,7 +28,7 @@ export default async function FormViewPage({
 
     // URL 파라미터에서 응답자 ID 확인
     const paramsObj = await searchParams;
-    const paramName = survey.url_param_name || 'id';
+    const paramName = survey.url_param_name || 'rid';
     const urlRespondentId = Array.isArray(paramsObj[paramName]) 
         ? paramsObj[paramName]?.[0] 
         : paramsObj[paramName];

@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       allow_anonymous: true,
       allow_url_param: false,
       email_required: false,
-      url_param_name: 'id',
+      url_param_name: 'rid',
       allow_email_response_view: false,
       allow_duplicate_responses: true,
       created_by: '11111111-1111-1111-1111-111111111111'

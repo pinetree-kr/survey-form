@@ -82,7 +82,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         allow_anonymous: allowAnonymous,
         allow_url_param: allowUrlParam,
         email_required: emailRequired,
-        url_param_name: parsedData.url_param_name || 'id',
+        url_param_name: parsedData.url_param_name || 'rid',
         allow_email_response_view: parsedData.allow_email_response_view ?? false,
         allow_duplicate_responses: parsedData.allow_duplicate_responses ?? true,
         opens_at: parsedData.opens_at || null,
@@ -168,7 +168,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
   "allow_anonymous": true,
   "allow_url_param": false,
   "email_required": false,
-  "url_param_name": "id",
+  "url_param_name": "rid",
   "allow_email_response_view": false,
   "allow_duplicate_responses": true,
   "opens_at": "2024-01-01T00:00:00.000Z",
@@ -216,7 +216,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
                   <li>• <strong>allow_anonymous</strong>: 익명 응답 허용 (기본값: true)</li>
                   <li>• <strong>allow_url_param</strong>: URL 파라미터로 응답자 ID 받기 (기본값: false)</li>
                   <li>• <strong>email_required</strong>: 이메일 입력 필수 (기본값: false)</li>
-                  <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: &#34;id&#34;)</li>
+                  <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: &#34;rid&#34;)</li>
                   <li>• <strong>allow_email_response_view</strong>: 이메일로 응답 조회 허용 (기본값: false)</li>
                   <li>• <strong>allow_duplicate_responses</strong>: 중복 응답 허용 (기본값: true)</li>
                 </ul>

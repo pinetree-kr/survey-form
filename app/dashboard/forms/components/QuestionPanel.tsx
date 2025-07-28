@@ -94,6 +94,7 @@ export const QuestionPanel = React.memo(({
 
     // 로컬 상태로 즉시 반응하는 UI
     const [localTitle, setLocalTitle] = useState(question.title);
+    const [localDescription, setLocalDescription] = useState(question.description || '');
     const [localOptions, setLocalOptions] = useState(question.options || []);
     const [localRequired, setLocalRequired] = useState(question.required);
     const [localIsHidden, setLocalIsHidden] = useState(question.is_hidden);
@@ -105,6 +106,7 @@ export const QuestionPanel = React.memo(({
 
     // 디바운스된 값들 (키보드 입력에만 적용)
     const debouncedTitle = useDebounce(isUserInput ? localTitle : question.title, 300);
+    const debouncedDescription = useDebounce(isUserInput ? localDescription : question.description || '', 300);
     const debouncedOptions = useDebounce(isUserInput ? localOptions : question.options || [], 300);
     const debouncedRequired = useDebounce(isUserInput ? localRequired : question.required, 300);
     const debouncedIsHidden = useDebounce(isUserInput ? localIsHidden : question.is_hidden, 300);
@@ -113,6 +115,7 @@ export const QuestionPanel = React.memo(({
 
     // 디바운스 상태 추적
     const [isTitleDebouncing, setIsTitleDebouncing] = useState(false);
+    const [isDescriptionDebouncing, setIsDescriptionDebouncing] = useState(false);
     const [isOptionsDebouncing, setIsOptionsDebouncing] = useState(false);
 
     const { findQuestionIndexById, findQuestionById } = useFormEditor();
@@ -128,6 +131,14 @@ export const QuestionPanel = React.memo(({
 
     useEffect(() => {
         if (isUserInput) {
+            setIsDescriptionDebouncing(localDescription !== debouncedDescription);
+        } else {
+            setIsDescriptionDebouncing(false);
+        }
+    }, [localDescription, debouncedDescription, isUserInput]);
+
+    useEffect(() => {
+        if (isUserInput) {
             setIsOptionsDebouncing(JSON.stringify(localOptions) !== JSON.stringify(debouncedOptions));
         } else {
             setIsOptionsDebouncing(false);
@@ -140,6 +151,12 @@ export const QuestionPanel = React.memo(({
             updateQuestion({ ...question, title: debouncedTitle });
         }
     }, [debouncedTitle, question, updateQuestion, isUserInput]);
+
+    useEffect(() => {
+        if (isUserInput && debouncedDescription !== (question.description || '')) {
+            updateQuestion({ ...question, description: debouncedDescription });
+        }
+    }, [debouncedDescription, question, updateQuestion, isUserInput]);
 
     useEffect(() => {
         if (isUserInput && !areOptionsEqual(debouncedOptions, question.options)) {
@@ -191,6 +208,11 @@ export const QuestionPanel = React.memo(({
         setLocalTitle(question.title);
         setIsUserInput(false); // 외부 데이터 로딩임을 표시
     }, [question.title]);
+
+    useEffect(() => {
+        setLocalDescription(question.description || '');
+        setIsUserInput(false); // 외부 데이터 로딩임을 표시
+    }, [question.description]);
 
     useEffect(() => {
         setLocalOptions(question.options || []);
@@ -276,6 +298,11 @@ export const QuestionPanel = React.memo(({
     const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setIsUserInput(true); // 키보드 입력임을 표시
         setLocalTitle(e.target.value);
+    };
+
+    const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setIsUserInput(true); // 키보드 입력임을 표시
+        setLocalDescription(e.target.value);
     };
 
     // 복잡한 로직이 있는 함수만 useCallback 사용
@@ -544,7 +571,7 @@ export const QuestionPanel = React.memo(({
             {/* 질문 텍스트 */}
             <Textarea
                 className={`w-full border rounded px-3 py-2 text-base min-h-[80px] focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isTitleDebouncing ? 'input-debouncing' : ''}`}
-                placeholder="질문을 입력하세요"
+                placeholder={question.question_type === "description" ? "안내문 제목을 입력하세요" : "질문을 입력하세요"}
                 value={localTitle}
                 onChange={handleTitleChange}
                 onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -554,6 +581,22 @@ export const QuestionPanel = React.memo(({
                 }}
                 style={{ minHeight: 40, overflow: 'hidden' }}
             />
+
+            {/* 안내문 설명 (description 타입일 때만) */}
+            {question.question_type === "description" && (
+                <Textarea
+                    className={`w-full border rounded px-3 py-2 text-base min-h-[120px] focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-3 ${isDescriptionDebouncing ? 'input-debouncing' : ''}`}
+                    placeholder="안내문 내용을 입력하세요"
+                    value={localDescription}
+                    onChange={handleDescriptionChange}
+                    onInput={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                    }}
+                    style={{ minHeight: 80, overflow: 'hidden' }}
+                />
+            )}
 
             {/* 이미지 미리보기 */}
             <ImagePreview images={question.images} />
