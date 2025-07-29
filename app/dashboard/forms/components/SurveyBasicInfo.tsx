@@ -23,13 +23,25 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
     const { formBasicInfo, updateFormBasicInfo } = useFormEditor();
+    const [copySuccess, setCopySuccess] = useState(false);
+    const [baseUrl, setBaseUrl] = useState('');
+    const [rawAllowedListText, setRawAllowedListText] = useState('');
     // 로컬 상태로 관리하여 즉시 UI 업데이트
     const [localSurvey, setLocalSurvey] = useState(formBasicInfo);
 
     // 외부 survey가 변경되면 로컬 상태 동기화
     useEffect(() => {
         setLocalSurvey(formBasicInfo);
+        // 허용된 응답자 목록 텍스트 초기화
+        setRawAllowedListText(formBasicInfo.allowed_list?.join('\n') || '');
     }, [formBasicInfo]);
+
+    // 클라이언트에서 baseUrl 설정
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setBaseUrl(window.location.origin);
+        }
+    }, []);
 
     // 디바운스된 업데이트를 위한 상태
     const [pendingUpdates, setPendingUpdates] = useState<Partial<Omit<TSurvey, 'questions'>>>({});
@@ -276,6 +288,69 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     <div className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-500">
                         {localSurvey.id || "자동생성"}
                     </div>
+                    
+                    {/* 설문 URL 링크 */}
+                    {localSurvey.id && (
+                        <div className="mt-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                설문 URL
+                            </label>
+                            <div className="flex items-center space-x-2">
+                                <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 font-mono text-sm">
+                                    {baseUrl ? `${baseUrl}/forms/${localSurvey.id}` : 'URL 로딩 중...'}
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const surveyUrl = `${baseUrl}/forms/${localSurvey.id}`;
+                                        navigator.clipboard.writeText(surveyUrl);
+                                        setCopySuccess(true);
+                                        setTimeout(() => setCopySuccess(false), 2000);
+                                    }}
+                                    disabled={!baseUrl}
+                                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-1"
+                                >
+                                    {copySuccess ? (
+                                        <div className="flex items-center space-x-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span>복사됨</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center space-x-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>링크 복사</span>
+                                        </div>
+                                    )}
+                                </button>
+                            </div>
+
+                            {localSurvey.url_param_required && (
+                                <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">URL 파라미터 사용 예시:</p>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-mono text-xs">
+                                            {baseUrl ? `${baseUrl}/forms/${localSurvey.id}?${localSurvey.url_param_name || 'rid'}=` : 'URL 로딩 중...'}
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const paramUrl = `${baseUrl}/forms/${localSurvey.id}?${localSurvey.url_param_name || 'rid'}=`;
+                                                navigator.clipboard.writeText(paramUrl);
+                                                setCopySuccess(true);
+                                                setTimeout(() => setCopySuccess(false), 2000);
+                                            }}
+                                            disabled={!baseUrl}
+                                            className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition-colors"
+                                        >
+                                            복사
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -565,19 +640,33 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                                     </label>
                                     <textarea
                                         rows={4}
-                                        placeholder="응답자 ID를 한 줄씩 입력하세요&#10;예:&#10;user@example.com&#10;user123&#10;another@email.com"
+                                        placeholder="응답자 ID를 입력하세요 (구분자: 개행, 콤마, 탭, 세미콜론)&#10;예:&#10;user@example.com, user123&#10;admin@company.com;manager@team.kr&#10;guest001	guest002"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                         onChange={(e) => {
-                                            const identifiers = e.target.value
-                                                .split('\n')
-                                                .map(line => line.trim())
-                                                .filter(line => line.length > 0);
-                                            handleImmediateUpdate({ allowed_list: identifiers });
+                                            const newValue = e.target.value;
+                                            // 원본 텍스트 즉시 업데이트 (멀티라인 지원)
+                                            setRawAllowedListText(newValue);
+                                            
+                                            // 최종 저장할 때는 빈 줄 제거 (다양한 구분자 지원)
+                                            const identifiersForSaving = newValue
+                                                // 개행, 콤마, 탭, 세미콜론으로 분리
+                                                .split(/[\n,\t;]+/)
+                                                .map(item => item.trim())
+                                                .filter(item => item.length > 0);
+                                            
+                                            // 로컬 상태 업데이트 (응답자 수 표시용)
+                                            setLocalSurvey(prev => ({ 
+                                                ...prev, 
+                                                allowed_list: identifiersForSaving
+                                            }));
+                                            
+                                            // 디바운스된 업데이트 예약 (저장용)
+                                            setPendingUpdates(prev => ({ ...prev, allowed_list: identifiersForSaving }));
                                         }}
-                                        value={localSurvey.allowed_list?.join('\n') || ''}
+                                        value={rawAllowedListText}
                                     />
                                     <p className="text-xs text-gray-500 mt-1">
-                                        이메일 주소, 사용자 ID 등을 한 줄씩 입력하세요
+                                        이메일 주소, 사용자 ID 등을 입력하세요. 개행, 콤마(,), 탭, 세미콜론(;)으로 구분할 수 있습니다.
                                     </p>
                                 </div>
 
