@@ -8,41 +8,41 @@ import { redirect } from 'next/navigation'
 // Server Actions
 async function getCurrentUser() {
   "use server"
-  
+
   const { env } = await getCloudflareContext({ async: true })
   const supabase = await createClient(env)
-  
+
   const { data: { user }, error } = await supabase.auth.getUser()
-  
+
   if (error || !user) {
     redirect('/auth/sign-in')
   }
-  
+
   return user
 }
 
 async function checkAdminRole() {
   "use server"
-  
+
   const { env } = await getCloudflareContext({ async: true })
   const supabase = await createClient(env)
-  
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
+
   if (authError || !user) {
     redirect('/auth/sign-in')
   }
-  
+
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
-  
+
   if (error || !profile || profile.role !== 'admin') {
     redirect('/dashboard')
   }
-  
+
   return profile
 }
 
@@ -116,7 +116,7 @@ async function deleteUser(user_id: string) {
 
   const { env } = await getCloudflareContext({ async: true })
 
-  const supabase = await createClient(env, env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = await createClient(env);
 
   if (!user_id) {
     // 400
@@ -161,7 +161,7 @@ async function createUser(formData: FormData) {
   "use server"
 
   const { env } = await getCloudflareContext({ async: true })
-  const supabase = await createClient(env, env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY)
+  const supabase = await createClient(env)
 
   // 현재 사용자 인증 확인
   const { data: { user }, error: authError } = await supabase.auth.getUser()

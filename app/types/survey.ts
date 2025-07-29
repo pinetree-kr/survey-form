@@ -37,7 +37,8 @@ export interface Survey {
     url_param_required: boolean
     email_required: boolean
     url_param_name: string
-    allow_email_response_view: boolean
+    allow_response_view: boolean
+    allow_response_modification?: boolean
     allow_duplicate_responses: boolean
     opens_at: string | null
     closes_at: string | null

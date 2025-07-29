@@ -20,7 +20,8 @@ export default async function ResponsesPage() {
       url_param_required,
       email_required,
       url_param_name,
-      allow_email_response_view,
+      allow_response_view,
+      allow_response_modification,
       allow_duplicate_responses,
       opens_at,
       closes_at,
@@ -28,7 +29,7 @@ export default async function ResponsesPage() {
       updated_by,
       created_at,
       updated_at,
-      responses:survey_responses(
+      responses:survey_responses!inner(
         id,
         survey_id,
         respondent,
@@ -41,6 +42,7 @@ export default async function ResponsesPage() {
         user_agent
       )
     `)
+    .eq('responses.is_overwritten', false)
     .order('created_at', { ascending: false })
 
   if (surveysError) {

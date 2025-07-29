@@ -514,8 +514,8 @@ export const QuestionPanel = React.memo(({
             {/* 드래그 핸들 & 상단 */}
             <div className="flex justify-between items-center mb-2">
                 <div
-                    {...attributes}
-                    {...listeners}
+                    // {...attributes}
+                    // {...listeners}
                     className="flex flex-row items-center cursor-move hover:bg-gray-100 rounded px-1"
                 >
                     <span

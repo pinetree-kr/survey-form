@@ -1,6 +1,13 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createClient } from '@/lib/supabase-ssr'
 import { NextRequest, NextResponse } from "next/server";
+import {
+    determineRespondentIdentifier,
+    validateSurvey,
+    checkAllowedList,
+    findExistingResponse,
+    validateEmail
+} from './utils';
 
 export async function POST(
     request: NextRequest,
@@ -22,17 +29,11 @@ export async function POST(
             return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
         }
 
-        if (!survey.is_active) {
-            return NextResponse.json({ error: '비활성화된 설문입니다.' }, { status: 400 });
-        }
 
-        // 설문 시간 체크
-        const now = new Date();
-        if (survey.opens_at && new Date(survey.opens_at) > now) {
-            return NextResponse.json({ error: '설문이 아직 시작되지 않았습니다.' }, { status: 400 });
-        }
-        if (survey.closes_at && new Date(survey.closes_at) < now) {
-            return NextResponse.json({ error: '설문이 종료되었습니다.' }, { status: 400 });
+        // 설문 유효성 검증
+        const surveyValidation = validateSurvey(survey);
+        if (!surveyValidation.valid) {
+            return NextResponse.json({ error: surveyValidation.error }, { status: 400 });
         }
 
         // 현재 사용자 인증 확인
@@ -66,65 +67,32 @@ export async function POST(
 
 
         // 이메일이 제공된 경우 형식 검증
-        if (email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                return NextResponse.json({ error: '유효한 이메일 주소를 입력해주세요.' }, { status: 400 });
-            }
+        if (email && !validateEmail(email)) {
+            return NextResponse.json({ error: '유효한 이메일 주소를 입력해주세요.' }, { status: 400 });
         }
 
         // 응답자 ID 결정 로직
-        let finalRespondent: string | null = null;
-        let finalEmail: string | null = null;
-        let finalIsAnonymous = false;
-
-        // 1) respondent가 제공된 경우 (URL 파라미터 또는 이메일)
-        if (respondent) {
-            finalRespondent = respondent;
-            // 이메일 형식인지 확인하여 finalEmail 설정
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (emailRegex.test(respondent)) {
-                finalEmail = respondent;
-            }
-            finalIsAnonymous = false;
-        }
-        // 2) 별도 이메일이 제공된 경우
-        else if (email) {
-            finalRespondent = email;
-            finalEmail = email;
-            finalIsAnonymous = false;
-        }
-        // 3) 익명 허용인 경우
-        else if (survey.allow_anonymous) {
-            finalRespondent = null;
-            finalIsAnonymous = true;
-        }
-        // 4) 어떤 방법도 허용되지 않은 경우
-        else {
+        const identifierResult = determineRespondentIdentifier(respondent, email, survey.allow_anonymous);
+        if (!identifierResult.isValid) {
             return NextResponse.json({ error: '응답자 식별이 필요합니다.' }, { status: 400 });
         }
 
+        const { finalRespondent, finalEmail, finalIsAnonymous } = identifierResult;
+
         // 화이트리스트 확인
-        if (survey.allowed_list && Array.isArray(survey.allowed_list)) {
-            const identifier = finalRespondent || finalEmail;
-            if (identifier && !survey.allowed_list.includes(identifier)) {
-                return NextResponse.json({ error: '허용되지 않은 응답자입니다.' }, { status: 403 });
-            }
+        const identifier = finalRespondent || finalEmail;
+        if (!checkAllowedList(survey.allowed_list, identifier)) {
+            return NextResponse.json({ error: '허용되지 않은 응답자입니다.' }, { status: 403 });
         }
 
-        // 중복 응답 확인
-        if (!survey.allow_duplicate_responses && (finalRespondent || finalEmail)) {
-            const { data: existingResponse, error: checkError } = await supabase
-                .from('survey_responses')
-                .select('id')
-                .eq('survey_id', surveyId)
-                .or(`respondent.eq.${finalRespondent},email.eq.${finalEmail}`)
-                .single();
+        // 기존 응답 확인
+        const existingResponse = await findExistingResponse(supabase, surveyId, finalRespondent, finalEmail);
 
-            if (existingResponse) {
-                return NextResponse.json({ error: '이미 응답한 사용자입니다.' }, { status: 400 });
-            }
+        // 중복 응답 확인 - 수정 허용 시에는 기존 응답이 있어도 허용
+        if (!survey.allow_duplicate_responses && !survey.allow_response_modification && existingResponse) {
+            return NextResponse.json({ error: '이미 응답한 사용자입니다.' }, { status: 400 });
         }
+
 
         // 응답 데이터 생성
         const responseData = {
@@ -208,11 +176,12 @@ export async function GET(
             return NextResponse.json({ error: '응답 조회 권한이 없습니다.' }, { status: 403 });
         }
 
-        // 응답 목록 조회
+        // 응답 목록 조회 (덮어쓰인 응답 제외)
         const { data: responses, error: responsesError } = await supabase
             .from('survey_responses')
             .select('*')
             .eq('survey_id', surveyId)
+            .eq('is_overwritten', false)
             .order('created_at', { ascending: false });
 
         if (responsesError) {

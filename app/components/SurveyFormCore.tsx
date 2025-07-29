@@ -17,6 +17,8 @@ interface SurveyFormCoreProps {
     completionTitle?: string;
     completionMessage?: string;
     submitButtonText?: string;
+    initialData?: any;
+    isEditMode?: boolean;
 }
 
 export default function SurveyFormCore({
@@ -27,10 +29,21 @@ export default function SurveyFormCore({
     onComplete,
     completionTitle = "설문이 완료되었습니다!",
     completionMessage = "설문을 제출하시겠습니까?",
-    submitButtonText = "설문 제출하기"
+    submitButtonText = "설문 제출하기",
+    initialData,
+    isEditMode = false
 }: SurveyFormCoreProps) {
     const [currentPanel, setCurrentPanel] = useState(0);
-    const [answers, setAnswers] = useState<Answer[]>([]);
+    const [answers, setAnswers] = useState<Answer[]>(() => {
+        if (isEditMode && initialData?.answers) {
+            // 기존 응답 데이터를 Answer[] 형태로 변환
+            return Object.entries(initialData.answers).map(([questionId, value]) => ({
+                questionId,
+                value: value as string | string[] | Record<string, string>
+            }));
+        }
+        return [];
+    });
     const [etcValues, setEtcValues] = useState<Record<string, string>>({});
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -478,7 +491,10 @@ export default function SurveyFormCore({
                         <h2 className="text-3xl font-bold text-gray-900 mb-3">이미 응답하셨습니다</h2>
                         <p className="text-gray-600 leading-relaxed">
                             해당 식별자로 이미 설문에 응답하셨습니다.<br />
-                            중복 응답은 허용되지 않습니다.
+                            {survey.allow_response_modification ? 
+                                (survey.allow_duplicate_responses ? '기존 응답을 수정하거나 새로 응답할 수 있습니다.' : '기존 응답을 수정할 수 있습니다.') 
+                                : '중복 응답은 허용되지 않습니다.'
+                            }
                         </p>
                     </div>
 
@@ -497,78 +513,63 @@ export default function SurveyFormCore({
                             </div>
                         )}
                         <p className="text-yellow-700 text-sm">
-                            다른 식별자로 다시 시도하시거나 관리자에게 문의해 주세요.
+                            {survey.allow_response_modification 
+                                ? (survey.allow_duplicate_responses 
+                                    ? '아래 버튼을 통해 기존 응답을 수정하거나 새로 응답할 수 있습니다.' 
+                                    : '아래 버튼을 통해 기존 응답을 수정할 수 있습니다.')
+                                : '중복 응답이 허용되지 않아 추가 응답을 할 수 없습니다.'
+                            }
                         </p>
                     </div>
 
-                    {/* 기존 응답 내용 표시 */}
-                    {existingResponse && existingResponse.answers && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-8">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                                <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                이전 응답 내역
-                            </h3>
-                            <div className="space-y-4 max-h-96 overflow-y-auto">
-                                {Object.entries(existingResponse.answers).map(([questionId, answer], index) => {
-                                    const question = survey.questions.find(q => q.id === questionId);
-                                    if (!question) return null;
 
-                                    return (
-                                        <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                                            <h4 className="font-medium text-gray-900 mb-2">{question.title}</h4>
-                                            <div className="text-gray-700">
-                                                {(() => {
-                                                    // 답변 타입에 따른 표시 로직
-                                                    if (Array.isArray(answer)) {
-                                                        return answer.map((item, idx) => (
-                                                            <span key={idx} className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm mr-2 mb-1">
-                                                                {question.options?.find(opt => opt.key === item)?.label || item}
-                                                            </span>
-                                                        ));
-                                                    } else if (typeof answer === 'object' && answer !== null) {
-                                                        return (
-                                                            <div className="space-y-1">
-                                                                {Object.entries(answer as Record<string, string>).map(([key, value]) => (
-                                                                    <div key={key} className="flex justify-between text-sm">
-                                                                        <span className="text-gray-600">{key}:</span>
-                                                                        <span className="font-medium">{value}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    } else {
-                                                        const displayValue = question.options?.find(opt => opt.key === answer)?.label || String(answer);
-                                                        return <span className="text-gray-900">{displayValue}</span>;
-                                                    }
-                                                })()}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                    <div className="text-center space-y-4">
+                        {/* 수정 허용 시 버튼들 */}
+                        {survey.allow_response_modification && existingResponse && !existingResponse.is_overwritten && (
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => {
+                                        // 수정 페이지로 리다이렉트
+                                        const currentUrl = new URL(window.location.href);
+                                        const editUrl = `/forms/${survey.id}/edit/${existingResponse.id}${currentUrl.search}`;
+                                        window.location.href = editUrl;
+                                    }}
+                                    className="w-full px-8 py-4 bg-green-600 text-white rounded-xl font-semibold text-lg hover:bg-green-700 transition-all duration-200"
+                                >
+                                    기존 응답 수정하기
+                                </button>
+                                {survey.allow_duplicate_responses && (
+                                    <button
+                                        onClick={() => {
+                                            // 새로 응답 시작
+                                            setAnswers([]);
+                                            setEtcValues({});
+                                            setIsDuplicateResponse(false);
+                                            setCurrentPanel(0);
+                                        }}
+                                        className="w-full px-8 py-4 bg-purple-600 text-white rounded-xl font-semibold text-lg hover:bg-purple-700 transition-all duration-200"
+                                    >
+                                        새로 응답하기
+                                    </button>
+                                )}
                             </div>
-                        </div>
-                    )}
-
-                    <div className="text-center">
-                        <button
-                            onClick={() => {
-                                setIsDuplicateResponse(false);
-                                setExistingResponse(null);
-                                if (survey.email_required) {
+                        )}
+                        
+                        {/* 이메일 필수인 경우에만 다른 이메일 시도 버튼 표시 */}
+                        {survey.email_required && (
+                            <button
+                                onClick={() => {
+                                    setIsDuplicateResponse(false);
+                                    setExistingResponse(null);
                                     setIsEmailVerified(false);
                                     setRespondentId('');
                                     setEmailError('');
-                                } else {
-                                    // URL 파라미터 경우는 페이지를 떠나도록 유도
-                                    window.history.back();
-                                }
-                            }}
-                            className="w-full px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all duration-200"
-                        >
-                            {survey.email_required ? '다른 이메일로 다시 시도' : '이전 페이지로 돌아가기'}
-                        </button>
+                                }}
+                                className="w-full px-8 py-4 bg-gray-600 text-white rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-200"
+                            >
+                                다른 이메일로 다시 시도
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

@@ -156,12 +156,6 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
-                    <Link
-                      href={`/dashboard/forms/${survey.id}/edit`}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      수정
-                    </Link>
                     <button
                       onClick={() => setDeleteModal({ isOpen: true, survey })}
                       className="text-red-600 hover:text-red-900"

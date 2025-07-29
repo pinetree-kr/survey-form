@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export async function createClient(env: CloudflareEnv, serviceRoleKey?: string) {
+export async function createClient(env: CloudflareEnv) {
     const cookieStore = await cookies()
 
     return createServerClient(

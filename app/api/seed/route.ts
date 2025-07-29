@@ -4,14 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const { env } = await getCloudflareContext({ async: true });
-  const supabase = await createClient(env, env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = await createClient(env);
 
   try {
     console.log('🌱 시작: API를 통한 시드 데이터 삽입...')
 
     // 1. 사용자 데이터 삽입
     console.log('👤 사용자 데이터 삽입 중...')
-    
+
     const users = [
       {
         id: '11111111-1111-1111-1111-111111111111',
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 설문 데이터 삽입
     console.log('📝 설문 데이터 삽입 중...')
-    
+
     const surveyData = {
       id: '33333333-3333-3333-3333-333333333333',
       title: '샘플 설문조사',
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       url_param_required: false,
       email_required: false,
       url_param_name: 'rid',
-      allow_email_response_view: false,
+      allow_response_view: false,
       allow_duplicate_responses: true,
       created_by: '11111111-1111-1111-1111-111111111111'
     }
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
     // 3. 샘플 응답 데이터 삽입 (선택사항)
     console.log('📊 응답 데이터 삽입 중...')
-    
+
     const responseData = {
       id: '44444444-4444-4444-4444-444444444444',
       survey_id: '33333333-3333-3333-3333-333333333333',
@@ -157,9 +157,9 @@ export async function POST(request: NextRequest) {
 
     console.log('🎉 시드 데이터 삽입 완료!')
 
-    return NextResponse.json({ 
-      success: true, 
-      message: '시드 데이터가 성공적으로 삽입되었습니다.' 
+    return NextResponse.json({
+      success: true,
+      message: '시드 데이터가 성공적으로 삽입되었습니다.'
     })
 
   } catch (error) {

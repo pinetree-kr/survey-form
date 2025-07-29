@@ -34,15 +34,15 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
 
   const handleCopyLink = async () => {
     if (!survey) return
-    
+
     const baseUrl = window.location.origin
     let surveyUrl = `${baseUrl}/forms/${survey.id}`
-    
+
     // URL 파라미터가 설정되어 있다면 해당 파라미터를 포함한 URL 생성
     if (survey.url_param_required && survey.url_param_name) {
       surveyUrl += `?${survey.url_param_name}=`
     }
-    
+
     try {
       await navigator.clipboard.writeText(surveyUrl)
       setCopySuccess(true)
@@ -120,11 +120,10 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                   </div>
                   <button
                     onClick={() => handleCopyLink()}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      copySuccess
-                        ? 'bg-green-600 text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${copySuccess
+                      ? 'bg-green-600 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
                   >
                     {copySuccess ? (
                       <div className="flex items-center space-x-1">
@@ -143,7 +142,7 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                     )}
                   </button>
                 </div>
-                
+
                 {survey.url_param_required && (
                   <div className="mt-2">
                     <p className="text-xs text-gray-500 mb-1">URL 파라미터 사용 예시:</p>

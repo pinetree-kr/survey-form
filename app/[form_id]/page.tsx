@@ -29,8 +29,8 @@ export default async function FormViewPage({
     // URL 파라미터에서 응답자 ID 확인
     const paramsObj = await searchParams;
     const paramName = survey.url_param_name || 'rid';
-    const urlRespondentId = Array.isArray(paramsObj[paramName]) 
-        ? paramsObj[paramName]?.[0] 
+    const urlRespondentId = Array.isArray(paramsObj[paramName])
+        ? paramsObj[paramName]?.[0]
         : paramsObj[paramName];
 
     // URL 파라미터가 있고 중복이 허용되지 않는 경우 중복 확인
@@ -46,7 +46,7 @@ export default async function FormViewPage({
             // 중복 응답이 있는 경우 에러 페이지로 리다이렉트하거나 메시지 표시
             return new Response(
                 JSON.stringify({ error: '이미 응답한 사용자입니다.' }),
-                { 
+                {
                     status: 400,
                     headers: { 'Content-Type': 'application/json' }
                 }
@@ -73,7 +73,7 @@ export default async function FormViewPage({
         created_by: survey.created_by,
         updated_by: survey.updated_by
     };
-
+    console.log({ surveyData })
     return (
         <div>
             <SurveyForm survey={surveyData} />
