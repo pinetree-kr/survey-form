@@ -82,6 +82,10 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         handleDebouncedUpdate({ url_param_name: e.target.value });
     }, [handleDebouncedUpdate]);
 
+    const handleWebhookUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        handleDebouncedUpdate({ webhook_url: e.target.value });
+    }, [handleDebouncedUpdate]);
+
     // 토글 버튼 핸들러들
     const handleIsActiveToggle = useCallback(() => {
         handleImmediateUpdate({ is_active: !localSurvey.is_active });
@@ -89,35 +93,35 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
 
     const handleAllowAnonymousToggle = useCallback(() => {
         const newAllowAnonymous = !localSurvey.allow_anonymous;
-        
+
         // 익명 허용을 끄면서 중복 응답이 허용되지 않는 경우, 이메일 필수 또는 URL 파라미터 중 하나는 켜져야 함
         if (!newAllowAnonymous && !localSurvey.allow_duplicate_responses) {
             if (!localSurvey.email_required && !localSurvey.url_param_required) {
                 // 이메일 필수를 자동으로 켜기
-                handleImmediateUpdate({ 
+                handleImmediateUpdate({
                     allow_anonymous: newAllowAnonymous,
-                    email_required: true 
+                    email_required: true
                 });
                 return;
             }
         }
-        
+
         handleImmediateUpdate({ allow_anonymous: newAllowAnonymous });
     }, [localSurvey.allow_anonymous, localSurvey.allow_duplicate_responses, localSurvey.email_required, localSurvey.url_param_required, handleImmediateUpdate]);
 
     const handleEmailRequiredToggle = useCallback(() => {
         const newEmailRequired = !localSurvey.email_required;
-        
+
         // 이메일 필수를 끄려고 할 때, 중복 응답이 허용되지 않고 URL 파라미터도 꺼져 있으면 끌 수 없음
         if (!newEmailRequired && !localSurvey.allow_duplicate_responses && !localSurvey.url_param_required) {
             // URL 파라미터를 자동으로 켜기
-            handleImmediateUpdate({ 
+            handleImmediateUpdate({
                 email_required: newEmailRequired,
                 url_param_required: true
             });
             return;
         }
-        
+
         handleImmediateUpdate({ email_required: newEmailRequired });
     }, [localSurvey.email_required, localSurvey.allow_duplicate_responses, localSurvey.url_param_required, handleImmediateUpdate]);
 
@@ -131,43 +135,43 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
 
     const handleUrlParamRequiredToggle = useCallback(() => {
         const newUrlParamRequired = !localSurvey.url_param_required;
-        
+
         // URL 파라미터를 끄려고 할 때, 중복 응답이 허용되지 않고 이메일 필수도 꺼져 있으면 끌 수 없음
         if (!newUrlParamRequired && !localSurvey.allow_duplicate_responses && !localSurvey.email_required) {
             // 이메일 필수를 자동으로 켜기
-            handleImmediateUpdate({ 
+            handleImmediateUpdate({
                 url_param_required: newUrlParamRequired,
                 email_required: true
             });
             return;
         }
-        
+
         handleImmediateUpdate({ url_param_required: newUrlParamRequired });
     }, [localSurvey.url_param_required, localSurvey.allow_duplicate_responses, localSurvey.email_required, handleImmediateUpdate]);
 
     const handleAllowDuplicateResponsesToggle = useCallback(() => {
         const newAllowDuplicate = !localSurvey.allow_duplicate_responses;
-        
+
         // 중복 응답을 허용하지 않는 경우
         if (!newAllowDuplicate) {
-            const updates: Partial<Omit<TSurvey, 'questions'>> = { 
-                allow_duplicate_responses: newAllowDuplicate 
+            const updates: Partial<Omit<TSurvey, 'questions'>> = {
+                allow_duplicate_responses: newAllowDuplicate
             };
-            
+
             // 익명 허용이 켜져 있으면 끄기
             if (localSurvey.allow_anonymous) {
                 updates.allow_anonymous = false;
             }
-            
+
             // 이메일 필수와 URL 파라미터가 모두 꺼져 있으면 이메일 필수를 켜기
             if (!localSurvey.email_required && !localSurvey.url_param_required) {
                 updates.email_required = true;
             }
-            
+
             handleImmediateUpdate(updates);
             return;
         }
-        
+
         handleImmediateUpdate({ allow_duplicate_responses: newAllowDuplicate });
     }, [localSurvey.allow_duplicate_responses, localSurvey.allow_anonymous, localSurvey.email_required, localSurvey.url_param_required, handleImmediateUpdate]);
 
@@ -218,6 +222,16 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
             className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
     ), [localSurvey.url_param_name, handleUrlParamNameChange]);
+
+    const webhookUrlInput = useMemo(() => (
+        <input
+            type="url"
+            value={localSurvey.webhook_url || ''}
+            onChange={handleWebhookUrlChange}
+            placeholder="https://your-server.com/webhook"
+            className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+    ), [localSurvey.webhook_url, handleWebhookUrlChange]);
 
     // 시간 입력 필드들
     const opensAtInput = useMemo(() => {
@@ -362,13 +376,12 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                             type="button"
                             onClick={handleAllowAnonymousToggle}
                             disabled={!localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                                !localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${!localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous
                                     ? 'bg-gray-300 cursor-not-allowed'
-                                    : localSurvey.allow_anonymous 
-                                        ? 'bg-blue-600' 
+                                    : localSurvey.allow_anonymous
+                                        ? 'bg-blue-600'
                                         : 'bg-gray-200'
-                            }`}
+                                }`}
                         >
                             <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.allow_anonymous ? 'translate-x-6' : 'translate-x-1'
@@ -533,67 +546,80 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                                     허용된 응답자 목록 (화이트리스트)
                                 </label>
                                 <p className="text-xs text-gray-500">
-                                    목록에 있는 응답자만 설문에 참여할 수 있습니다
+                                    목록에 있는 응답자만 설문에 참여할 수 있습니다. 비워두면 모두 허용됩니다.
                                 </p>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const isEnabled = localSurvey.allowed_list !== null;
-                                    handleImmediateUpdate({ 
-                                        allowed_list: isEnabled ? null : [] 
-                                    });
-                                }}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                                    localSurvey.allowed_list !== null ? 'bg-blue-600' : 'bg-gray-200'
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        localSurvey.allowed_list !== null ? 'translate-x-6' : 'translate-x-1'
-                                    }`}
-                                />
-                            </button>
                         </div>
 
                         {/* 화이트리스트가 활성화된 경우 관리 UI */}
-                        {localSurvey.allowed_list !== null && (
-                            <div className="ml-6 space-y-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        허용된 응답자 추가
-                                    </label>
-                                    <textarea
-                                        rows={4}
-                                        placeholder="응답자 ID를 한 줄씩 입력하세요&#10;예:&#10;user@example.com&#10;user123&#10;another@email.com"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        onChange={(e) => {
-                                            const identifiers = e.target.value
-                                                .split('\n')
-                                                .map(line => line.trim())
-                                                .filter(line => line.length > 0);
-                                            handleImmediateUpdate({ allowed_list: identifiers });
-                                        }}
-                                        value={localSurvey.allowed_list?.join('\n') || ''}
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        이메일 주소, 사용자 ID 등을 한 줄씩 입력하세요
-                                    </p>
-                                </div>
+                        <div className="ml-6 space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    허용된 응답자 추가
+                                </label>
+                                <textarea
+                                    rows={4}
+                                    placeholder="응답자 ID를 한 줄씩 입력하세요&#10;예:&#10;user@example.com&#10;user123&#10;another@email.com"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    onChange={(e) => {
+                                        const identifiers = e.target.value
+                                            .split('\n')
+                                            .map(line => line.trim())
+                                            .filter(line => line.length > 0);
+                                        handleImmediateUpdate({ allowed_list: identifiers });
+                                    }}
+                                    value={localSurvey.allowed_list?.join('\n') || ''}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    이메일 주소, 사용자 ID 등을 한 줄씩 입력하세요
+                                </p>
+                            </div>
 
-                                {/* 현재 등록된 응답자 수 표시 */}
-                                {localSurvey.allowed_list && localSurvey.allowed_list.length > 0 && (
-                                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                                        <div className="flex items-center">
-                                            <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
-                                            <span className="text-blue-800 text-sm font-medium">
-                                                {localSurvey.allowed_list.length}명의 응답자가 등록되었습니다
-                                            </span>
-                                        </div>
+                            {/* 현재 등록된 응답자 수 표시 */}
+                            {localSurvey.allowed_list && localSurvey.allowed_list.length > 0 && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                    <div className="flex items-center">
+                                        <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        <span className="text-blue-800 text-sm font-medium">
+                                            {localSurvey.allowed_list.length}명의 응답자가 등록되었습니다
+                                        </span>
                                     </div>
-                                )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Webhook 설정 */}
+                    <div className="border-t border-gray-200 pt-6 mt-6">
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Webhook URL
+                            </label>
+                            <p className="text-xs text-gray-500 mb-3">
+                                응답자가 설문을 제출할 때마다 이 URL로 POST 요청을 보냅니다. 비워두면 webhook을 사용하지 않습니다.
+                            </p>
+                            {webhookUrlInput}
+                            <p className="text-xs text-gray-500 mt-2">
+                                예: https://your-server.com/webhook/survey-response
+                            </p>
+                        </div>
+
+                        {/* Webhook 정보 안내 */}
+                        {localSurvey.webhook_url && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                <div className="flex">
+                                    <svg className="w-4 h-4 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="text-sm text-blue-800">
+                                        <p className="font-medium mb-1">Webhook 페이로드 형식:</p>
+                                        <code className="text-xs bg-blue-100 px-2 py-1 rounded">
+                                            {`{ "survey_id": "...", "response_id": "...", "respondent_id": "...", "answers": {...}, "completed_at": "..." }`}
+                                        </code>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

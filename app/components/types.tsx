@@ -89,6 +89,7 @@ export type TSurvey = {
     allow_response_modification?: boolean;
     allow_duplicate_responses?: boolean;
     allowed_list?: string[] | null; // 허용된 응답자 목록 (null이면 화이트리스트 미사용)
+    webhook_url?: string | null; // 응답 제출 시 호출할 webhook URL
     opens_at?: string | null;
     closes_at?: string | null;
     questions: TQuestion[];

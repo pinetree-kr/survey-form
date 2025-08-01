@@ -2,6 +2,26 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createClient } from '@/lib/supabase-ssr'
 import { NextRequest, NextResponse } from "next/server";
 
+// Webhook 호출 함수
+async function callWebhook(webhookUrl: string, payload: any) {
+    const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Survey-Form-Webhook/1.0'
+        },
+        body: JSON.stringify(payload),
+        // 5초 타임아웃 설정
+        signal: AbortSignal.timeout(5000)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response;
+}
+
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -14,7 +34,7 @@ export async function POST(
         // 설문 존재 여부 및 설정 확인
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, allow_anonymous, is_active, url_param_required, email_required, url_param_name, allow_duplicate_responses, allow_response_view, allow_response_modification, opens_at, closes_at, allowed_list')
+            .select('id, allow_anonymous, is_active, url_param_required, email_required, url_param_name, allow_duplicate_responses, allow_response_view, allow_response_modification, opens_at, closes_at, allowed_list, webhook_url')
             .eq('id', surveyId)
             .single();
 
@@ -151,10 +171,54 @@ export async function POST(
             return NextResponse.json({ error: '응답 저장에 실패했습니다.' }, { status: 500 });
         }
 
+        // Webhook 호출 (동기적으로 처리)
+        if (survey.webhook_url) {
+            try {
+                await callWebhook(survey.webhook_url, {
+                    survey_id: surveyId,
+                    response_id: response.id,
+                    respondent_id: finalRespondent,
+                    email: finalEmail,
+                    is_anonymous: finalIsAnonymous,
+                    answers: answers,
+                    completed_at: response.completed_at,
+                    ip_address: ipAddress,
+                    user_agent: userAgent
+                });
+            } catch (error) {
+                console.error('Webhook 호출 실패:', error);
+                // webhook 실패는 응답 저장에 영향을 주지 않음 (로그만 남김)
+            }
+        }
+
+        // redirect_uri가 제공된 경우 리다이렉트 URL 생성
+        const url = new URL(request.url);
+        const redirectUri = url.searchParams.get('redirect_uri');
+        const state = url.searchParams.get('state');
+
+        let redirectUrl = null;
+        if (redirectUri) {
+            try {
+                const redirectURL = new URL(redirectUri);
+                redirectURL.searchParams.set('response_id', response.id);
+                redirectURL.searchParams.set('survey_id', surveyId);
+                if (state) {
+                    redirectURL.searchParams.set('state', state);
+                }
+                if (!finalIsAnonymous && finalRespondent) {
+                    redirectURL.searchParams.set('respondent_id', finalRespondent);
+                }
+                redirectUrl = redirectURL.toString();
+            } catch (error) {
+                console.error('리다이렉트 URL 생성 실패:', error);
+            }
+        }
+
         return NextResponse.json({
             success: true,
             response_id: response.id,
-            is_anonymous: isAnonymous
+            is_anonymous: isAnonymous,
+            redirect_url: redirectUrl
         });
 
     } catch (error) {
