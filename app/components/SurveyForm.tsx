@@ -2,7 +2,7 @@
 
 import React from "react";
 import { TSurvey } from "./types";
-import SurveyFormCore from "./SurveyFormCore";
+import SurveyFormWrapper from "./SurveyFormWrapper";
 
 type Answer = {
     questionId: string;
@@ -91,7 +91,7 @@ export default function SurveyForm({
     };
 
     return (
-        <SurveyFormCore
+        <SurveyFormWrapper
             survey={survey}
             initialRespondentId={initialRespondentId}
             isPreview={false}
