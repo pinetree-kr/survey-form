@@ -56,11 +56,12 @@ export async function POST(
         const urlParamName = survey.url_param_name || 'rid';
         const urlRespondentId = searchParams.get(urlParamName);
 
-        // 중복 응답 확인을 위한 조건 구성
+        // 중복 응답 확인을 위한 조건 구성 (덮어쓰인 응답 제외)
         const query = supabase
             .from('survey_responses')
             .select('id, answers, completed_at, respondent, email')
-            .eq('survey_id', surveyId);
+            .eq('survey_id', surveyId)
+            .eq('is_overwritten', false);
 
         // 확인할 조건들
         const conditions: string[] = [];

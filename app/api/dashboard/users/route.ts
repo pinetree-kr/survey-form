@@ -90,7 +90,7 @@ import { Database } from '@/app/types'
 
 export async function DELETE(request: NextRequest) {
     const { env } = await getCloudflareContext({ async: true });
-    const supabase = await createClient(env, env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = await createClient(env);
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 

@@ -243,6 +243,19 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
                                 </svg>
                                 Export
                             </button>
+                            {surveyId && (
+                                <button
+                                    type="button"
+                                    onClick={() => window.location.href = `/dashboard/forms/${surveyId}/preview`}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-200 btn-hover-lift flex items-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    미리보기
+                                </button>
+                            )}
                         </div>
                         <div className="flex space-x-3">
                             <button
@@ -250,7 +263,7 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
                                 onClick={() => window.location.href = '/dashboard/forms'}
                                 className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-all duration-200 btn-hover-lift"
                             >
-                                취소
+                                목록으로
                             </button>
                             <button
                                 type="button"

@@ -7,7 +7,7 @@
   "url_param_required": true,
   "email_required": true,
   "url_param_name": "rid",
-  "allow_email_response_view": true,
+  "allow_response_view": true,
   "allow_duplicate_responses": true,
   "opens_at": null,
   "closes_at": null,

@@ -28,7 +28,7 @@ export async function GET(
         // 설문 존재 여부 및 이메일 조회 허용 여부 확인
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, allow_email_response_view')
+            .select('id, allow_response_view')
             .eq('id', surveyId)
             .single();
 
@@ -36,7 +36,7 @@ export async function GET(
             return NextResponse.json({ error: '설문을 찾을 수 없습니다.' }, { status: 404 });
         }
 
-        if (!survey.allow_email_response_view) {
+        if (!survey.allow_response_view) {
             return NextResponse.json({ error: '이 설문은 이메일로 응답 조회를 허용하지 않습니다.' }, { status: 403 });
         }
 

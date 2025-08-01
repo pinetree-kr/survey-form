@@ -78,6 +78,7 @@ export function FormEditorProvider({
     React.useEffect(() => {
         if (!initialData?.closes_at && formBasicInfo.closes_at === "") {
             const defaultCloseDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
             setFormBasicInfo(prev => ({ ...prev, closes_at: defaultCloseDate }));
         }
     }, [initialData?.closes_at, formBasicInfo.closes_at]);

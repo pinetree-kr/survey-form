@@ -59,6 +59,11 @@ export function ResponseList({ surveys }: ResponseListProps) {
     })
   }
 
+  const isDeadlinePassed = (closesAt: string | null) => {
+    if (!closesAt) return false;
+    return new Date() > new Date(closesAt);
+  }
+
   return (
     <div className="space-y-6">
       {/* 통계 카드 */}
@@ -200,9 +205,19 @@ export function ResponseList({ surveys }: ResponseListProps) {
                                   </span>
                                 )}
                               </div>
-                                                             <span className="text-sm text-gray-500">
-                                 {formatDateTime(response.completed_at || response.started_at)}
-                               </span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-gray-500">
+                                  {formatDateTime(response.completed_at || response.started_at)}
+                                </span>
+                                {survey.allow_response_modification && !isDeadlinePassed(survey.closes_at) && (
+                                  <a
+                                    href={`/forms/${survey.id}/edit/${response.id}${survey.url_param_required && response.respondent ? `?${survey.url_param_name || 'rid'}=${response.respondent}` : ''}`}
+                                    className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                                  >
+                                    수정
+                                  </a>
+                                )}
+                              </div>
                             </div>
                             
                                                          <div className="space-y-2">

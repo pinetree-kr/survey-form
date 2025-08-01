@@ -77,9 +77,6 @@ export default async function FormViewPage({
                             <p className="text-red-700 text-sm mb-2">
                                 URL에 <code className="bg-red-100 px-1 rounded">{urlParamName}</code> 파라미터가 필요합니다.
                             </p>
-                            <p className="text-red-700 text-sm">
-                                예: <code className="bg-red-100 px-1 rounded">?{urlParamName}=user123</code>
-                            </p>
                         </div>
 
                         <p className="text-gray-500 text-sm">
