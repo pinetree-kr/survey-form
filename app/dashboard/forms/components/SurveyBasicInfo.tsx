@@ -646,7 +646,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                                     value={localSurvey.allowed_list?.join('\n') || ''}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
-                                    이메일 주소, 사용자 ID 등을 한 줄씩 입력하세요
+                                    이메일 주소, 응답자 ID 등을 한 줄씩 입력하세요
                                 </p>
                             </div>
 

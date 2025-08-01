@@ -114,7 +114,7 @@ export default function SurveyList({ surveys, deleteSurvey, userRole }: SurveyLi
                   <div>
                     <div className="text-sm font-medium text-gray-900">
                       <Link
-                        href={`/dashboard/forms/${survey.id}/edit`}
+                        href={`/dashboard/forms/${survey.id}`}
                         className="text-blue-600 hover:text-blue-900 hover:underline"
                       >
                         {survey.title}

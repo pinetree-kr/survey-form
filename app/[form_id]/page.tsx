@@ -54,6 +54,15 @@ export default async function FormViewPage({
         }
     }
 
+    if (survey.allowed_list && survey.allowed_list.length > 0) {
+        if (!survey.allowed_list.includes(urlRespondentId)) {
+            return new Response(
+                JSON.stringify({ error: '허용된 응답자가 아닙니다.' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
+    }
+
     // 설문 데이터를 TSurvey 타입으로 변환
     const surveyData: TSurvey = {
         id: survey.id,
@@ -71,7 +80,7 @@ export default async function FormViewPage({
         created_at: survey.created_at,
         updated_at: survey.updated_at,
         created_by: survey.created_by,
-        updated_by: survey.updated_by
+        updated_by: survey.updated_by,
     };
     console.log({ surveyData })
     return (
