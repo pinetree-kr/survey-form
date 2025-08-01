@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase-ssr"
+import { createClient as createClientBrowser } from "@/lib/supabase-browser"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { redirect } from "next/navigation"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 export const handleSignUp = async (email: string, password: string) => {
     'use server'
@@ -43,17 +45,25 @@ export const handleLogin = async (email: string, password: string) => {
 
 
 
-export const verifyAccessToken = async (redirect_url: string) => {
-    'use server'
+// export const verifyAccessToken = async (redirect_url: string) => {
+//     'use server'
 
-    const { env } = await getCloudflareContext({ async: true })
-    // const supabase = createSupabaseClient(env)
+//     const { env } = await getCloudflareContext({ async: true })
+//     // const supabase = createSupabaseClient(env)
+//     let supabase: SupabaseClient | null = null
 
-    const supabase = await createClient(env)
-    //   // 현재 사용자 확인 (보안을 위해 getUser() 사용)
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (user && !error) {
-        // // 로그인된 경우 관리자 페이지로 리다이렉트
-        return redirect(redirect_url)
-    }
-}
+//     if (typeof window === 'undefined') {
+//         console.log('server')
+//         supabase = await createClient(env)
+//     } else {
+//         console.log('browser')
+//         supabase = createClientBrowser()
+//     }
+
+//     //   // 현재 사용자 확인 (보안을 위해 getUser() 사용)
+//     const { data: { user }, error } = await supabase.auth.getUser()
+//     if (user && !error) {
+//         // // 로그인된 경우 관리자 페이지로 리다이렉트
+//         return redirect(redirect_url)
+//     }
+// }

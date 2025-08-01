@@ -1,10 +1,9 @@
 import { LoginForm } from '../components'
-import { handleLogin, verifyAccessToken } from '../actions'
+import { handleLogin } from '../actions'
 import Link from 'next/link'
 
 
 export default async function AuthLoginPage() {
-      await verifyAccessToken("/dashboard")
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
