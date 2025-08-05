@@ -209,14 +209,14 @@ export function ResponseList({ surveys }: ResponseListProps) {
                                 <span className="text-sm text-gray-500">
                                   {formatDateTime(response.completed_at || response.started_at)}
                                 </span>
-                                {survey.allow_response_modification && !isDeadlinePassed(survey.closes_at) && (
+                                {/* {survey.allow_response_modification && !isDeadlinePassed(survey.closes_at) && (
                                   <a
-                                    href={`/forms/${survey.id}/edit/${response.id}${survey.url_param_required && response.respondent ? `?${survey.url_param_name || 'rid'}=${response.respondent}` : ''}`}
+                                    href={`/forms/${survey.id}/${response.id}${survey.access_token_required && response.respondent ? `?${survey.access_secret_key || ''}=${response.respondent}` : ''}`}
                                     className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
                                   >
                                     수정
                                   </a>
-                                )}
+                                )} */}
                               </div>
                             </div>
                             

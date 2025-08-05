@@ -27,9 +27,9 @@ async function getSurvey(surveyId: string) {
       questions,
       is_active,
       allow_anonymous,
-      url_param_required,
+      access_token_required,
+      access_secret_key,
       email_required,
-      url_param_name,
       allow_response_view,
       allow_response_modification,
       allow_duplicate_responses,
@@ -47,6 +47,7 @@ async function getSurvey(surveyId: string) {
   if (error || !data) {
     return null
   }
+  console.log(data)
 
   return data
 }
@@ -82,6 +83,34 @@ async function handleUpdate(formData: TSurvey, surveyId?: string) {
     }
   }
 
+  // access_token_required 상태에 따른 secret_key 처리
+  let secretKey = formData.access_secret_key || undefined;
+  if (formData.access_token_required && !secretKey) {
+    // access_token_required가 true인데 secret_key가 없으면 자동 생성
+    const { generateSecretKey } = await import('@/lib/access-token');
+    secretKey = generateSecretKey();
+  }
+  // access_token_required가 false여도 기존 secret_key는 유지
+  console.log({
+    update: {
+      title: formData.title,
+      description: formData.description || null,
+      questions: formData.questions || [],
+      allow_anonymous: formData.allow_anonymous ?? false,
+      is_active: formData.is_active !== undefined ? formData.is_active : true,
+      access_token_required: formData.access_token_required ?? false,
+      email_required: formData.email_required ?? false,
+      access_secret_key: secretKey,
+      allow_response_view: formData.allow_response_view ?? false,
+      allow_response_modification: formData.allow_response_modification ?? false,
+      allow_duplicate_responses: formData.allow_duplicate_responses ?? true,
+      allowed_list: formData.allowed_list || null,
+      opens_at: formData.opens_at || null,
+      closes_at: formData.closes_at || null,
+      updated_by: user.id,
+      updated_at: new Date().toISOString()
+    }
+  })
   const { data, error } = await supabase
     .from('surveys')
     .update({
@@ -90,9 +119,9 @@ async function handleUpdate(formData: TSurvey, surveyId?: string) {
       questions: formData.questions || [],
       allow_anonymous: formData.allow_anonymous ?? false,
       is_active: formData.is_active !== undefined ? formData.is_active : true,
-      url_param_required: formData.url_param_required ?? false,
+      access_token_required: formData.access_token_required ?? false,
       email_required: formData.email_required ?? false,
-      url_param_name: formData.url_param_name || 'rid',
+      access_secret_key: secretKey,
       allow_response_view: formData.allow_response_view ?? false,
       allow_response_modification: formData.allow_response_modification ?? false,
       allow_duplicate_responses: formData.allow_duplicate_responses ?? true,

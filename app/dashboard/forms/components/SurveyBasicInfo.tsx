@@ -26,6 +26,8 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
     const [copySuccess, setCopySuccess] = useState(false);
     const [baseUrl, setBaseUrl] = useState('');
     const [rawAllowedListText, setRawAllowedListText] = useState('');
+    const [isSecretKeyRevealed, setIsSecretKeyRevealed] = useState(false);
+    const [showRegenerateModal, setShowRegenerateModal] = useState(false);
     // 로컬 상태로 관리하여 즉시 UI 업데이트
     const [localSurvey, setLocalSurvey] = useState(formBasicInfo);
 
@@ -34,6 +36,8 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         setLocalSurvey(formBasicInfo);
         // 허용된 응답자 목록 텍스트 초기화
         setRawAllowedListText(formBasicInfo.allowed_list?.join('\n') || '');
+        // 시크릿 키 reveal 상태 초기화
+        setIsSecretKeyRevealed(false);
     }, [formBasicInfo]);
 
     // 클라이언트에서 baseUrl 설정
@@ -90,13 +94,20 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         updateFormBasicInfo({ description: trimmedValue });
     }, [updateFormBasicInfo]);
 
-    const handleUrlParamNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        handleDebouncedUpdate({ url_param_name: e.target.value });
-    }, [handleDebouncedUpdate]);
 
     const handleWebhookUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         handleDebouncedUpdate({ webhook_url: e.target.value });
     }, [handleDebouncedUpdate]);
+
+    // 시크릿키 재생성 핸들러
+    const handleRegenerateSecretKey = useCallback(() => {
+        import('@/lib/access-token').then(({ generateSecretKey }) => {
+            const newSecretKey = generateSecretKey();
+            setLocalSurvey(prev => ({ ...prev, access_secret_key: newSecretKey }));
+            updateFormBasicInfo({ access_secret_key: newSecretKey });
+            setShowRegenerateModal(false);
+        });
+    }, [updateFormBasicInfo]);
 
     // 토글 버튼 핸들러들
     const handleIsActiveToggle = useCallback(() => {
@@ -106,9 +117,9 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
     const handleAllowAnonymousToggle = useCallback(() => {
         const newAllowAnonymous = !localSurvey.allow_anonymous;
 
-        // 익명 허용을 끄면서 중복 응답이 허용되지 않는 경우, 이메일 필수 또는 URL 파라미터 중 하나는 켜져야 함
+        // 익명 허용을 끄면서 중복 응답이 허용되지 않는 경우, 이메일 필수 또는 액세스 토큰 필수 중 하나는 켜져야 함
         if (!newAllowAnonymous && !localSurvey.allow_duplicate_responses) {
-            if (!localSurvey.email_required && !localSurvey.url_param_required) {
+            if (!localSurvey.email_required && !localSurvey.access_token_required) {
                 // 이메일 필수를 자동으로 켜기
                 handleImmediateUpdate({
                     allow_anonymous: newAllowAnonymous,
@@ -119,23 +130,23 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         }
 
         handleImmediateUpdate({ allow_anonymous: newAllowAnonymous });
-    }, [localSurvey.allow_anonymous, localSurvey.allow_duplicate_responses, localSurvey.email_required, localSurvey.url_param_required, handleImmediateUpdate]);
+    }, [localSurvey.allow_anonymous, localSurvey.allow_duplicate_responses, localSurvey.email_required, localSurvey.access_token_required, handleImmediateUpdate]);
 
     const handleEmailRequiredToggle = useCallback(() => {
         const newEmailRequired = !localSurvey.email_required;
 
-        // 이메일 필수를 끄려고 할 때, 중복 응답이 허용되지 않고 URL 파라미터도 꺼져 있으면 끌 수 없음
-        if (!newEmailRequired && !localSurvey.allow_duplicate_responses && !localSurvey.url_param_required) {
-            // URL 파라미터를 자동으로 켜기
+        // 이메일 필수를 끄려고 할 때, 중복 응답이 허용되지 않고 액세스 토큰도 꺼져 있으면 끌 수 없음
+        if (!newEmailRequired && !localSurvey.allow_duplicate_responses && !localSurvey.access_token_required) {
+            // 액세스 토큰을 자동으로 켜기
             handleImmediateUpdate({
                 email_required: newEmailRequired,
-                url_param_required: true
+                access_token_required: true
             });
             return;
         }
 
         handleImmediateUpdate({ email_required: newEmailRequired });
-    }, [localSurvey.email_required, localSurvey.allow_duplicate_responses, localSurvey.url_param_required, handleImmediateUpdate]);
+    }, [localSurvey.email_required, localSurvey.allow_duplicate_responses, localSurvey.access_token_required, handleImmediateUpdate]);
 
     const handleAllowResponseViewToggle = useCallback(() => {
         handleImmediateUpdate({ allow_response_view: !localSurvey.allow_response_view });
@@ -145,21 +156,21 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         handleImmediateUpdate({ allow_response_modification: !localSurvey.allow_response_modification });
     }, [localSurvey.allow_response_modification, handleImmediateUpdate]);
 
-    const handleUrlParamRequiredToggle = useCallback(() => {
-        const newUrlParamRequired = !localSurvey.url_param_required;
+    const handleAccessTokenRequiredToggle = useCallback(() => {
+        const newAccessTokenRequired = !localSurvey.access_token_required;
 
-        // URL 파라미터를 끄려고 할 때, 중복 응답이 허용되지 않고 이메일 필수도 꺼져 있으면 끌 수 없음
-        if (!newUrlParamRequired && !localSurvey.allow_duplicate_responses && !localSurvey.email_required) {
+        // 액세스 토큰을 끄려고 할 때, 중복 응답이 허용되지 않고 이메일 필수도 꺼져 있으면 끌 수 없음
+        if (!newAccessTokenRequired && !localSurvey.allow_duplicate_responses && !localSurvey.email_required) {
             // 이메일 필수를 자동으로 켜기
             handleImmediateUpdate({
-                url_param_required: newUrlParamRequired,
+                access_token_required: newAccessTokenRequired,
                 email_required: true
             });
             return;
         }
 
-        handleImmediateUpdate({ url_param_required: newUrlParamRequired });
-    }, [localSurvey.url_param_required, localSurvey.allow_duplicate_responses, localSurvey.email_required, handleImmediateUpdate]);
+        handleImmediateUpdate({ access_token_required: newAccessTokenRequired });
+    }, [localSurvey.access_token_required, localSurvey.allow_duplicate_responses, localSurvey.email_required, handleImmediateUpdate]);
 
     const handleAllowDuplicateResponsesToggle = useCallback(() => {
         const newAllowDuplicate = !localSurvey.allow_duplicate_responses;
@@ -175,8 +186,8 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                 updates.allow_anonymous = false;
             }
 
-            // 이메일 필수와 URL 파라미터가 모두 꺼져 있으면 이메일 필수를 켜기
-            if (!localSurvey.email_required && !localSurvey.url_param_required) {
+            // 이메일 필수와 액세스 토큰이 모두 꺼져 있으면 이메일 필수를 켜기
+            if (!localSurvey.email_required && !localSurvey.access_token_required) {
                 updates.email_required = true;
             }
 
@@ -185,7 +196,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         }
 
         handleImmediateUpdate({ allow_duplicate_responses: newAllowDuplicate });
-    }, [localSurvey.allow_duplicate_responses, localSurvey.allow_anonymous, localSurvey.email_required, localSurvey.url_param_required, handleImmediateUpdate]);
+    }, [localSurvey.allow_duplicate_responses, localSurvey.allow_anonymous, localSurvey.email_required, localSurvey.access_token_required, handleImmediateUpdate]);
 
     // 시간 설정 핸들러들
     const handleOpensAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,15 +236,81 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         />
     ), [localSurvey.description, handleDescriptionChange, handleDescriptionBlur]);
 
-    const urlParamNameInput = useMemo(() => (
-        <input
-            type="text"
-            value={localSurvey.url_param_name}
-            onChange={handleUrlParamNameChange}
-            placeholder="id"
-            className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-    ), [localSurvey.url_param_name, handleUrlParamNameChange]);
+    const secretKeyDisplay = useMemo(() => {
+        if (!localSurvey.access_secret_key) {
+            return (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-start">
+                        <svg className="w-4 h-4 text-yellow-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="text-sm text-yellow-800">
+                            <p className="font-medium">시크릿 키 자동 생성</p>
+                            <p className="mt-1">설문을 저장하면 시크릿 키가 자동으로 생성됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        return (
+            <div className="space-y-3">
+                {!isSecretKeyRevealed ? (
+                    // 숨겨진 상태
+                    <div className="flex items-center space-x-2">
+                        <div className="flex-1 border rounded px-3 py-2 text-sm bg-gray-50 font-mono text-gray-400">
+                            ••••••••••••••••••••••••••••••••
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsSecretKeyRevealed(true)}
+                            className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors flex items-center gap-1"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            표시
+                        </button>
+                    </div>
+                ) : (
+                    // 보여진 상태
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="text"
+                            value={localSurvey.access_secret_key}
+                            readOnly
+                            className="flex-1 border rounded px-3 py-2 text-sm bg-gray-50 font-mono text-gray-600"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                navigator.clipboard.writeText(localSurvey.access_secret_key!);
+                                setCopySuccess(true);
+                                setTimeout(() => setCopySuccess(false), 2000);
+                            }}
+                            className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors flex items-center gap-1"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            {copySuccess ? '복사됨' : '복사'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowRegenerateModal(true)}
+                            className="px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors flex items-center gap-1"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            재생성
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }, [localSurvey.access_secret_key, isSecretKeyRevealed, copySuccess]);
 
     const webhookUrlInput = useMemo(() => (
         <input
@@ -341,17 +418,17 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                                 </button>
                             </div>
 
-                            {localSurvey.url_param_required && (
+                            {localSurvey.access_token_required && (
                                 <div className="mt-2">
-                                    <p className="text-xs text-gray-500 mb-1">URL 파라미터 사용 예시:</p>
+                                    <p className="text-xs text-gray-500 mb-1">액세스 토큰 사용 예시:</p>
                                     <div className="flex items-center space-x-2">
                                         <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-mono text-xs">
-                                            {baseUrl ? `${baseUrl}/forms/${localSurvey.id}?${localSurvey.url_param_name || 'rid'}=` : 'URL 로딩 중...'}
+                                            {baseUrl ? `${baseUrl}/forms/${localSurvey.id}?token=your_token` : 'URL 로딩 중...'}
                                         </div>
                                         <button
                                             onClick={() => {
-                                                const paramUrl = `${baseUrl}/forms/${localSurvey.id}?${localSurvey.url_param_name || 'rid'}=`;
-                                                navigator.clipboard.writeText(paramUrl);
+                                                const clipUrl = `${baseUrl}/forms/${localSurvey.id}`;
+                                                navigator.clipboard.writeText(clipUrl);
                                                 setCopySuccess(true);
                                                 setTimeout(() => setCopySuccess(false), 2000);
                                             }}
@@ -474,9 +551,9 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                             <p className="text-xs text-gray-500">
                                 설문 완료 시 이메일을 입력받아 응답자를 식별합니다
                             </p>
-                            {!localSurvey.allow_duplicate_responses && localSurvey.email_required && !localSurvey.url_param_required && (
+                            {!localSurvey.allow_duplicate_responses && localSurvey.email_required && !localSurvey.access_token_required && (
                                 <p className="text-xs text-red-600 mt-1 font-medium">
-                                    ⚠️ 중복 응답이 허용되지 않을 때는 이메일 필수 또는 URL 파라미터 필수 중 하나는 필요합니다
+                                    ⚠️ 중복 응답이 허용되지 않을 때는 이메일 필수 또는 액세스 토큰 필수 중 하나는 필요합니다
                                 </p>
                             )}
                         </div>
@@ -494,43 +571,43 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     </div>
 
 
-                    {/* URL 파라미터 필수 */}
+                    {/* 액세스 토큰 필수 */}
                     <div className="flex items-center justify-between">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                URL 파라미터 필수
+                                액세스 토큰 필수
                             </label>
                             <p className="text-xs text-gray-500">
-                                URL의 쿼리 파라미터로 응답자 ID를 받습니다
+                                설문 접근 시 액세스 토큰을 요구합니다
                             </p>
-                            {!localSurvey.allow_duplicate_responses && !localSurvey.email_required && localSurvey.url_param_required && (
+                            {!localSurvey.allow_duplicate_responses && !localSurvey.email_required && localSurvey.access_token_required && (
                                 <p className="text-xs text-red-600 mt-1 font-medium">
-                                    ⚠️ 중복 응답이 허용되지 않을 때는 이메일 필수 또는 URL 파라미터 필수 중 하나는 필요합니다
+                                    ⚠️ 중복 응답이 허용되지 않을 때는 이메일 필수 또는 액세스 토큰 필수 중 하나는 필요합니다
                                 </p>
                             )}
                         </div>
                         <button
                             type="button"
-                            onClick={handleUrlParamRequiredToggle}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.url_param_required ? 'bg-blue-600' : 'bg-gray-200'
+                            onClick={handleAccessTokenRequiredToggle}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${localSurvey.access_token_required ? 'bg-blue-600' : 'bg-gray-200'
                                 }`}
                         >
                             <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.url_param_required ? 'translate-x-6' : 'translate-x-1'
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${localSurvey.access_token_required ? 'translate-x-6' : 'translate-x-1'
                                     }`}
                             />
                         </button>
                     </div>
 
-                    {/* URL 파라미터 이름 설정 */}
-                    {localSurvey.url_param_required && (
+                    {/* 시크릿 키 표시 */}
+                    {localSurvey.access_token_required && (
                         <div className="ml-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                URL 파라미터 이름
+                                시크릿 키
                             </label>
-                            {urlParamNameInput}
+                            {secretKeyDisplay}
                             <p className="text-xs text-gray-500 mt-1">
-                                예: ?{localSurvey.url_param_name || 'id'}=user123
+                                이 키는 액세스 토큰 검증에 사용됩니다. 안전하게 보관하세요.
                             </p>
                         </div>
                     )}
@@ -564,7 +641,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     </div>
 
                     {/* 식별자로 응답 확인 */}
-                    {(localSurvey.email_required || localSurvey.url_param_required) && (
+                    {(localSurvey.email_required || localSurvey.access_token_required) && (
                         <div className="flex items-center justify-between">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -589,7 +666,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     )}
 
                     {/* 응답 수정 허용 */}
-                    {(localSurvey.email_required || localSurvey.url_param_required) && !localSurvey.allow_duplicate_responses && (
+                    {(localSurvey.email_required || localSurvey.access_token_required) && !localSurvey.allow_duplicate_responses && (
                         <div className="flex items-center justify-between">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -700,6 +777,46 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     </div>
                 </div>
             </div>
+
+            {/* Secret Key Regenerate Modal */}
+            {showRegenerateModal && (
+                <div className="fixed inset-0 bg-gray-50/30 flex items-center justify-center z-50">
+                    <div className="mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div className="mt-3 text-center">
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100">
+                                <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">시크릿 키 재생성</h3>
+                            <div className="mt-2 px-7 py-3">
+                                <p className="text-sm text-gray-500">
+                                    시크릿 키를 재생성하면 기존에 발급된 모든 액세스 토큰이 무효화됩니다. 
+                                    계속하시겠습니까?
+                                </p>
+                            </div>
+                            <div className="items-center px-4 py-3">
+                                <div className="flex space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRegenerateModal(false)}
+                                        className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleRegenerateSecretKey}
+                                        className="px-4 py-2 bg-orange-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    >
+                                        재생성
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }); 

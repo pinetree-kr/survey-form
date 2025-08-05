@@ -41,7 +41,7 @@ export async function POST(
         // 설문 존재 여부 및 설정 확인
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, allow_anonymous, is_active, url_param_required, email_required, url_param_name, allow_duplicate_responses, allow_response_view, allow_response_modification, opens_at, closes_at, allowed_list, webhook_url')
+            .select('id, allow_anonymous, is_active, access_token_required, access_secret_key, email_required, allow_duplicate_responses, allow_response_view, allow_response_modification, opens_at, closes_at, allowed_list, webhook_url')
             .eq('id', surveyId)
             .single();
 

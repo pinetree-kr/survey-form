@@ -18,9 +18,9 @@ export async function fetchSurvey(id: string): Promise<TSurvey | null> {
             questions,
             is_active,
             allow_anonymous,
-            url_param_required,
+            access_token_required,
+            access_secret_key,
             email_required,
-            url_param_name,
             allow_response_view,
             allow_duplicate_responses,
             allowed_list,
@@ -47,7 +47,7 @@ export async function fetchSurvey(id: string): Promise<TSurvey | null> {
     if (error || !data) {
       return null
     }
-
+    
     return data
   } catch (error) {
     console.error('설문 데이터 가져오기 실패:', error)

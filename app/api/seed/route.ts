@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
       ],
       is_active: true,
       allow_anonymous: true,
-      url_param_required: false,
+      access_token_required: false,
+      access_secret_key: '',
       email_required: false,
-      url_param_name: 'rid',
       allow_response_view: false,
       allow_duplicate_responses: true,
       created_by: '11111111-1111-1111-1111-111111111111'

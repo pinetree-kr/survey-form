@@ -2,6 +2,8 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createClient } from '@/lib/supabase-ssr';
 import { SurveyForm, TSurvey } from "../components";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { validateAccessToken, extractRespondentFromToken, validateAndParseJWT, generateSecretKey } from '@/lib/access-token';
 
 export default async function FormViewPage({
     params,
@@ -13,6 +15,10 @@ export default async function FormViewPage({
     const { form_id } = await params;
     const { env } = await getCloudflareContext({ async: true });
     const supabase = await createClient(env);
+
+    // x-redirect-url 헤더 확인
+    const headersList = await headers();
+    const redirectUrl = headersList.get('x-redirect-url');
 
     // 설문 데이터 조회
     const { data: survey, error } = await supabase
@@ -26,24 +32,73 @@ export default async function FormViewPage({
         notFound();
     }
 
-    // URL 파라미터에서 응답자 ID 확인
-    const paramsObj = await searchParams;
-    const paramName = survey.url_param_name || 'rid';
-    const urlRespondentId = Array.isArray(paramsObj[paramName])
-        ? paramsObj[paramName]?.[0]
-        : paramsObj[paramName];
+    // access_token_required가 true인데 access_secret_key가 없으면 자동 생성
+    if (survey.access_token_required && !survey.access_secret_key) {
+        const newSecretKey = generateSecretKey();
+        
+        const { error: updateError } = await supabase
+            .from('surveys')
+            .update({ access_secret_key: newSecretKey })
+            .eq('id', survey.id);
+        
+        if (!updateError) {
+            survey.access_secret_key = newSecretKey;
+        }
+    }
 
-    // URL 파라미터가 있고 중복이 허용되지 않는 경우 중복 확인
+    // URL 파라미터에서 액세스 토큰 및 응답자 ID 확인
+    const paramsObj = await searchParams;
+    const accessToken = Array.isArray(paramsObj.token)
+        ? paramsObj.token?.[0]
+        : paramsObj.token;
+
+    // 액세스 토큰이 필수인 경우 검증
+    if (survey.access_token_required && survey.access_secret_key) {
+        if (!accessToken || typeof accessToken !== 'string') {
+            return new Response(
+                JSON.stringify({ error: '액세스 토큰이 필요합니다.' }),
+                {
+                    status: 401,
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+        }
+
+        // 토큰 검증
+        if (!validateAccessToken(accessToken, survey.access_secret_key)) {
+            return new Response(
+                JSON.stringify({ error: '유효하지 않은 액세스 토큰입니다.' }),
+                {
+                    status: 401,
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+        }
+    }
+
+    // respondent ID와 metadata 추출 (JWT 토큰에서만)
+    let urlRespondentId: string | null = null;
+    let tokenMetadata: any = null;
+    
+    if (accessToken && survey.access_token_required && survey.access_secret_key) {
+        // JWT 토큰 파싱하여 응답자 ID와 metadata 추출
+        const tokenPayload = validateAndParseJWT(accessToken, survey.access_secret_key);
+        if (tokenPayload) {
+            urlRespondentId = tokenPayload.aud;
+            tokenMetadata = tokenPayload.metadata;
+        }
+    }
+
+    // 중복 응답 확인 (액세스 토큰이나 다른 식별자가 있고 중복이 허용되지 않는 경우)
     if (urlRespondentId && typeof urlRespondentId === 'string' && !survey.allow_duplicate_responses) {
         const { data: existingResponse, error: checkError } = await supabase
             .from('survey_responses')
             .select('id')
             .eq('survey_id', survey.id)
-            .eq('respondent_id', urlRespondentId)
+            .eq('respondent', urlRespondentId)
             .single();
 
         if (existingResponse) {
-            // 중복 응답이 있는 경우 에러 페이지로 리다이렉트하거나 메시지 표시
             return new Response(
                 JSON.stringify({ error: '이미 응답한 사용자입니다.' }),
                 {
@@ -54,11 +109,12 @@ export default async function FormViewPage({
         }
     }
 
+    // 허용된 응답자 목록 확인
     if (survey.allowed_list && survey.allowed_list.length > 0) {
-        if (!survey.allowed_list.includes(urlRespondentId)) {
+        if (!urlRespondentId || !survey.allowed_list.includes(urlRespondentId)) {
             return new Response(
                 JSON.stringify({ error: '허용된 응답자가 아닙니다.' }),
-                { status: 400, headers: { 'Content-Type': 'application/json' } }
+                { status: 403, headers: { 'Content-Type': 'application/json' } }
             );
         }
     }
@@ -70,22 +126,30 @@ export default async function FormViewPage({
         description: survey.description || '',
         is_active: survey.is_active,
         allow_anonymous: survey.allow_anonymous,
-        url_param_required: survey.url_param_required,
+        access_token_required: survey.access_token_required,
+        access_secret_key: survey.access_secret_key,
         email_required: survey.email_required,
-        url_param_name: survey.url_param_name,
         allow_response_view: survey.allow_response_view,
         allow_response_modification: survey.allow_response_modification,
         allow_duplicate_responses: survey.allow_duplicate_responses,
+        allowed_list: survey.allowed_list,
+        webhook_url: survey.webhook_url,
+        opens_at: survey.opens_at,
+        closes_at: survey.closes_at,
         questions: survey.questions || [],
         created_at: survey.created_at,
         updated_at: survey.updated_at,
         created_by: survey.created_by,
         updated_by: survey.updated_by,
     };
-    console.log({ surveyData })
+    console.log({ surveyData, tokenMetadata })
     return (
         <div>
-            <SurveyForm survey={surveyData} />
+            <SurveyForm 
+                survey={surveyData} 
+                redirectUrl={redirectUrl} 
+                tokenMetadata={tokenMetadata} 
+            />
         </div>
     )
 }

@@ -107,7 +107,7 @@ export default async function ResponseEditPage({
     const finalRespondentId = Array.isArray(urlRespondentId) ? urlRespondentId[0] : urlRespondentId;
 
     // URL 파라미터가 필요한 경우 검증
-    if (survey.url_param_required && !finalRespondentId) {
+    if (survey.access_token_required && !finalRespondentId) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
@@ -132,7 +132,7 @@ export default async function ResponseEditPage({
     }
 
     // 응답자 ID 검증 (URL 파라미터와 응답 데이터의 respondent 필드 비교)
-    if (survey.url_param_required && response.respondent !== finalRespondentId) {
+    if (survey.access_token_required && response.respondent !== finalRespondentId) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
@@ -163,9 +163,9 @@ export default async function ResponseEditPage({
         description: survey.description || '',
         is_active: survey.is_active,
         allow_anonymous: survey.allow_anonymous,
-        url_param_required: survey.url_param_required,
+        access_token_required: survey.access_token_required,
+        access_secret_key: survey.access_secret_key,
         email_required: survey.email_required,
-        url_param_name: survey.url_param_name,
         allow_response_view: survey.allow_response_view,
         allow_response_modification: survey.allow_response_modification,
         allow_duplicate_responses: survey.allow_duplicate_responses,

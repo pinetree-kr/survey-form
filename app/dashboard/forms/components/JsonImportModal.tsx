@@ -58,18 +58,18 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
 
       // 응답자 식별 설정 유효성 검사
       const allowAnonymous = parsedData.allow_anonymous ?? true;
-      const allowUrlParam = parsedData.url_param_required ?? false;
+      const accessTokenRequired = parsedData.access_token_required ?? false;
       const emailRequired = parsedData.email_required ?? false;
 
       // 최소 하나의 식별 방법은 허용되어야 함
-      if (!allowAnonymous && !allowUrlParam && !emailRequired) {
-        setError('최소 하나의 응답자 식별 방법을 허용해야 합니다. (allow_anonymous, url_param_required, email_required 중 하나 이상이 true여야 함)');
+      if (!allowAnonymous && !accessTokenRequired && !emailRequired) {
+        setError('최소 하나의 응답자 식별 방법을 허용해야 합니다. (allow_anonymous, access_token_required, email_required 중 하나 이상이 true여야 함)');
         return;
       }
 
       // URL 파라미터 설정 검증
-      if (allowUrlParam && !parsedData.url_param_name) {
-        setError('URL 파라미터 방식을 허용하는 경우 url_param_name을 설정해야 합니다.');
+      if (accessTokenRequired && !parsedData.access_secret_key) {
+        setError('엑세스 토큰 방식을 허용하는 경우 access_secret_key을 설정해야 합니다.');
         return;
       }
 
@@ -80,9 +80,9 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
         description: parsedData.description || '',
         is_active: parsedData.is_active ?? true,
         allow_anonymous: allowAnonymous,
-        url_param_required: allowUrlParam,
+        access_token_required: accessTokenRequired,
         email_required: emailRequired,
-        url_param_name: parsedData.url_param_name || 'rid',
+        access_secret_key: parsedData.access_secret_key,
         allow_response_view: parsedData.allow_response_view ?? false,
         allow_response_modification: parsedData.allow_response_modification ?? false,
         allow_duplicate_responses: parsedData.allow_duplicate_responses ?? true,
@@ -168,9 +168,9 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
   "description": "설문 설명",
   "is_active": true,
   "allow_anonymous": true,
-  "url_param_required": false,
+  "access_token_required": false,
   "email_required": false,
-  "url_param_name": "rid",
+  "access_secret_key": "access_secret_key",
   "allow_response_view": false,
   "allow_duplicate_responses": true,
   "opens_at": "2024-01-01T00:00:00.000Z",
@@ -216,9 +216,9 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
                 <h4 className="font-medium">응답자 식별 설정</h4>
                 <ul className="space-y-1 ml-4">
                   <li>• <strong>allow_anonymous</strong>: 익명 응답 허용 (기본값: true)</li>
-                  <li>• <strong>url_param_required</strong>: URL 파라미터로 응답자 ID 받기 (기본값: false)</li>
+                  <li>• <strong>access_token_required</strong>: 엑세스 토큰 허용 (기본값: false)</li>
                   <li>• <strong>email_required</strong>: 이메일 입력 필수 (기본값: false)</li>
-                  <li>• <strong>url_param_name</strong>: URL 파라미터 이름 (기본값: &#34;rid&#34;)</li>
+                  <li>• <strong>access_secret_key</strong>: 엑세스 토큰 키 (기본값: &#34;access_secret_key&#34;)</li>
                   <li>• <strong>allow_response_view</strong>: 이메일로 응답 조회 허용 (기본값: false)</li>
                   <li>• <strong>allow_duplicate_responses</strong>: 중복 응답 허용 (기본값: true)</li>
                 </ul>
@@ -243,7 +243,7 @@ export function JsonImportModal({ isOpen, onClose, onImport }: JsonImportModalPr
               </div>
 
               <div className="text-xs text-blue-600 bg-blue-100 p-2 rounded">
-                <strong>주의:</strong> 최소 하나의 응답자 식별 방법(allow_anonymous, url_param_required, email_required)을 허용해야 합니다.
+                <strong>주의:</strong> 최소 하나의 응답자 식별 방법(allow_anonymous, access_token_required, email_required)을 허용해야 합니다.
               </div>
             </div>
           </div>

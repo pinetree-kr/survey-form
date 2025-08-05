@@ -19,6 +19,8 @@ interface SurveyFormCoreProps {
     submitButtonText?: string;
     initialData?: any;
     isEditMode?: boolean;
+    redirectUrl?: string | null;
+    tokenMetadata?: any;
 }
 
 export default function SurveyFormCore({
@@ -31,7 +33,9 @@ export default function SurveyFormCore({
     completionMessage = "설문을 제출하시겠습니까?",
     submitButtonText = "설문 제출하기",
     initialData,
-    isEditMode = false
+    isEditMode = false,
+    redirectUrl,
+    tokenMetadata
 }: SurveyFormCoreProps) {
     const [currentPanel, setCurrentPanel] = useState(0);
     const [answers, setAnswers] = useState<Answer[]>(() => {
@@ -398,7 +402,24 @@ export default function SurveyFormCore({
                         onComplete();
                     }
                 } else {
-                    // 실제 제출 모드에서는 제출 완료 화면 표시
+                    // 실제 제출 모드에서는 redirectUrl이 있으면 리다이렉트, 없으면 제출 완료 화면 표시
+                    if (redirectUrl) {
+                        // tokenMetadata가 있으면 URL에 추가하여 리다이렉트
+                        let finalRedirectUrl = redirectUrl;
+                        if (tokenMetadata) {
+                            const url = new URL(redirectUrl);
+                            // metadata의 각 속성을 URL 파라미터로 추가
+                            Object.entries(tokenMetadata).forEach(([key, value]) => {
+                                if (value !== undefined && value !== null) {
+                                    url.searchParams.set(key, String(value));
+                                }
+                            });
+                            finalRedirectUrl = url.toString();
+                        }
+                        window.location.href = finalRedirectUrl;
+                        return;
+                    }
+                    
                     setIsSubmitted(true);
                     // 중복 허용이 되지 않는 설문의 경우 현재 응답을 existingResponse에 저장
                     if (!survey.allow_duplicate_responses) {
@@ -421,7 +442,7 @@ export default function SurveyFormCore({
         } else if (onComplete) {
             onComplete();
         }
-    }, [answers, etcValues, respondentId, onSubmit, onComplete, isPreview, survey.allow_duplicate_responses, survey.email_required]);
+    }, [answers, etcValues, respondentId, onSubmit, onComplete, isPreview, survey.allow_duplicate_responses, survey.email_required, redirectUrl]);
 
     // 이메일 유효성 검사 함수
     const validateEmail = React.useCallback((email: string): string => {

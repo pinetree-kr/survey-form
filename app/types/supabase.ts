@@ -79,9 +79,9 @@ export interface Database {
                     questions: Json
                     is_active: boolean
                     allow_anonymous: boolean
-                    url_param_required: boolean
+                    access_token_required: boolean
+                    access_secret_key: string
                     email_required: boolean
-                    url_param_name: string
                     allow_response_view: boolean
                     allow_duplicate_responses: boolean
                     opens_at: string | null
@@ -98,9 +98,9 @@ export interface Database {
                     questions?: Json
                     is_active?: boolean
                     allow_anonymous?: boolean
-                    url_param_required?: boolean
+                    access_token_required?: boolean
+                    access_secret_key?: string
                     email_required?: boolean
-                    url_param_name?: string
                     allow_response_view?: boolean
                     allow_duplicate_responses?: boolean
                     opens_at?: string | null
@@ -117,9 +117,9 @@ export interface Database {
                     questions?: Json
                     is_active?: boolean
                     allow_anonymous?: boolean
-                    url_param_required?: boolean
+                    access_token_required?: boolean
+                    access_secret_key?: string
                     email_required?: boolean
-                    url_param_name?: string
                     allow_response_view?: boolean
                     allow_duplicate_responses?: boolean
                     opens_at?: string | null

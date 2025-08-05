@@ -21,6 +21,8 @@ interface SurveyFormWrapperProps {
     submitButtonText?: string;
     initialData?: any;
     isEditMode?: boolean;
+    redirectUrl?: string | null;
+    tokenMetadata?: any;
 }
 
 export default function SurveyFormWrapper({
@@ -33,7 +35,9 @@ export default function SurveyFormWrapper({
     completionMessage,
     submitButtonText,
     initialData,
-    isEditMode = false
+    isEditMode = false,
+    redirectUrl,
+    tokenMetadata
 }: SurveyFormWrapperProps) {
     const [isVerified, setIsVerified] = useState<boolean>(false);
     const [verifiedRespondentId, setVerifiedRespondentId] = useState<string>('');
@@ -94,6 +98,8 @@ export default function SurveyFormWrapper({
             submitButtonText={submitButtonText}
             initialData={initialData}
             isEditMode={isEditMode}
+            redirectUrl={redirectUrl}
+            tokenMetadata={tokenMetadata}
         />
     );
 }

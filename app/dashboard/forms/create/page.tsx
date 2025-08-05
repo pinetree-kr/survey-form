@@ -24,6 +24,15 @@ async function handleCreate(formData: TSurvey) {
     throw new Error('설문 제목은 필수입니다')
   }
 
+  // access_token_required 상태에 따른 secret_key 처리
+  let secretKey: string | null = formData.access_secret_key || null;
+  if (formData.access_token_required && !secretKey) {
+    // access_token_required가 true인데 secret_key가 없으면 자동 생성
+    const { generateSecretKey } = await import('@/lib/access-token');
+    secretKey = generateSecretKey();
+  }
+  // access_token_required가 false여도 기존 secret_key는 유지
+
   const { data, error } = await supabase
     .from('surveys')
     .insert({
@@ -32,9 +41,9 @@ async function handleCreate(formData: TSurvey) {
       questions: formData.questions || [],
       is_active: formData.is_active ?? true,
       allow_anonymous: formData.allow_anonymous ?? true,
-      url_param_required: formData.url_param_required ?? false,
+      access_token_required: formData.access_token_required ?? false,
+      access_secret_key: secretKey,
       email_required: formData.email_required ?? false,
-      url_param_name: formData.url_param_name || 'rid',
       allow_response_view: formData.allow_response_view ?? false,
       allow_response_modification: formData.allow_response_modification ?? false,
       allow_duplicate_responses: formData.allow_duplicate_responses ?? true,

@@ -39,8 +39,8 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
     let surveyUrl = `${baseUrl}/forms/${survey.id}`
 
     // URL 파라미터가 설정되어 있다면 해당 파라미터를 포함한 URL 생성
-    if (survey.url_param_required && survey.url_param_name) {
-      surveyUrl += `?${survey.url_param_name}=`
+    if (survey.access_token_required) {
+      surveyUrl += `?token=`
     }
 
     try {
@@ -112,8 +112,8 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                     {(() => {
                       const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
                       let url = `${baseUrl}/forms/${survey.id}`
-                      if (survey.url_param_required && survey.url_param_name) {
-                        url += `?${survey.url_param_name}=`
+                      if (survey.access_token_required) {
+                        url += `?token=`
                       }
                       return url
                     })()}
@@ -143,16 +143,16 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
                   </button>
                 </div>
 
-                {survey.url_param_required && (
+                {survey.access_token_required && (
                   <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-1">URL 파라미터 사용 예시:</p>
+                    <p className="text-xs text-gray-500 mb-1">엑세스 토큰 사용 예시:</p>
                     <div className="flex items-center space-x-2">
                       <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-mono text-xs">
-                        {`${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?${survey.url_param_name || 'rid'}=`}
+                        {`${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?token=`}
                       </div>
                       <button
                         onClick={() => {
-                          const paramUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?${survey.url_param_name || 'rid'}=`
+                          const paramUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/forms/${survey.id}?token=`
                           navigator.clipboard.writeText(paramUrl)
                           setCopySuccess(true)
                           setTimeout(() => setCopySuccess(false), 2000)
@@ -327,23 +327,23 @@ export default function SurveyDetailView({ surveyId }: SurveyDetailViewProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL 파라미터 허용
+                  엑세스 토큰 허용
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.url_param_required
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${survey.access_token_required
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-800'
                     }`}>
-                    {survey.url_param_required ? '허용' : '불가'}
+                    {survey.access_token_required ? '허용' : '불가'}
                   </span>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL 파라미터 이름
+                  Secret Key
                 </label>
                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                  {survey.url_param_name || 'rid'}
+                  {survey.access_secret_key || ''}
                 </div>
               </div>
             </div>

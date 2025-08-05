@@ -24,8 +24,8 @@ export async function updateSurveyResponse(
         surveys!survey_responses_survey_id_fkey(
           allow_response_modification,
           closes_at,
-          url_param_required,
-          url_param_name
+          access_token_required,
+          access_secret_key
         )
       `)
       .eq('id', responseId)
@@ -58,7 +58,7 @@ export async function updateSurveyResponse(
     }
 
     // URL 파라미터 권한 확인
-    if (survey.url_param_required && response.respondent !== respondentId) {
+    if (survey.access_token_required && response.respondent !== respondentId) {
       return { 
         success: false, 
         error: '이 응답을 수정할 권한이 없습니다.' 
@@ -126,8 +126,8 @@ export async function getSurveyResponse(responseId: string, surveyId: string) {
           title,
           allow_response_modification,
           closes_at,
-          url_param_required,
-          url_param_name
+          access_token_required,
+          access_secret_key
         )
       `)
       .eq('id', responseId)

@@ -50,7 +50,7 @@ export default async function FormViewPage({
     const finalRespondentId = Array.isArray(urlRespondentId) ? urlRespondentId[0] : urlRespondentId;
 
     // URL 파라미터가 필수인데 없거나 빈값인 경우 오류 처리
-    if (survey.url_param_required && !survey.allow_anonymous && !survey.email_required) {
+    if (survey.access_token_required && !survey.allow_anonymous && !survey.email_required) {
         if (!finalRespondentId || finalRespondentId.trim() === '') {
             return (
                 <div className="min-h-screen flex items-center justify-center bg-red-50 px-4">
@@ -95,9 +95,9 @@ export default async function FormViewPage({
         description: survey.description || '',
         is_active: survey.is_active,
         allow_anonymous: survey.allow_anonymous,
-        url_param_required: survey.url_param_required,
+        access_token_required: survey.access_token_required,
+        access_secret_key: survey.access_secret_key,
         email_required: survey.email_required,
-        url_param_name: survey.url_param_name,
         allow_response_view: survey.allow_response_view,
         allow_response_modification: survey.allow_response_modification,
         allow_duplicate_responses: survey.allow_duplicate_responses,

@@ -36,12 +36,12 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
         // ID는 제거하고 나머지 모든 정보를 완전히 덮어씌움
         const { id, questions, ...basicInfo } = surveyData;
 
-                // 기본 정보 완전히 덮어씌우기
+        // 기본 정보 완전히 덮어씌우기
         updateFormBasicInfo({
             id: '', // ID는 빈 문자열로 설정
             ...basicInfo,
         });
-        
+
         // 문항 정보 완전히 덮어씌우기 - 강제로 새로운 배열 생성
         const newQuestions = questions ? [...questions] : [];
         updateQuestions(newQuestions);
@@ -186,33 +186,41 @@ export const FormEditorFooter = React.memo(function FormEditorFooter({
         }
 
         setIsSaving(true);
-        toast.promise(onSave(fullForm, surveyId), {
-            pending: '설문 저장 중...',
-            success: {
-                render: ({ data }: { data: TSurvey }) => {
-                    // 상태 업데이트를 비동기로 처리
-                    setTimeout(() => {
-                        setIsSaving(false);
-                        if (surveyId) {
-                            router.refresh()
-                        } else {
-                            router.replace(`/dashboard/forms/${data.id}`)
-                        }
-                    }, 0);
-                    return '설문이 성공적으로 저장되었습니다.'
-                }
-            },
-            error: {
-                render: (error: any) => {
-                    // 상태 업데이트를 비동기로 처리
-                    setTimeout(() => {
-                        setIsSaving(false);
-                    }, 0);
-                    console.error('설문 저장 중 오류 발생:', error);
-                    return '설문 저장 중 오류가 발생했습니다. 다시 시도해주세요.';
-                }
+
+        try {
+            // 저장 중 toast 표시
+            // toast.info('설문 저장 중...', { autoClose: false, toastId: 'saving' });
+
+            // onSave 함수 호출
+            const data = await onSave(fullForm, surveyId);
+
+            // 저장 중 toast 제거
+            // toast.dismiss('saving');
+
+            // 성공 toast 표시
+            toast.success('설문이 성공적으로 저장되었습니다.');
+
+            // 상태 업데이트 및 페이지 처리
+            setIsSaving(false);
+
+            if (surveyId) {
+                // 수정 모드인 경우 페이지 새로고침
+                router.refresh();
+            } else {
+                // 새 설문 생성인 경우 해당 페이지로 이동
+                router.replace(`/dashboard/forms/${data.id}`);
             }
-        });
+
+        } catch (error: any) {
+            // 저장 중 toast 제거
+            // toast.dismiss('saving');
+
+            // 에러 toast 표시
+            toast.error('설문 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+
+            console.error('설문 저장 중 오류 발생:', error);
+            setIsSaving(false);
+        }
 
     }, [onSave, getFullForm, setIsSaving, clearAllAnimations, surveyId, router]);
 

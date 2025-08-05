@@ -23,8 +23,8 @@ export async function PUT(
         surveys!survey_responses_survey_id_fkey(
           allow_response_modification,
           closes_at,
-          url_param_required,
-          url_param_name
+          access_token_required,
+          access_secret_key
         )
       `)
       .eq('id', responseId)
@@ -65,7 +65,7 @@ export async function PUT(
     }
 
     // URL 파라미터 권한 확인 (필요한 경우)
-    if (survey.url_param_required && response.respondent !== respondent) {
+    if (survey.access_token_required && response.respondent !== respondent) {
       return NextResponse.json(
         { error: '이 응답을 수정할 권한이 없습니다.' },
         { status: 403 }

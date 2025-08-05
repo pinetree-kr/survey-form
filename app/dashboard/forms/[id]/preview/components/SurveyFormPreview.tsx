@@ -10,7 +10,13 @@ type Answer = {
     value: string | string[] | Record<string, string>;
 };
 
-export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
+export function SurveyFormPreview({ 
+    survey, 
+    previewTokenMetadata 
+}: { 
+    survey: TSurvey;
+    previewTokenMetadata?: { token: string; [key: string]: any };
+}) {
     const [showResponseModal, setShowResponseModal] = useState(false);
     const [responseData, setResponseData] = useState<any>(null);
 
@@ -91,6 +97,8 @@ export function SurveyFormPreview({ survey }: { survey: TSurvey }) {
                 completionTitle="설문이 완료되었습니다!"
                 completionMessage="미리보기 모드에서 응답을 확인해보세요."
                 submitButtonText="응답 확인하기"
+                initialRespondentId={previewTokenMetadata ? 'preview-user' : undefined}
+                tokenMetadata={previewTokenMetadata}
             />
             
             {/* 응답 JSON 모달 */}

@@ -64,15 +64,37 @@ export function FormEditorProvider({
         "description": initialData?.description || "",
         "is_active": initialData?.is_active ?? true,
         "allow_anonymous": initialData?.allow_anonymous ?? true,
-        "url_param_required": initialData?.url_param_required ?? false,
+        "access_token_required": initialData?.access_token_required ?? false,
         "email_required": initialData?.email_required ?? false,
-        "url_param_name": initialData?.url_param_name ?? 'rid',
+        "access_secret_key": initialData?.access_secret_key ?? '',
         "allow_response_view": initialData?.allow_response_view ?? false,
         "allow_response_modification": initialData?.allow_response_modification ?? false,
         "allow_duplicate_responses": initialData?.allow_duplicate_responses ?? true,
         "opens_at": initialData?.opens_at || null,
         "closes_at": initialData?.closes_at || "",
     });
+
+    // initialData가 변경될 때 상태 동기화 (router.refresh() 후 업데이트를 위해)
+    React.useEffect(() => {
+        if (initialData) {
+            setQuestions(initialData.questions || []);
+            setFormBasicInfo({
+                "id": initialData.id || "",
+                "title": initialData.title || "",
+                "description": initialData.description || "",
+                "is_active": initialData.is_active ?? true,
+                "allow_anonymous": initialData.allow_anonymous ?? true,
+                "access_token_required": initialData.access_token_required ?? false,
+                "email_required": initialData.email_required ?? false,
+                "access_secret_key": initialData.access_secret_key ?? '',
+                "allow_response_view": initialData.allow_response_view ?? false,
+                "allow_response_modification": initialData.allow_response_modification ?? false,
+                "allow_duplicate_responses": initialData.allow_duplicate_responses ?? true,
+                "opens_at": initialData.opens_at || null,
+                "closes_at": initialData.closes_at || "",
+            });
+        }
+    }, [initialData]);
 
     // 클라이언트에서만 기본 마감 시간 설정 (hydration 오류 방지)
     React.useEffect(() => {
