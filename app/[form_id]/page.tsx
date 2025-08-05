@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase-ssr';
 import { SurveyForm, TSurvey } from "../components";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { validateAccessToken, extractRespondentFromToken, validateAndParseJWT, generateSecretKey } from '@/lib/access-token';
+import { validateAccessToken, validateAndParseJWT, generateSecretKey } from '@/lib/access-token';
 
 export default async function FormViewPage({
     params,
@@ -35,12 +35,12 @@ export default async function FormViewPage({
     // access_token_required가 true인데 access_secret_key가 없으면 자동 생성
     if (survey.access_token_required && !survey.access_secret_key) {
         const newSecretKey = generateSecretKey();
-        
+
         const { error: updateError } = await supabase
             .from('surveys')
             .update({ access_secret_key: newSecretKey })
             .eq('id', survey.id);
-        
+
         if (!updateError) {
             survey.access_secret_key = newSecretKey;
         }
@@ -52,34 +52,23 @@ export default async function FormViewPage({
         ? paramsObj.token?.[0]
         : paramsObj.token;
 
+
     // 액세스 토큰이 필수인 경우 검증
     if (survey.access_token_required && survey.access_secret_key) {
         if (!accessToken || typeof accessToken !== 'string') {
-            return new Response(
-                JSON.stringify({ error: '액세스 토큰이 필요합니다.' }),
-                {
-                    status: 401,
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            );
+            throw new Error('액세스 토큰이 필요합니다.')
         }
 
         // 토큰 검증
         if (!validateAccessToken(accessToken, survey.access_secret_key)) {
-            return new Response(
-                JSON.stringify({ error: '유효하지 않은 액세스 토큰입니다.' }),
-                {
-                    status: 401,
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            );
+            throw new Error('유효하지 않은 액세스 토큰입니다.')
         }
     }
 
     // respondent ID와 metadata 추출 (JWT 토큰에서만)
     let urlRespondentId: string | null = null;
     let tokenMetadata: any = null;
-    
+
     if (accessToken && survey.access_token_required && survey.access_secret_key) {
         // JWT 토큰 파싱하여 응답자 ID와 metadata 추출
         const tokenPayload = validateAndParseJWT(accessToken, survey.access_secret_key);
@@ -99,23 +88,14 @@ export default async function FormViewPage({
             .single();
 
         if (existingResponse) {
-            return new Response(
-                JSON.stringify({ error: '이미 응답한 사용자입니다.' }),
-                {
-                    status: 400,
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            );
+            throw new Error('이미 응답한 사용자입니다.')
         }
     }
 
     // 허용된 응답자 목록 확인
     if (survey.allowed_list && survey.allowed_list.length > 0) {
         if (!urlRespondentId || !survey.allowed_list.includes(urlRespondentId)) {
-            return new Response(
-                JSON.stringify({ error: '허용된 응답자가 아닙니다.' }),
-                { status: 403, headers: { 'Content-Type': 'application/json' } }
-            );
+            throw new Error('허용된 응답자가 아닙니다.')
         }
     }
 
@@ -145,10 +125,10 @@ export default async function FormViewPage({
     console.log({ surveyData, tokenMetadata })
     return (
         <div>
-            <SurveyForm 
-                survey={surveyData} 
-                redirectUrl={redirectUrl} 
-                tokenMetadata={tokenMetadata} 
+            <SurveyForm
+                survey={surveyData}
+                redirectUrl={redirectUrl}
+                tokenMetadata={tokenMetadata}
             />
         </div>
     )

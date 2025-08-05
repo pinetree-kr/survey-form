@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-ssr'
 import { notFound } from 'next/navigation'
 import { SurveyForm } from '@/app/components'
 import { TSurvey, TSurveyResponse } from '@/app/components'
+import { validateAccessToken, validateAndParseJWT, generateSecretKey } from '@/lib/access-token'
 
 // 설문 데이터 가져오기
 async function getSurvey(surveyId: string) {
@@ -50,10 +51,10 @@ export default async function ResponseEditPage({
     params,
     searchParams
 }: {
-    params: Promise<{ id: string; responseId: string }>;
+    params: Promise<{ form_id: string; responseId: string }>;
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-    const { id: surveyId, responseId } = await params;
+    const { form_id: surveyId, responseId } = await params;
     const resolvedSearchParams = await searchParams;
 
     // 설문 데이터 가져오기
@@ -61,6 +62,22 @@ export default async function ResponseEditPage({
     
     if (!survey) {
         notFound();
+    }
+
+    // access_token_required가 true인데 access_secret_key가 없으면 자동 생성
+    if (survey.access_token_required && !survey.access_secret_key) {
+        const { env } = await getCloudflareContext({ async: true });
+        const supabase = await createClient(env);
+        const newSecretKey = generateSecretKey();
+
+        const { error: updateError } = await supabase
+            .from('surveys')
+            .update({ access_secret_key: newSecretKey })
+            .eq('id', survey.id);
+
+        if (!updateError) {
+            survey.access_secret_key = newSecretKey;
+        }
     }
 
     // 응답 데이터 가져오기
@@ -101,38 +118,75 @@ export default async function ResponseEditPage({
         );
     }
 
-    // URL 파라미터에서 respondent_id 추출 및 검증
-    const urlParamName = survey.url_param_name || 'rid';
-    const urlRespondentId = resolvedSearchParams[urlParamName];
-    const finalRespondentId = Array.isArray(urlRespondentId) ? urlRespondentId[0] : urlRespondentId;
+    // URL 파라미터에서 액세스 토큰 확인
+    const accessToken = Array.isArray(resolvedSearchParams.token)
+        ? resolvedSearchParams.token?.[0]
+        : resolvedSearchParams.token;
 
-    // URL 파라미터가 필요한 경우 검증
-    if (survey.access_token_required && !finalRespondentId) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
-                    <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
-                        <div className="flex items-center justify-center mb-3">
-                            <svg className="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="text-red-800 font-semibold">필수 파라미터 누락</span>
+    // 액세스 토큰이 필수인 경우 검증
+    let urlRespondentId: string | null = null;
+    let tokenMetadata: any = null;
+
+    if (survey.access_token_required && survey.access_secret_key) {
+        if (!accessToken || typeof accessToken !== 'string') {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
+                            <div className="flex items-center justify-center mb-3">
+                                <svg className="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-red-800 font-semibold">액세스 토큰 필요</span>
+                            </div>
+                            <p className="text-red-700 text-sm mb-2">
+                                이 응답을 수정하려면 유효한 액세스 토큰이 필요합니다.
+                            </p>
                         </div>
-                        <p className="text-red-700 text-sm mb-2">
-                            URL에 <code className="bg-red-100 px-1 rounded">{urlParamName}</code> 파라미터가 필요합니다.
+
+                        <p className="text-gray-500 text-sm">
+                            올바른 링크를 사용하거나 관리자에게 문의해 주세요.
                         </p>
                     </div>
-
-                    <p className="text-gray-500 text-sm">
-                        올바른 링크를 사용하거나 관리자에게 문의해 주세요.
-                    </p>
                 </div>
-            </div>
-        );
+            );
+        }
+
+        // 토큰 검증
+        if (!validateAccessToken(accessToken, survey.access_secret_key)) {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
+                            <div className="flex items-center justify-center mb-3">
+                                <svg className="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                                </svg>
+                                <span className="text-red-800 font-semibold">유효하지 않은 토큰</span>
+                            </div>
+                            <p className="text-red-700 text-sm">
+                                제공된 액세스 토큰이 유효하지 않습니다.
+                            </p>
+                        </div>
+
+                        <p className="text-gray-500 text-sm">
+                            올바른 링크를 사용하거나 관리자에게 문의해 주세요.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // JWT 토큰 파싱하여 응답자 ID와 metadata 추출
+        const tokenPayload = validateAndParseJWT(accessToken, survey.access_secret_key);
+        if (tokenPayload) {
+            urlRespondentId = tokenPayload.aud;
+            tokenMetadata = tokenPayload.metadata;
+        }
     }
 
-    // 응답자 ID 검증 (URL 파라미터와 응답 데이터의 respondent 필드 비교)
-    if (survey.access_token_required && response.respondent !== finalRespondentId) {
+    // 응답자 ID 검증 (토큰의 응답자 ID와 응답 데이터의 respondent 필드 비교)
+    if (survey.access_token_required && urlRespondentId && response.respondent !== urlRespondentId) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
@@ -195,11 +249,13 @@ export default async function ResponseEditPage({
     };
 
     return (
-        <SurveyForm 
-            survey={surveyData} 
-            initialData={responseData}
-            isEditMode={true}
-            respondentId={finalRespondentId}
-        />
+        <div>
+            <SurveyForm 
+                survey={surveyData} 
+                initialData={responseData}
+                isEditMode={true}
+                tokenMetadata={tokenMetadata}
+            />
+        </div>
     );
 }

@@ -252,7 +252,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                 </div>
             );
         }
-        
+
         return (
             <div className="space-y-3">
                 {!isSecretKeyRevealed ? (
@@ -379,7 +379,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     <div className="w-full px-3 py-2 border rounded-md bg-gray-50 text-gray-500">
                         {localSurvey.id || "자동생성"}
                     </div>
-                    
+
                     {/* 설문 URL 링크 */}
                     {localSurvey.id && (
                         <div className="mt-3">
@@ -388,17 +388,17 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                             </label>
                             <div className="flex items-center space-x-2">
                                 <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 font-mono text-sm">
-                                    {baseUrl ? `${baseUrl}/forms/${localSurvey.id}` : 'URL 로딩 중...'}
+                                    {baseUrl ? `${baseUrl}/${localSurvey.id}` : 'URL 로딩 중...'}
                                 </div>
                                 <button
                                     onClick={() => {
-                                        const surveyUrl = `${baseUrl}/forms/${localSurvey.id}`;
+                                        const surveyUrl = `${baseUrl}/${localSurvey.id}`;
                                         navigator.clipboard.writeText(surveyUrl);
                                         setCopySuccess(true);
                                         setTimeout(() => setCopySuccess(false), 2000);
                                     }}
                                     disabled={!baseUrl}
-                                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-1"
+                                    className="px-3 py-2 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition-colors"
                                 >
                                     {copySuccess ? (
                                         <div className="flex items-center space-x-1">
@@ -421,22 +421,8 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                             {localSurvey.access_token_required && (
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">액세스 토큰 사용 예시:</p>
-                                    <div className="flex items-center space-x-2">
-                                        <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-mono text-xs">
-                                            {baseUrl ? `${baseUrl}/forms/${localSurvey.id}?token=your_token` : 'URL 로딩 중...'}
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                const clipUrl = `${baseUrl}/forms/${localSurvey.id}`;
-                                                navigator.clipboard.writeText(clipUrl);
-                                                setCopySuccess(true);
-                                                setTimeout(() => setCopySuccess(false), 2000);
-                                            }}
-                                            disabled={!baseUrl}
-                                            className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition-colors"
-                                        >
-                                            복사
-                                        </button>
+                                    <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 font-mono text-xs">
+                                        {baseUrl ? `${baseUrl}/${localSurvey.id}?token=your_token` : 'URL 로딩 중...'}
                                     </div>
                                 </div>
                             )}
@@ -529,10 +515,10 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                             onClick={handleAllowAnonymousToggle}
                             disabled={!localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${!localSurvey.allow_duplicate_responses && localSurvey.allow_anonymous
-                                    ? 'bg-gray-300 cursor-not-allowed'
-                                    : localSurvey.allow_anonymous
-                                        ? 'bg-blue-600'
-                                        : 'bg-gray-200'
+                                ? 'bg-gray-300 cursor-not-allowed'
+                                : localSurvey.allow_anonymous
+                                    ? 'bg-blue-600'
+                                    : 'bg-gray-200'
                                 }`}
                         >
                             <span
@@ -791,7 +777,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                             <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">시크릿 키 재생성</h3>
                             <div className="mt-2 px-7 py-3">
                                 <p className="text-sm text-gray-500">
-                                    시크릿 키를 재생성하면 기존에 발급된 모든 액세스 토큰이 무효화됩니다. 
+                                    시크릿 키를 재생성하면 기존에 발급된 모든 액세스 토큰이 무효화됩니다.
                                     계속하시겠습니까?
                                 </p>
                             </div>

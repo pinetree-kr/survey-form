@@ -552,7 +552,7 @@ export default function SurveyFormCore({
                                     onClick={() => {
                                         // 수정 페이지로 리다이렉트
                                         const currentUrl = new URL(window.location.href);
-                                        const editUrl = `/forms/${survey.id}/edit/${existingResponse.id}${currentUrl.search}`;
+                                        const editUrl = `/${survey.id}/edit/${existingResponse.id}${currentUrl.search}`;
                                         window.location.href = editUrl;
                                     }}
                                     className="w-full px-8 py-4 bg-green-600 text-white rounded-xl font-semibold text-lg hover:bg-green-700 transition-all duration-200"

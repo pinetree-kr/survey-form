@@ -94,8 +94,8 @@ export async function updateSurveyResponse(
 
     // 캐시 무효화
     revalidatePath(`/dashboard/forms/${surveyId}/responses`)
-    revalidatePath(`/forms/${surveyId}`)
-    revalidatePath(`/forms/${surveyId}/edit/${responseId}`)
+    revalidatePath(`/${surveyId}`)
+    revalidatePath(`/${surveyId}/edit/${responseId}`)
 
     return { 
       success: true, 

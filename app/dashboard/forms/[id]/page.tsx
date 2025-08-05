@@ -47,7 +47,6 @@ async function getSurvey(surveyId: string) {
   if (error || !data) {
     return null
   }
-  console.log(data)
 
   return data
 }
@@ -90,27 +89,8 @@ async function handleUpdate(formData: TSurvey, surveyId?: string) {
     const { generateSecretKey } = await import('@/lib/access-token');
     secretKey = generateSecretKey();
   }
+
   // access_token_required가 false여도 기존 secret_key는 유지
-  console.log({
-    update: {
-      title: formData.title,
-      description: formData.description || null,
-      questions: formData.questions || [],
-      allow_anonymous: formData.allow_anonymous ?? false,
-      is_active: formData.is_active !== undefined ? formData.is_active : true,
-      access_token_required: formData.access_token_required ?? false,
-      email_required: formData.email_required ?? false,
-      access_secret_key: secretKey,
-      allow_response_view: formData.allow_response_view ?? false,
-      allow_response_modification: formData.allow_response_modification ?? false,
-      allow_duplicate_responses: formData.allow_duplicate_responses ?? true,
-      allowed_list: formData.allowed_list || null,
-      opens_at: formData.opens_at || null,
-      closes_at: formData.closes_at || null,
-      updated_by: user.id,
-      updated_at: new Date().toISOString()
-    }
-  })
   const { data, error } = await supabase
     .from('surveys')
     .update({
