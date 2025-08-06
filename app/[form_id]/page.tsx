@@ -32,6 +32,25 @@ export default async function FormViewPage({
         notFound();
     }
 
+    // 설문 시간 검증
+    const now = new Date();
+    
+    // 시작 시간 확인
+    if (survey.opens_at) {
+        const opensAt = new Date(survey.opens_at);
+        if (now < opensAt) {
+            throw new Error('설문이 아직 시작되지 않았습니다.');
+        }
+    }
+    
+    // 종료 시간 확인
+    if (survey.closes_at) {
+        const closesAt = new Date(survey.closes_at);
+        if (now > closesAt) {
+            throw new Error('설문이 종료되었습니다.');
+        }
+    }
+
     // access_token_required가 true인데 access_secret_key가 없으면 자동 생성
     if (survey.access_token_required && !survey.access_secret_key) {
         const newSecretKey = generateSecretKey();
@@ -80,7 +99,7 @@ export default async function FormViewPage({
 
     // 중복 응답 확인 (액세스 토큰이나 다른 식별자가 있고 중복이 허용되지 않는 경우)
     if (urlRespondentId && typeof urlRespondentId === 'string' && !survey.allow_duplicate_responses) {
-        const { data: existingResponse, error: checkError } = await supabase
+        const { data: existingResponse } = await supabase
             .from('survey_responses')
             .select('id')
             .eq('survey_id', survey.id)
@@ -122,7 +141,7 @@ export default async function FormViewPage({
         created_by: survey.created_by,
         updated_by: survey.updated_by,
     };
-    console.log({ surveyData, tokenMetadata })
+    
     return (
         <div>
             <SurveyForm

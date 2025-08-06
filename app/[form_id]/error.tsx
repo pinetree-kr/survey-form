@@ -65,6 +65,30 @@ export default function Error({
       }
     }
     
+    if (message.includes('아직 시작되지 않았습니다') || message.includes('not started')) {
+      return {
+        title: '설문 시작 전',
+        description: '설문이 아직 시작되지 않았습니다.',
+        icon: (
+          <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
+      }
+    }
+    
+    if (message.includes('종료되었습니다') || message.includes('ended') || message.includes('closed')) {
+      return {
+        title: '설문 종료',
+        description: '설문이 종료되었습니다.',
+        icon: (
+          <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
+      }
+    }
+    
     // 기본 에러
     return {
       title: '오류가 발생했습니다',

@@ -201,15 +201,25 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
     // 시간 설정 핸들러들
     const handleOpensAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        const dateTime = value ? new Date(value).toISOString() : null;
-        handleImmediateUpdate({ opens_at: dateTime });
+        if (value) {
+            // 브라우저 로컬 시간을 UTC로 변환하여 저장
+            const localDate = new Date(value);
+            const utcDateTime = localDate.toISOString();
+            handleImmediateUpdate({ opens_at: utcDateTime });
+        } else {
+            handleImmediateUpdate({ opens_at: null });
+        }
     }, [handleImmediateUpdate]);
 
     const handleClosesAtChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         if (value) {
-            const dateTime = new Date(value).toISOString();
-            handleImmediateUpdate({ closes_at: dateTime });
+            // 브라우저 로컬 시간을 UTC로 변환하여 저장
+            const localDate = new Date(value);
+            const utcDateTime = localDate.toISOString();
+            handleImmediateUpdate({ closes_at: utcDateTime });
+        } else {
+            handleImmediateUpdate({ closes_at: null });
         }
     }, [handleImmediateUpdate]);
 
@@ -329,7 +339,13 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
             try {
                 const date = new Date(localSurvey.opens_at);
                 if (!isNaN(date.getTime())) {
-                    value = date.toISOString().slice(0, 16);
+                    // 브라우저 시간대로 표시하기 위해 로컬 시간으로 변환
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    value = `${year}-${month}-${day}T${hours}:${minutes}`;
                 }
             } catch (error) {
                 console.error('Invalid opens_at date:', localSurvey.opens_at);
@@ -351,7 +367,13 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
             try {
                 const date = new Date(localSurvey.closes_at);
                 if (!isNaN(date.getTime())) {
-                    value = date.toISOString().slice(0, 16);
+                    // 브라우저 시간대로 표시하기 위해 로컬 시간으로 변환
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    value = `${year}-${month}-${day}T${hours}:${minutes}`;
                 }
             } catch (error) {
                 console.error('Invalid closes_at date:', localSurvey.closes_at);
@@ -448,7 +470,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            시작 시간 (UTC)
+                            시작 시간
                         </label>
                         {opensAtInput}
                         <p className="text-xs text-gray-500 mt-1">
@@ -457,7 +479,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            종료 시간 (UTC) <span className="text-red-500">*</span>
+                            종료 시간 <span className="text-red-500">*</span>
                         </label>
                         {closesAtInput}
                         <p className="text-xs text-gray-500 mt-1">
