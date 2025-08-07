@@ -70,6 +70,8 @@ export function FormEditorProvider({
         "allow_response_view": initialData?.allow_response_view ?? false,
         "allow_response_modification": initialData?.allow_response_modification ?? false,
         "allow_duplicate_responses": initialData?.allow_duplicate_responses ?? true,
+        "allowed_list": initialData?.allowed_list || null,
+        "webhook_url": initialData?.webhook_url || null,
         "opens_at": initialData?.opens_at || null,
         "closes_at": initialData?.closes_at || "",
     });
@@ -90,6 +92,8 @@ export function FormEditorProvider({
                 "allow_response_view": initialData.allow_response_view ?? false,
                 "allow_response_modification": initialData.allow_response_modification ?? false,
                 "allow_duplicate_responses": initialData.allow_duplicate_responses ?? true,
+                "allowed_list": initialData.allowed_list || null,
+                "webhook_url": initialData.webhook_url || null,
                 "opens_at": initialData.opens_at || null,
                 "closes_at": initialData.closes_at || "",
             });

@@ -39,7 +39,7 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
         // 시크릿 키 reveal 상태 초기화
         setIsSecretKeyRevealed(false);
     }, [formBasicInfo]);
-
+    console.log({ formBasicInfo })
     // 클라이언트에서 baseUrl 설정
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -135,6 +135,15 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
     const handleEmailRequiredToggle = useCallback(() => {
         const newEmailRequired = !localSurvey.email_required;
 
+        // 이메일 필수를 켜는 경우, 익명 응답을 자동으로 끄기
+        if (newEmailRequired) {
+            handleImmediateUpdate({
+                email_required: newEmailRequired,
+                allow_anonymous: false
+            });
+            return;
+        }
+
         // 이메일 필수를 끄려고 할 때, 중복 응답이 허용되지 않고 액세스 토큰도 꺼져 있으면 끌 수 없음
         if (!newEmailRequired && !localSurvey.allow_duplicate_responses && !localSurvey.access_token_required) {
             // 액세스 토큰을 자동으로 켜기
@@ -158,6 +167,15 @@ export const SurveyBasicInfo = React.memo(function SurveyBasicInfo() {
 
     const handleAccessTokenRequiredToggle = useCallback(() => {
         const newAccessTokenRequired = !localSurvey.access_token_required;
+
+        // 액세스 토큰을 켜는 경우, 익명 응답을 자동으로 끄기
+        if (newAccessTokenRequired) {
+            handleImmediateUpdate({
+                access_token_required: newAccessTokenRequired,
+                allow_anonymous: false
+            });
+            return;
+        }
 
         // 액세스 토큰을 끄려고 할 때, 중복 응답이 허용되지 않고 이메일 필수도 꺼져 있으면 끌 수 없음
         if (!newAccessTokenRequired && !localSurvey.allow_duplicate_responses && !localSurvey.email_required) {

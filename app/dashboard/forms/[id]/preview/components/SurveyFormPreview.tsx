@@ -97,8 +97,8 @@ export function SurveyFormPreview({
                 completionTitle="설문이 완료되었습니다!"
                 completionMessage="미리보기 모드에서 응답을 확인해보세요."
                 submitButtonText="응답 확인하기"
-                initialRespondentId={previewTokenMetadata ? 'preview-user' : undefined}
-                tokenMetadata={previewTokenMetadata}
+                audience={previewTokenMetadata ? 'preview-user' : undefined}
+                metadata={previewTokenMetadata}
             />
             
             {/* 응답 JSON 모달 */}

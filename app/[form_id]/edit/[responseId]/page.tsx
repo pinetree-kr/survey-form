@@ -124,8 +124,8 @@ export default async function ResponseEditPage({
         : resolvedSearchParams.token;
 
     // 액세스 토큰이 필수인 경우 검증
-    let urlRespondentId: string | null = null;
-    let tokenMetadata: any = null;
+    let audience: string | null = null;
+    let metadata: any = null;
 
     if (survey.access_token_required && survey.access_secret_key) {
         if (!accessToken || typeof accessToken !== 'string') {
@@ -180,13 +180,13 @@ export default async function ResponseEditPage({
         // JWT 토큰 파싱하여 응답자 ID와 metadata 추출
         const tokenPayload = validateAndParseJWT(accessToken, survey.access_secret_key);
         if (tokenPayload) {
-            urlRespondentId = tokenPayload.aud;
-            tokenMetadata = tokenPayload.metadata;
+            audience = tokenPayload.aud;
+            metadata = tokenPayload.metadata;
         }
     }
 
     // 응답자 ID 검증 (토큰의 응답자 ID와 응답 데이터의 respondent 필드 비교)
-    if (survey.access_token_required && urlRespondentId && response.respondent !== urlRespondentId) {
+    if (survey.access_token_required && audience && response.respondent !== audience) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
                 <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
@@ -254,7 +254,8 @@ export default async function ResponseEditPage({
                 survey={surveyData} 
                 initialData={responseData}
                 isEditMode={true}
-                tokenMetadata={tokenMetadata}
+                metadata={metadata}
+                audience={audience || undefined}
             />
         </div>
     );

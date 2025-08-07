@@ -10,7 +10,6 @@ type Answer = {
 
 interface SurveyFormCoreProps {
     survey: TSurvey;
-    initialRespondentId?: string;
     isPreview?: boolean;
     onSubmit?: (answers: Answer[], etcValues: Record<string, string>, respondentId?: string) => void | Promise<void>;
     onComplete?: () => void;
@@ -20,12 +19,13 @@ interface SurveyFormCoreProps {
     initialData?: any;
     isEditMode?: boolean;
     redirectUrl?: string | null;
-    tokenMetadata?: any;
+    email?: string;
+    metadata?: any;
+    audience?: string;
 }
 
 export default function SurveyFormCore({
     survey,
-    initialRespondentId,
     isPreview = false,
     onSubmit,
     onComplete,
@@ -35,7 +35,9 @@ export default function SurveyFormCore({
     initialData,
     isEditMode = false,
     redirectUrl,
-    tokenMetadata
+    email,
+    metadata,
+    audience,
 }: SurveyFormCoreProps) {
     const [currentPanel, setCurrentPanel] = useState(0);
     const [answers, setAnswers] = useState<Answer[]>(() => {
@@ -53,11 +55,8 @@ export default function SurveyFormCore({
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string>('');
-    const [respondentId, setRespondentId] = useState<string>(initialRespondentId || '');
-    const [isEmailVerified, setIsEmailVerified] = useState<boolean>(!!initialRespondentId);
-    const [emailError, setEmailError] = useState<string>('');
+    const [respondentId, setRespondentId] = useState<string>(audience || email || '');
     const [isDuplicateResponse, setIsDuplicateResponse] = useState(false);
-    const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
     const [existingResponse, setExistingResponse] = useState<any>(null);
     const [showResponseReview, setShowResponseReview] = useState(false);
 
@@ -68,7 +67,6 @@ export default function SurveyFormCore({
         }
 
         try {
-            setIsCheckingDuplicate(true);
             const response = await fetch(`/api/surveys/${survey.id}/responses/check`, {
                 method: 'POST',
                 headers: {
@@ -81,23 +79,23 @@ export default function SurveyFormCore({
             });
 
             if (response.ok) {
-                const data = await response.json() as { 
-                    isDuplicate: boolean; 
+                const data = await response.json() as {
+                    isDuplicate: boolean;
                     existingResponse?: any;
                     isNotAllowed?: boolean;
                     message?: string;
                 };
-                
+
                 // 화이트리스트에 없는 경우 중복으로 처리 (접근 차단)
                 if (data.isNotAllowed) {
                     return true; // 중복으로 처리하여 접근 차단
                 }
-                
+
                 // 기존 응답이 있으면 저장
                 if (data.isDuplicate && data.existingResponse) {
                     setExistingResponse(data.existingResponse);
                 }
-                
+
                 return data.isDuplicate || false;
             }
             return false;
@@ -105,7 +103,7 @@ export default function SurveyFormCore({
             console.error('중복 확인 오류:', error);
             return false;
         } finally {
-            setIsCheckingDuplicate(false);
+            // 에러 처리 완료
         }
     }, [survey.id, survey.allow_duplicate_responses, survey.email_required, isPreview]);
 
@@ -119,19 +117,19 @@ export default function SurveyFormCore({
             }
 
             // initialRespondentId가 있고, 익명이 허용되지 않는 경우 중복 체크
-            if (initialRespondentId && initialRespondentId.trim() && !survey.allow_anonymous) {
-                const isDuplicate = await checkDuplicateResponse(initialRespondentId);
+            if ((audience || email) && (audience || email)?.trim() && !survey.allow_anonymous) {
+                const isDuplicate = await checkDuplicateResponse(audience || email || '');
                 setIsDuplicateResponse(isDuplicate);
 
                 // 중복인 경우 respondentId 설정 (중복 화면에서 표시하기 위해)
                 if (isDuplicate) {
-                    setRespondentId(initialRespondentId);
+                    setRespondentId(audience || email || '');
                 }
             }
         };
 
         checkInitialDuplicate();
-    }, [initialRespondentId, survey.allow_duplicate_responses, survey.allow_anonymous, isPreview, checkDuplicateResponse]);
+    }, [audience, email, survey.allow_duplicate_responses, survey.allow_anonymous, isPreview, checkDuplicateResponse]);
 
     // 조건을 확인하는 함수
     const checkCondition = React.useCallback((condition: TBranchCondition): boolean => {
@@ -406,10 +404,10 @@ export default function SurveyFormCore({
                     if (redirectUrl) {
                         // tokenMetadata가 있으면 URL에 추가하여 리다이렉트
                         let finalRedirectUrl = redirectUrl;
-                        if (tokenMetadata) {
+                        if (metadata) {
                             const url = new URL(redirectUrl);
                             // metadata의 각 속성을 URL 파라미터로 추가
-                            Object.entries(tokenMetadata).forEach(([key, value]) => {
+                            Object.entries(metadata).forEach(([key, value]) => {
                                 if (value !== undefined && value !== null) {
                                     url.searchParams.set(key, String(value));
                                 }
@@ -419,7 +417,7 @@ export default function SurveyFormCore({
                         window.location.href = finalRedirectUrl;
                         return;
                     }
-                    
+
                     setIsSubmitted(true);
                     // 중복 허용이 되지 않는 설문의 경우 현재 응답을 existingResponse에 저장
                     if (!survey.allow_duplicate_responses) {
@@ -442,43 +440,8 @@ export default function SurveyFormCore({
         } else if (onComplete) {
             onComplete();
         }
-    }, [answers, etcValues, respondentId, onSubmit, onComplete, isPreview, survey.allow_duplicate_responses, survey.email_required, redirectUrl]);
+    }, [answers, etcValues, respondentId, onSubmit, onComplete, isPreview, survey.allow_duplicate_responses, survey.email_required, redirectUrl, metadata]);
 
-    // 이메일 유효성 검사 함수
-    const validateEmail = React.useCallback((email: string): string => {
-        if (!email.trim()) {
-            return '이메일 주소를 입력해주세요.';
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return '유효한 이메일 주소를 입력해주세요.';
-        }
-        return '';
-    }, []);
-
-    // 이메일 입력 변경 핸들러
-    const handleEmailChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const email = e.target.value;
-        setRespondentId(email);
-        setEmailError(validateEmail(email));
-        setIsDuplicateResponse(false); // 이메일 변경 시 중복 상태 초기화
-        setExistingResponse(null); // 기존 응답도 초기화
-    }, [validateEmail]);
-
-    // 이메일 검증 및 중복 확인
-    const handleEmailVerification = React.useCallback(async () => {
-        const emailValidationError = validateEmail(respondentId);
-        setEmailError(emailValidationError);
-
-        if (!emailValidationError && respondentId.trim()) {
-            const isDuplicate = await checkDuplicateResponse(respondentId);
-            setIsDuplicateResponse(isDuplicate);
-
-            if (!isDuplicate) {
-                setIsEmailVerified(true);
-            }
-        }
-    }, [respondentId, validateEmail, checkDuplicateResponse]);
 
     // 리셋 함수
     const handleReset = React.useCallback(() => {
@@ -492,11 +455,9 @@ export default function SurveyFormCore({
         setExistingResponse(null);
         setShowResponseReview(false);
         if (!isPreview) {
-            setRespondentId(initialRespondentId || '');
-            setIsEmailVerified(!!initialRespondentId);
-            setEmailError('');
+            setRespondentId(audience || email || '');
         }
-    }, [isPreview, initialRespondentId]);
+    }, [isPreview, audience, email]);
 
     // 중복 응답 화면
     if (isDuplicateResponse) {
@@ -512,8 +473,8 @@ export default function SurveyFormCore({
                         <h2 className="text-3xl font-bold text-gray-900 mb-3">이미 응답하셨습니다</h2>
                         <p className="text-gray-600 leading-relaxed">
                             해당 식별자로 이미 설문에 응답하셨습니다.<br />
-                            {survey.allow_response_modification ? 
-                                (survey.allow_duplicate_responses ? '기존 응답을 수정하거나 새로 응답할 수 있습니다.' : '기존 응답을 수정할 수 있습니다.') 
+                            {survey.allow_response_modification ?
+                                (survey.allow_duplicate_responses ? '기존 응답을 수정하거나 새로 응답할 수 있습니다.' : '기존 응답을 수정할 수 있습니다.')
                                 : '중복 응답은 허용되지 않습니다.'
                             }
                         </p>
@@ -534,9 +495,9 @@ export default function SurveyFormCore({
                             </div>
                         )}
                         <p className="text-yellow-700 text-sm">
-                            {survey.allow_response_modification 
-                                ? (survey.allow_duplicate_responses 
-                                    ? '아래 버튼을 통해 기존 응답을 수정하거나 새로 응답할 수 있습니다.' 
+                            {survey.allow_response_modification
+                                ? (survey.allow_duplicate_responses
+                                    ? '아래 버튼을 통해 기존 응답을 수정하거나 새로 응답할 수 있습니다.'
                                     : '아래 버튼을 통해 기존 응답을 수정할 수 있습니다.')
                                 : '중복 응답이 허용되지 않아 추가 응답을 할 수 없습니다.'
                             }
@@ -575,92 +536,13 @@ export default function SurveyFormCore({
                                 )}
                             </div>
                         )}
-                        
-                        {/* 이메일 필수인 경우에만 다른 이메일 시도 버튼 표시 */}
-                        {survey.email_required && (
-                            <button
-                                onClick={() => {
-                                    setIsDuplicateResponse(false);
-                                    setExistingResponse(null);
-                                    setIsEmailVerified(false);
-                                    setRespondentId('');
-                                    setEmailError('');
-                                }}
-                                className="w-full px-8 py-4 bg-gray-600 text-white rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-200"
-                            >
-                                다른 이메일로 다시 시도
-                            </button>
-                        )}
+
                     </div>
                 </div>
             </div>
         );
     }
 
-    // 이메일 입력 UI (설문 시작 전)
-    if (survey.email_required && !isEmailVerified) {
-        const isEmailValid = !emailError && respondentId.trim() !== '';
-
-        return (
-            <div className="max-w-2xl mx-auto p-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-center mb-2">{survey.title}</h1>
-                    {survey.description && (
-                        <p className="text-gray-600 text-center">{survey.description}</p>
-                    )}
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-xl font-semibold mb-4">이메일 주소 입력</h2>
-                    <p className="text-gray-600 mb-4">
-                        설문을 시작하기 전에 이메일 주소를 입력해주세요.
-                    </p>
-
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            이메일 주소 <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="email"
-                            value={respondentId}
-                            onChange={handleEmailChange}
-                            onBlur={() => setEmailError(validateEmail(respondentId))}
-                            placeholder="example@email.com"
-                            className={`w-full border px-3 py-2 rounded-lg focus:ring-2 focus:border-transparent ${emailError
-                                ? 'border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
-                                }`}
-                            required
-                            disabled={isCheckingDuplicate}
-                        />
-                        {emailError && (
-                            <p className="mt-1 text-sm text-red-600">{emailError}</p>
-                        )}
-                    </div>
-
-                    <div className="flex justify-end">
-                        <button
-                            onClick={handleEmailVerification}
-                            disabled={!isEmailValid || isCheckingDuplicate}
-                            className={`px-6 py-2 rounded-lg transition-colors ${isEmailValid && !isCheckingDuplicate
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                }`}
-                        >
-                            {isCheckingDuplicate ? (
-                                <div className="flex items-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                    확인 중...
-                                </div>
-                            ) : (
-                                '설문 시작하기'
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     // 설문 제출 완료 화면
     if (isSubmitted) {

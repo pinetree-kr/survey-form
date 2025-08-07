@@ -34,7 +34,7 @@ export default async function FormViewPage({
 
     // 설문 시간 검증
     const now = new Date();
-    
+
     // 시작 시간 확인
     if (survey.opens_at) {
         const opensAt = new Date(survey.opens_at);
@@ -42,7 +42,7 @@ export default async function FormViewPage({
             throw new Error('설문이 아직 시작되지 않았습니다.');
         }
     }
-    
+
     // 종료 시간 확인
     if (survey.closes_at) {
         const closesAt = new Date(survey.closes_at);
@@ -85,25 +85,25 @@ export default async function FormViewPage({
     }
 
     // respondent ID와 metadata 추출 (JWT 토큰에서만)
-    let urlRespondentId: string | null = null;
-    let tokenMetadata: any = null;
+    let audience: string | undefined = undefined;
+    let metadata: any = null;
 
     if (accessToken && survey.access_token_required && survey.access_secret_key) {
         // JWT 토큰 파싱하여 응답자 ID와 metadata 추출
         const tokenPayload = validateAndParseJWT(accessToken, survey.access_secret_key);
         if (tokenPayload) {
-            urlRespondentId = tokenPayload.aud;
-            tokenMetadata = tokenPayload.metadata;
+            audience = tokenPayload.aud;
+            metadata = tokenPayload.metadata;
         }
     }
 
     // 중복 응답 확인 (액세스 토큰이나 다른 식별자가 있고 중복이 허용되지 않는 경우)
-    if (urlRespondentId && typeof urlRespondentId === 'string' && !survey.allow_duplicate_responses) {
+    if (audience && typeof audience === 'string' && !survey.allow_duplicate_responses) {
         const { data: existingResponse } = await supabase
             .from('survey_responses')
             .select('id')
             .eq('survey_id', survey.id)
-            .eq('respondent', urlRespondentId)
+            .eq('respondent', audience)
             .single();
 
         if (existingResponse) {
@@ -112,11 +112,11 @@ export default async function FormViewPage({
     }
 
     // 허용된 응답자 목록 확인
-    if (survey.allowed_list && survey.allowed_list.length > 0) {
-        if (!urlRespondentId || !survey.allowed_list.includes(urlRespondentId)) {
-            throw new Error('허용된 응답자가 아닙니다.')
-        }
-    }
+    // if (survey.allowed_list && survey.allowed_list.length > 0) {
+    //     if (!audience || !survey.allowed_list.includes(audience)) {
+    //         throw new Error('허용된 응답자가 아닙니다.')
+    //     }
+    // }
 
     // 설문 데이터를 TSurvey 타입으로 변환
     const surveyData: TSurvey = {
@@ -141,13 +141,14 @@ export default async function FormViewPage({
         created_by: survey.created_by,
         updated_by: survey.updated_by,
     };
-    
+
     return (
         <div>
             <SurveyForm
                 survey={surveyData}
                 redirectUrl={redirectUrl}
-                tokenMetadata={tokenMetadata}
+                audience={audience || undefined}
+                metadata={metadata}
             />
         </div>
     )

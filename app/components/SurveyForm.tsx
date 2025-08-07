@@ -11,28 +11,25 @@ type Answer = {
 
 interface SurveyFormProps {
     survey: TSurvey;
-    initialRespondentId?: string;
     initialData?: any;
     isEditMode?: boolean;
-    respondentId?: string;
     redirectUrl?: string | null;
-    tokenMetadata?: any;
+    metadata?: any;
+    audience?: string;
 }
 
 export default function SurveyForm({
     survey,
-    initialRespondentId,
     initialData,
     isEditMode = false,
-    respondentId,
     redirectUrl,
-    tokenMetadata
+    metadata,
+    audience
 }: SurveyFormProps) {
     // 실제 설문 제출 로직
     const handleSubmit = async (answers: Answer[], _etcValues: Record<string, string>, submitRespondentId?: string) => {
         // 응답자 ID 결정
         let finalRespondent: string | undefined;
-        console.log({ isEditMode, survey })
         // 수정 모드인 경우
         if (isEditMode) {
             // 응답 수정 API 호출
@@ -46,7 +43,7 @@ export default function SurveyForm({
                         acc[answer.questionId] = answer.value;
                         return acc;
                     }, {} as Record<string, any>),
-                    respondent: respondentId || initialRespondentId,
+                    respondent: audience,
                     email: submitRespondentId
                 }),
             });
@@ -65,8 +62,8 @@ export default function SurveyForm({
             finalRespondent = submitRespondentId;
         }
         // 액세스 토큰이 필수인 경우 
-        else if (survey.access_token_required && initialRespondentId) {
-            finalRespondent = initialRespondentId;
+        else if (survey.access_token_required && audience) {
+            finalRespondent = audience;
         }
         // 익명 응답이 허용된 경우
         else if (survey.allow_anonymous) {
@@ -97,7 +94,6 @@ export default function SurveyForm({
     return (
         <SurveyFormWrapper
             survey={survey}
-            initialRespondentId={initialRespondentId}
             isPreview={false}
             onSubmit={handleSubmit}
             completionTitle={isEditMode ? "응답이 수정되었습니다!" : "설문이 완료되었습니다!"}
@@ -106,7 +102,8 @@ export default function SurveyForm({
             initialData={initialData}
             isEditMode={isEditMode}
             redirectUrl={redirectUrl}
-            tokenMetadata={tokenMetadata}
+            metadata={metadata}
+            audience={audience}
         />
     );
 }
